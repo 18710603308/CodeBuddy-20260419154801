@@ -1,0 +1,382 @@
+/* DevTools Hub - 统一颜色系统 */
+
+/* ==================== CSS 变量定义 ==================== */
+:root {
+  /* 黑暗模式颜色 (默认) */
+  --bg-primary: #0f172a;
+  --bg-secondary: #1e293b;
+  --bg-tertiary: #334155;
+  --bg-input: #1e293b;
+  
+  --text-primary: #f1f5f9;
+  --text-secondary: #cbd5e1;
+  --text-muted: #94a3b8;
+  --text-subtle: #64748b;
+  
+  --border-primary: #475569;
+  --border-secondary: #334155;
+  
+  --accent-primary: #10b981;
+  --accent-hover: #059669;
+  
+  --shadow-color: rgba(0, 0, 0, 0.3);
+  --overlay-bg: rgba(15, 23, 42, 0.8);
+  
+  /* 功能性颜色 */
+  --success-color: #34d399;
+  --error-color: #f87171;
+  --warning-color: #fbbf24;
+  --info-color: #60a5fa;
+}
+
+/* 白天模式 */
+[data-theme="light"] {
+  --bg-primary: #f8fafc;
+  --bg-secondary: #ffffff;
+  --bg-tertiary: #e2e8f0;
+  --bg-input: #f1f5f9;
+  
+  --text-primary: #0f172a;
+  --text-secondary: #334155;
+  --text-muted: #64748b;
+  --text-subtle: #94a3b8;
+  
+  --border-primary: #cbd5e1;
+  --border-secondary: #e2e8f0;
+  
+  --accent-primary: #059669;
+  --accent-hover: #047857;
+  
+  --shadow-color: rgba(0, 0, 0, 0.1);
+  --overlay-bg: rgba(248, 250, 252, 0.9);
+  
+  --success-color: #059669;
+  --error-color: #dc2626;
+  --warning-color: #d97706;
+  --info-color: #2563eb;
+}
+
+/* ==================== 基础样式重置 ==================== */
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  background-color: var(--bg-primary);
+  color: var(--text-primary);
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+/* ==================== 统一颜色工具类 ==================== */
+/* 背景色 */
+.bg-primary { background-color: var(--bg-primary); }
+.bg-secondary { background-color: var(--bg-secondary); }
+.bg-tertiary { background-color: var(--bg-tertiary); }
+.bg-input { background-color: var(--bg-input); }
+
+/* 文字颜色 */
+.text-primary { color: var(--text-primary); }
+.text-secondary { color: var(--text-secondary); }
+.text-muted { color: var(--text-muted); }
+.text-subtle { color: var(--text-subtle); }
+
+/* 边框颜色 */
+.border-primary { border-color: var(--border-primary); }
+.border-secondary { border-color: var(--border-secondary); }
+
+/* 功能性颜色 */
+.text-success { color: var(--success-color); }
+.text-error { color: var(--error-color); }
+.text-warning { color: var(--warning-color); }
+.text-info { color: var(--info-color); }
+
+/* ==================== 通用组件样式 ==================== */
+/* 输入框/文本域 */
+.dev-textarea {
+  background-color: var(--bg-input) !important;
+  border: 1px solid var(--border-primary);
+  color: var(--text-primary);
+  transition: border-color 0.2s ease, background-color 0.3s ease;
+}
+
+.dev-textarea:focus {
+  border-color: var(--accent-primary);
+  outline: none;
+}
+
+.dev-textarea::placeholder {
+  color: var(--text-subtle);
+}
+
+/* 选择框 */
+.dev-select {
+  background-color: var(--bg-secondary);
+  border: 1px solid var(--border-primary);
+  color: var(--text-primary);
+  transition: border-color 0.2s ease, background-color 0.3s ease;
+}
+
+.dev-select:focus {
+  border-color: var(--accent-primary);
+  outline: none;
+}
+
+/* 卡片/面板 */
+.dev-card {
+  background-color: var(--bg-secondary);
+  border: 1px solid var(--border-secondary);
+  transition: background-color 0.3s ease, border-color 0.3s ease;
+}
+
+/* 标签文字 */
+.dev-label {
+  color: var(--text-muted);
+}
+
+/* ==================== 按钮样式 ==================== */
+.dev-btn {
+  background-color: var(--bg-tertiary);
+  color: var(--text-primary);
+  border: 1px solid var(--border-primary);
+  transition: all 0.2s ease;
+}
+
+.dev-btn:hover {
+  background-color: var(--border-primary);
+}
+
+.dev-btn-primary {
+  background-color: var(--accent-primary);
+  color: white;
+  border-color: var(--accent-primary);
+}
+
+.dev-btn-primary:hover {
+  background-color: var(--accent-hover);
+  border-color: var(--accent-hover);
+}
+
+/* ==================== 导航栏样式 ==================== */
+.dev-nav {
+  background-color: var(--bg-secondary);
+  border-color: var(--border-secondary);
+}
+
+/* ==================== 工具卡片样式 ==================== */
+.dev-tool-card {
+  background-color: var(--bg-secondary);
+  border-color: var(--border-secondary);
+  transition: transform 0.2s ease, box-shadow 0.2s ease, background-color 0.3s ease;
+}
+
+.dev-tool-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px var(--shadow-color);
+}
+
+/* ==================== 图表/图标容器 ==================== */
+.dev-icon-container {
+  background: linear-gradient(135deg, var(--accent-primary), var(--accent-hover));
+}
+
+/* ==================== 滚动条样式 ==================== */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--bg-primary);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--border-primary);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--text-subtle);
+}
+
+/* ==================== XML 语法高亮 (优化对比度) ==================== */
+.xml-tag {
+  color: #f87171;
+  font-weight: 600;
+}
+
+.xml-attr-name {
+  color: #fbbf24;
+  font-weight: 500;
+}
+
+.xml-attr-value {
+  color: #34d399;
+}
+
+.xml-bracket {
+  color: var(--text-primary);
+}
+
+.xml-comment {
+  color: var(--text-subtle);
+  font-style: italic;
+}
+
+.xml-declaration {
+  color: #c084fc;
+}
+
+/* 白天模式 XML 语法高亮调整 */
+[data-theme="light"] .xml-tag { color: #dc2626; }
+[data-theme="light"] .xml-attr-name { color: #b45309; }
+[data-theme="light"] .xml-attr-value { color: #059669; }
+[data-theme="light"] .xml-declaration { color: #7c3aed; }
+
+/* ==================== 代码编辑器对比度优化 ==================== */
+.cm-editor {
+  background-color: var(--bg-primary) !important;
+}
+
+.cm-editor .cm-content {
+  color: var(--text-primary) !important;
+}
+
+.cm-editor .cm-gutters {
+  background-color: var(--bg-secondary) !important;
+  color: var(--text-muted) !important;
+  border-color: var(--border-secondary) !important;
+}
+
+.cm-editor .cm-activeLineGutter {
+  background-color: var(--bg-tertiary) !important;
+}
+
+.cm-editor .cm-activeLine {
+  background-color: rgba(255, 255, 255, 0.05) !important;
+}
+
+[data-theme="light"] .cm-editor .cm-activeLine {
+  background-color: rgba(0, 0, 0, 0.03) !important;
+}
+
+/* ==================== 合并视图样式 ==================== */
+.cm-merge-view {
+  background-color: var(--bg-primary) !important;
+  border: 1px solid var(--border-primary);
+}
+
+.cm-merge-view .cm-editor {
+  background-color: var(--bg-primary) !important;
+}
+
+.cm-merge-view .cm-editor .cm-content {
+  color: var(--text-primary) !important;
+}
+
+.cm-merge-view .cm-editor .cm-gutters {
+  background-color: var(--bg-secondary) !important;
+  color: var(--text-muted) !important;
+  border-left: 1px solid var(--border-primary) !important;
+}
+
+.cm-merge-view .cm-editor .cm-lineNumbers .cm-gutterElement {
+  color: var(--text-muted) !important;
+}
+
+.cm-merge-view .cm-editor .cm-activeLineGutter {
+  background-color: var(--bg-tertiary) !important;
+}
+
+.cm-merge-view .cm-editor .cm-activeLine {
+  background-color: rgba(255, 255, 255, 0.05) !important;
+}
+
+[data-theme="light"] .cm-merge-view .cm-editor .cm-activeLine {
+  background-color: rgba(0, 0, 0, 0.03) !important;
+}
+
+.cm-merge-view .cm-merge-gap {
+  background-color: var(--bg-secondary) !important;
+  border-color: var(--border-primary) !important;
+  border-left: 1px solid var(--border-primary) !important;
+  border-right: 1px solid var(--border-primary) !important;
+}
+
+/* 覆盖 oneDark 主题中的深色样式 */
+.cm-merge-view .cm-editor.cm-focused {
+  outline: none !important;
+}
+
+.cm-merge-view .cm-scroller {
+  font-family: 'Fira Code', 'JetBrains Mono', Consolas, monospace !important;
+}
+
+/* 合并视图中的按钮和控件 */
+.cm-merge-view .cm-merge-revert {
+  color: var(--accent-primary) !important;
+}
+
+.cm-merge-view .cm-changedChunk {
+  background-color: rgba(251, 191, 36, 0.15) !important;
+}
+
+[data-theme="light"] .cm-merge-view .cm-changedChunk {
+  background-color: rgba(217, 119, 6, 0.1) !important;
+}
+
+/* ==================== Diff 高亮对比度优化 ==================== */
+/* 删除行 */
+.diff-delete {
+  background-color: rgba(248, 113, 113, 0.15);
+}
+
+[data-theme="light"] .diff-delete {
+  background-color: rgba(220, 38, 38, 0.1);
+}
+
+/* 添加行 */
+.diff-insert {
+  background-color: rgba(52, 211, 153, 0.15);
+}
+
+[data-theme="light"] .diff-insert {
+  background-color: rgba(5, 150, 105, 0.1);
+}
+
+/* ==================== 动画过渡 ==================== */
+.transition-theme {
+  transition: background-color 0.3s ease, 
+              color 0.3s ease, 
+              border-color 0.3s ease,
+              box-shadow 0.3s ease;
+}
+
+/* ==================== 白天模式 Tailwind 覆盖 ==================== */
+/* 将硬编码的 slate 颜色映射到 CSS 变量 */
+[data-theme="light"] .bg-slate-700 { background-color: var(--bg-tertiary) !important; }
+[data-theme="light"] .bg-slate-800 { background-color: var(--bg-secondary) !important; }
+[data-theme="light"] .bg-slate-900 { background-color: var(--bg-primary) !important; }
+[data-theme="light"] .bg-slate-900\/50 { background-color: rgba(248, 250, 252, 0.5) !important; }
+[data-theme="light"] .bg-slate-900\/30 { background-color: rgba(248, 250, 252, 0.3) !important; }
+[data-theme="light"] .bg-slate-700\/30 { background-color: rgba(226, 232, 240, 0.3) !important; }
+
+[data-theme="light"] .text-slate-200 { color: var(--text-primary) !important; }
+[data-theme="light"] .text-slate-600 { color: var(--text-muted) !important; }
+[data-theme="light"] .text-subtle { color: var(--text-subtle) !important; }
+
+[data-theme="light"] .border-slate-700 { border-color: var(--border-primary) !important; }
+[data-theme="light"] .border-slate-600 { border-color: var(--border-primary) !important; }
+[data-theme="light"] .border-slate-700\/50 { border-color: rgba(203, 213, 225, 0.5) !important; }
+
+[data-theme="light"] .hover\:bg-slate-600:hover { background-color: var(--bg-tertiary) !important; }
+[data-theme="light"] .hover\:bg-slate-700\/30:hover { background-color: rgba(226, 232, 240, 0.3) !important; }
+
+[data-theme="light"] .caret-slate-200 { caret-color: var(--text-primary) !important; }
+
+[data-theme="light"] .bg-black\/60 { background-color: rgba(0, 0, 0, 0.1) !important; }
+
+/* 白天模式下提升对比度 */
+[data-theme="light"] .text-red-400 { color: #dc2626 !important; }
+[data-theme="light"] .text-emerald-400 { color: #059669 !important; }
