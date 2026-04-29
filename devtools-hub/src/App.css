@@ -380,3 +380,18 @@ body {
 /* 白天模式下提升对比度 */
 [data-theme="light"] .text-red-400 { color: #dc2626 !important; }
 [data-theme="light"] .text-emerald-400 { color: #059669 !important; }
+
+/* ==================== 游戏页面白天模式 ==================== */
+[data-theme="light"] .bg-tertiary { background-color: var(--bg-tertiary) !important; }
+[data-theme="light"] .bg-tertiary\/50 { background-color: rgba(226, 232, 240, 0.5) !important; }
+[data-theme="light"] .bg-secondary\/80 { background-color: rgba(255, 255, 255, 0.9) !important; }
+[data-theme="light"] .bg-input { background-color: var(--bg-input) !important; }
+[data-theme="light"] .border-border { border-color: var(--border-primary) !important; }
+[data-theme="light"] .from-primary { --tw-gradient-from: #f8fafc !important; }
+[data-theme="light"] .via-secondary { --tw-gradient-to: #ffffff !important; }
+[data-theme="light"] .to-primary { --tw-gradient-stops: var(--tw-gradient-from), #f8fafc, var(--tw-gradient-to) !important; }
+[data-theme="light"] .bg-gradient-to-br { background-image: linear-gradient(to bottom right, #f8fafc, #ffffff, #f8fafc) !important; }
+[data-theme="light"] .bg-secondary\/80 { background-color: rgba(255, 255, 255, 0.8) !important; }
+[data-theme="light"] .border-primary { border-color: var(--border-primary) !important; }
+[data-theme="light"] .text-primary { color: var(--text-primary) !important; }
+[data-theme="light"] .text-muted { color: var(--text-muted) !important; }

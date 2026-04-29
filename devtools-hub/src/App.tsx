@@ -1,4 +1,4 @@
-import { useState, useEffect, createContext, useContext, useRef } from 'react'
+import { useState, useEffect, useMemo, createContext, useContext, useRef } from 'react'
 import {
   Braces,
   FileCode2,
@@ -45,8 +45,7 @@ import {
   Calculator,
   TextCursorInput,
   Image,
- QrCode,
-  Link,
+  QrCode,
   Unlink,
   Lock,
   Unlock,
@@ -57,9 +56,14 @@ import {
   Coffee,
   AlertCircle,
   Cog,
-  Code
+  Code,
+  Bot,
+  WifiOff,
+  Gamepad2
 } from 'lucide-react'
+import { Link, useNavigate } from 'react-router-dom'
 import './App.css'
+import { AINavigator } from '@/components/ai-navigator'
 
 // 全局内容配置 Context
 interface ContentConfig {
@@ -198,58 +202,15 @@ interface Tool {
 }
 
 const tools: Tool[] = [
-  // 核心数据处理
-  { id: 'json', icon: Braces, title: 'JSON 格式化', description: '美化、压缩、校验 JSON 数据', color: 'from-amber-500 to-orange-600', bgColor: 'bg-amber-500/10', borderColor: 'border-amber-500/30' },
-  { id: 'xml', icon: FileCode2, title: 'XML 格式化', description: '美化、压缩、校验 XML 数据', color: 'from-emerald-500 to-teal-600', bgColor: 'bg-emerald-500/10', borderColor: 'border-emerald-500/30' },
-  { id: 'yaml', icon: FileJson, title: 'YAML 工具', description: 'YAML 解析与格式化', color: 'from-teal-500 to-cyan-600', bgColor: 'bg-teal-500/10', borderColor: 'border-teal-500/30' },
-  { id: 'diff', icon: GitCompare, title: '文本对比', description: '快速比较两段文本差异', color: 'from-blue-500 to-cyan-600', bgColor: 'bg-blue-500/10', borderColor: 'border-blue-500/30' },
-  { id: 'sql', icon: Database, title: 'SQL 格式化', description: '美化、压缩、校验 SQL', color: 'from-indigo-500 to-blue-600', bgColor: 'bg-indigo-500/10', borderColor: 'border-indigo-500/30' },
-  { id: 'csv', icon: Table2, title: 'CSV 工具', description: '解析、转换、导出 CSV', color: 'from-violet-500 to-purple-600', bgColor: 'bg-violet-500/10', borderColor: 'border-violet-500/30' },
+  // 导航
+  { id: 'ai-nav', icon: Bot, title: 'AI 导航黄页', description: '收录全网优质 AI 工具，支持分类浏览和搜索', color: 'from-emerald-400 to-green-600', bgColor: 'bg-emerald-500/10', borderColor: 'border-emerald-500/30' },
+  { id: 'coding-world', icon: Globe, title: 'Coding The World', description: '探索优质开源项目', color: 'from-blue-500 to-purple-600', bgColor: 'bg-blue-500/10', borderColor: 'border-blue-500/30' },
   
-  // 编码与加密
-  { id: 'base64', icon: Terminal, title: 'Base64 编解码', description: '字符串与 Base64 互转', color: 'from-green-500 to-emerald-600', bgColor: 'bg-green-500/10', borderColor: 'border-green-500/30' },
-  { id: 'hash', icon: Hash, title: 'Hash 生成', description: 'MD5、SHA1、SHA256 等加密', color: 'from-purple-500 to-pink-600', bgColor: 'bg-purple-500/10', borderColor: 'border-purple-500/30' },
-  { id: 'url', icon: Code2, title: 'URL 编解码', description: 'URL 参数编码与解码', color: 'from-teal-500 to-cyan-600', bgColor: 'bg-teal-500/10', borderColor: 'border-teal-500/30' },
-  { id: 'unicode', icon: Type, title: 'Unicode 转换', description: '中文与 Unicode 互转', color: 'from-cyan-500 to-sky-600', bgColor: 'bg-cyan-500/10', borderColor: 'border-cyan-500/30' },
-  { id: 'jwt', icon: Layers, title: 'JWT 解码', description: '解析 Token 内容和签名', color: 'from-fuchsia-500 to-pink-600', bgColor: 'bg-fuchsia-500/10', borderColor: 'border-fuchsia-500/30' },
-  { id: 'aes', icon: Lock, title: 'AES 加解密', description: 'AES 对称加密解密', color: 'from-red-500 to-rose-600', bgColor: 'bg-red-500/10', borderColor: 'border-red-500/30' },
+  // AI 游戏
+  { id: 'ai-game', icon: Gamepad2, title: 'AI 游戏工坊', description: '输入文字让 AI 生成游戏关卡，文本命令操控角色', color: 'from-purple-500 to-pink-600', bgColor: 'bg-purple-500/10', borderColor: 'border-purple-500/30' },
   
-  // 进制与转换
-  { id: 'binary', icon: Binary, title: '进制转换', description: '2/8/10/16 进制互转', color: 'from-orange-500 to-amber-600', bgColor: 'bg-orange-500/10', borderColor: 'border-orange-500/30' },
-  { id: 'color', icon: Palette, title: '颜色转换', description: 'RGB/HEX/HSL 互转', color: 'from-pink-500 to-rose-600', bgColor: 'bg-pink-500/10', borderColor: 'border-pink-500/30' },
-  { id: 'timestamp', icon: Clock, title: '时间戳转换', description: 'Unix 时间戳互转', color: 'from-blue-500 to-indigo-600', bgColor: 'bg-blue-500/10', borderColor: 'border-blue-500/30' },
-  
-  // 文本处理
-  { id: 'regex', icon: Type, title: '正则表达式', description: '测试与生成正则模式', color: 'from-cyan-500 to-sky-600', bgColor: 'bg-cyan-500/10', borderColor: 'border-cyan-500/30' },
-  { id: 'camel', icon: Shuffle, title: '驼峰转换', description: '驼峰/下划线/短横线互转', color: 'from-violet-500 to-purple-600', bgColor: 'bg-violet-500/10', borderColor: 'border-violet-500/30' },
-  { id: 'case', icon: TextCursorInput, title: '大小写转换', description: '英文大小写/全角半角', color: 'from-amber-500 to-yellow-600', bgColor: 'bg-amber-500/10', borderColor: 'border-amber-500/30' },
-  
-  // 代码工具
-  { id: 'js', icon: Code2, title: 'JS 格式化', description: 'JavaScript 压缩美化', color: 'from-yellow-500 to-amber-600', bgColor: 'bg-yellow-500/10', borderColor: 'border-yellow-500/30' },
-  { id: 'html', icon: FileTextIcon, title: 'HTML 格式化', description: 'HTML 标签格式化', color: 'from-orange-500 to-red-600', bgColor: 'bg-orange-500/10', borderColor: 'border-orange-500/30' },
-  { id: 'css', icon: Palette, title: 'CSS 格式化', description: 'CSS 代码格式化', color: 'from-blue-500 to-cyan-600', bgColor: 'bg-blue-500/10', borderColor: 'border-blue-500/30' },
-  { id: 'codemirror', icon: Code2, title: '代码编辑器', description: '支持多语言的代码编辑器', color: 'from-sky-500 to-blue-600', bgColor: 'bg-sky-500/10', borderColor: 'border-sky-500/30' },
-  { id: 'codemerge', icon: GitCompare, title: '代码合并对比', description: 'CodeMirror 代码合并与对比工具', color: 'from-violet-500 to-purple-600', bgColor: 'bg-violet-500/10', borderColor: 'border-violet-500/30' },
-  
-  // CodeMirror 语言编辑器
-  { id: 'js-editor', icon: Braces, title: 'JavaScript', description: 'JavaScript 代码编辑器', color: 'from-yellow-500 to-amber-600', bgColor: 'bg-yellow-500/10', borderColor: 'border-yellow-500/30' },
-  { id: 'ts-editor', icon: FileCode, title: 'TypeScript', description: 'TypeScript 代码编辑器', color: 'from-blue-500 to-indigo-600', bgColor: 'bg-blue-500/10', borderColor: 'border-blue-500/30' },
-  { id: 'py-editor', icon: FileJson, title: 'Python', description: 'Python 代码编辑器', color: 'from-green-500 to-emerald-600', bgColor: 'bg-green-500/10', borderColor: 'border-green-500/30' },
-  { id: 'java-editor', icon: Coffee, title: 'Java', description: 'Java 代码编辑器', color: 'from-orange-500 to-red-600', bgColor: 'bg-orange-500/10', borderColor: 'border-orange-500/30' },
-  { id: 'cpp-editor', icon: Binary, title: 'C++', description: 'C++ 代码编辑器', color: 'from-blue-600 to-cyan-600', bgColor: 'bg-blue-600/10', borderColor: 'border-blue-600/30' },
-  { id: 'rust-editor', icon: Cog, title: 'Rust', description: 'Rust 代码编辑器', color: 'from-orange-600 to-red-700', bgColor: 'bg-orange-600/10', borderColor: 'border-orange-600/30' },
-  { id: 'go-editor', icon: Terminal, title: 'Go', description: 'Go 代码编辑器', color: 'from-cyan-500 to-teal-600', bgColor: 'bg-cyan-500/10', borderColor: 'border-cyan-500/30' },
-  { id: 'php-editor', icon: Code, title: 'PHP', description: 'PHP 代码编辑器', color: 'from-indigo-500 to-purple-600', bgColor: 'bg-indigo-500/10', borderColor: 'border-indigo-500/30' },
-  { id: 'md-editor', icon: FileText, title: 'Markdown', description: 'Markdown 编辑器', color: 'from-slate-500 to-gray-600', bgColor: 'bg-slate-500/10', borderColor: 'border-slate-500/30' },
-  { id: 'codesearch', icon: Search, title: '代码搜索', description: 'CodeMirror 高级搜索替换', color: 'from-teal-500 to-emerald-600', bgColor: 'bg-teal-500/10', borderColor: 'border-teal-500/30' },
-  { id: 'codelint', icon: AlertCircle, title: '代码检查', description: '代码语法检查与提示', color: 'from-red-500 to-rose-600', bgColor: 'bg-red-500/10', borderColor: 'border-red-500/30' },
-  
-  // 实用工具
-  { id: 'mock', icon: Wand2, title: 'Mock 数据', description: '生成模拟 JSON 数据', color: 'from-orange-500 to-amber-600', bgColor: 'bg-orange-500/10', borderColor: 'border-orange-500/30' },
-  { id: 'qrcode', icon: QrCode, title: '二维码生成', description: '生成和解析二维码', color: 'from-teal-500 to-emerald-600', bgColor: 'bg-teal-500/10', borderColor: 'border-teal-500/30' },
-  { id: 'uuid', icon: Key, title: 'UUID 生成', description: '生成唯一标识符', color: 'from-purple-500 to-violet-600', bgColor: 'bg-purple-500/10', borderColor: 'border-purple-500/30' },
-  { id: 'password', icon: ShieldCheck, title: '密码生成器', description: '随机安全密码生成', color: 'from-green-500 to-emerald-600', bgColor: 'bg-green-500/10', borderColor: 'border-green-500/30' },
-  { id: 'clipboard', icon: Clipboard, title: '剪贴板工具', description: '历史记录与快速粘贴', color: 'from-rose-500 to-red-600', bgColor: 'bg-rose-500/10', borderColor: 'border-rose-500/30' },
+  // 离线工具
+  { id: 'offline-tools', icon: WifiOff, title: '离线工具', description: '40+ 开发工具，无需网络即开即用', color: 'from-orange-500 to-amber-600', bgColor: 'bg-orange-500/10', borderColor: 'border-orange-500/30' },
 ]
 
 const features = [
@@ -1330,9 +1291,15 @@ function ClipboardTool() {
 // ==================== 主应用 ====================
 
 function App() {
-  const [isDark, setIsDark] = useState(true)
+  // 从 localStorage 读取主题设置
+  const [isDark, setIsDark] = useState(() => {
+    const theme = localStorage.getItem('devtools-theme')
+    return theme === 'light' ? false : true
+  })
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const [selectedTool, setSelectedTool] = useState<Tool | null>(null)
+  const [searchQuery, setSearchQuery] = useState('')
+  const [showSearchResults, setShowSearchResults] = useState(false)
   
   // 全局内容配置
   const [contentHeight, setContentHeight] = useState(350)
@@ -1344,6 +1311,98 @@ function App() {
     document.documentElement.setAttribute('data-theme', theme)
     localStorage.setItem('devtools-theme', theme)
   }, [isDark])
+
+  // 处理 URL 参数中的 tool 参数
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search)
+    const toolParam = params.get('tool')
+    if (toolParam) {
+      // 从完整的 tools 数组中找到对应的工具
+      // 由于首页现在只有 3 个工具，需要从完整列表中查找
+      const allToolIds = [
+        'json', 'xml', 'yaml', 'diff', 'sql', 'csv',
+        'base64', 'hash', 'url', 'unicode', 'jwt', 'aes',
+        'binary', 'color', 'timestamp',
+        'regex', 'camel', 'case',
+        'js', 'html', 'css', 'codemirror', 'codemerge',
+        'js-editor', 'ts-editor', 'py-editor', 'java-editor', 'cpp-editor', 
+        'rust-editor', 'go-editor', 'php-editor', 'md-editor',
+        'codesearch', 'codelint',
+        'mock', 'qrcode', 'uuid', 'password', 'clipboard'
+      ]
+      
+      if (allToolIds.includes(toolParam)) {
+        const toolTitleMap: Record<string, { title: string; description: string }> = {
+          'json': { title: 'JSON 格式化', description: '美化、压缩、校验 JSON 数据' },
+          'xml': { title: 'XML 格式化', description: '美化、压缩、校验 XML 数据' },
+          'yaml': { title: 'YAML 工具', description: 'YAML 解析与格式化' },
+          'diff': { title: '文本对比', description: '快速比较两段文本差异' },
+          'sql': { title: 'SQL 格式化', description: '美化、压缩、校验 SQL' },
+          'csv': { title: 'CSV 工具', description: '解析、转换、导出 CSV' },
+          'base64': { title: 'Base64 编解码', description: '字符串与 Base64 互转' },
+          'hash': { title: 'Hash 生成', description: 'MD5、SHA1、SHA256 等加密' },
+          'url': { title: 'URL 编解码', description: 'URL 参数编码与解码' },
+          'unicode': { title: 'Unicode 转换', description: '中文与 Unicode 互转' },
+          'jwt': { title: 'JWT 解码', description: '解析 Token 内容和签名' },
+          'aes': { title: 'AES 加解密', description: 'AES 对称加密解密' },
+          'binary': { title: '进制转换', description: '2/8/10/16 进制互转' },
+          'color': { title: '颜色转换', description: 'RGB/HEX/HSL 互转' },
+          'timestamp': { title: '时间戳转换', description: 'Unix 时间戳互转' },
+          'regex': { title: '正则表达式', description: '测试与生成正则模式' },
+          'camel': { title: '驼峰转换', description: '驼峰/下划线/短横线互转' },
+          'case': { title: '大小写转换', description: '英文大小写/全角半角' },
+          'js': { title: 'JS 格式化', description: 'JavaScript 压缩美化' },
+          'html': { title: 'HTML 格式化', description: 'HTML 标签格式化' },
+          'css': { title: 'CSS 格式化', description: 'CSS 代码格式化' },
+          'codemirror': { title: '代码编辑器', description: '支持多语言的代码编辑器' },
+          'codemerge': { title: '代码合并对比', description: 'CodeMirror 代码合并与对比工具' },
+          'js-editor': { title: 'JavaScript', description: 'JavaScript 代码编辑器' },
+          'ts-editor': { title: 'TypeScript', description: 'TypeScript 代码编辑器' },
+          'py-editor': { title: 'Python', description: 'Python 代码编辑器' },
+          'java-editor': { title: 'Java', description: 'Java 代码编辑器' },
+          'cpp-editor': { title: 'C++', description: 'C++ 代码编辑器' },
+          'rust-editor': { title: 'Rust', description: 'Rust 代码编辑器' },
+          'go-editor': { title: 'Go', description: 'Go 代码编辑器' },
+          'php-editor': { title: 'PHP', description: 'PHP 代码编辑器' },
+          'md-editor': { title: 'Markdown', description: 'Markdown 编辑器' },
+          'codesearch': { title: '代码搜索', description: 'CodeMirror 高级搜索替换' },
+          'codelint': { title: '代码检查', description: '代码语法检查与提示' },
+          'mock': { title: 'Mock 数据', description: '生成模拟 JSON 数据' },
+          'qrcode': { title: '二维码生成', description: '生成和解析二维码' },
+          'uuid': { title: 'UUID 生成', description: '生成唯一标识符' },
+          'password': { title: '密码生成器', description: '随机安全密码生成' },
+          'clipboard': { title: '剪贴板工具', description: '历史记录与快速粘贴' },
+        }
+        
+        const toolInfo = toolTitleMap[toolParam]
+        if (toolInfo) {
+          // 创建一个临时的工具对象来打开面板
+          setSelectedTool({
+            id: toolParam,
+            icon: Code2, // 使用默认图标
+            title: toolInfo.title,
+            description: toolInfo.description,
+            color: 'from-emerald-500 to-teal-600',
+            bgColor: 'bg-emerald-500/10',
+            borderColor: 'border-emerald-500/30'
+          })
+        }
+        
+        // 清除 URL 参数
+        window.history.replaceState({}, '', '/')
+      }
+    }
+  }, [])
+
+  // 搜索功能
+  const searchResults = useMemo(() => {
+    if (!searchQuery.trim()) return []
+    const query = searchQuery.toLowerCase()
+    return tools.filter(tool => 
+      tool.title.toLowerCase().includes(query) ||
+      tool.description.toLowerCase().includes(query)
+    )
+  }, [searchQuery])
 
   const increaseHeight = () => setContentHeight(prev => Math.min(prev + 50, 800))
   const decreaseHeight = () => setContentHeight(prev => Math.max(prev - 50, 200))
@@ -1416,6 +1475,9 @@ function App() {
     uuid: <UuidTool />,
     password: <PasswordTool />,
     clipboard: <ClipboardTool />,
+    
+    // AI 工具
+    'ai-nav': <AINavigator />,
   }
 
   return (
@@ -1436,12 +1498,73 @@ function App() {
                 <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-400 to-green-600 flex items-center justify-center shadow-lg shadow-emerald-500/20">
                   <Terminal className="w-5 h-5 text-white" />
                 </div>
-                <span className="text-xl font-bold text-primary transition-theme">
+                <span className="text-xl font-bold text-gray-900 dark:text-primary transition-theme">
                   DevTools Hub
                 </span>
               </div>
 
+              {/* Search Box */}
               <div className="hidden md:flex items-center gap-8">
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted" />
+                  <input
+                    type="text"
+                    placeholder="搜索工具..."
+                    value={searchQuery}
+                    onChange={(e) => {
+                      setSearchQuery(e.target.value)
+                      setShowSearchResults(e.target.value.trim().length > 0)
+                    }}
+                    onFocus={() => setShowSearchResults(searchQuery.trim().length > 0)}
+                    onBlur={() => setTimeout(() => setShowSearchResults(false), 200)}
+                    className="w-64 pl-10 pr-4 py-2 rounded-xl bg-tertiary border border-secondary text-primary text-sm placeholder:text-muted focus:outline-none focus:border-emerald-500 transition-colors"
+                  />
+                  {/* Search Results Dropdown */}
+                  {showSearchResults && searchResults.length > 0 && (
+                    <div className="absolute top-full mt-2 left-0 w-full bg-secondary border border-secondary rounded-xl shadow-xl overflow-hidden">
+                      <div className="p-2 text-xs text-muted border-b border-secondary">
+                        找到 {searchResults.length} 个工具
+                      </div>
+                      {searchResults.map((tool: Tool) => {
+                        const Icon = tool.icon
+                        return (
+                          <button
+                            key={tool.id}
+                            onClick={() => {
+                              if (tool.id === 'ai-nav') {
+                                window.location.href = '/ai'
+                              } else if (tool.id === 'coding-world') {
+                                window.location.href = '/coding-the-world'
+                              } else if (tool.id === 'ai-game') {
+                                window.location.href = '/game'
+                              } else if (tool.id === 'offline-tools') {
+                                window.location.href = '/offline-tools'
+                              } else {
+                                setSelectedTool(tool)
+                              }
+                              setSearchQuery('')
+                              setShowSearchResults(false)
+                            }}
+                            className="w-full flex items-center gap-3 p-3 hover:bg-tertiary transition-colors text-left"
+                          >
+                            <div className={`w-8 h-8 rounded-lg ${tool.bgColor} flex items-center justify-center`}>
+                              <Icon className={`w-4 h-4 bg-gradient-to-br ${tool.color} bg-clip-text`} />
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <div className="text-sm font-medium text-primary truncate">{tool.title}</div>
+                              <div className="text-xs text-muted truncate">{tool.description}</div>
+                            </div>
+                          </button>
+                        )
+                      })}
+                    </div>
+                  )}
+                  {showSearchResults && searchQuery.trim() && searchResults.length === 0 && (
+                    <div className="absolute top-full mt-2 left-0 w-full bg-secondary border border-secondary rounded-xl shadow-xl p-4 text-center">
+                      <p className="text-sm text-muted">未找到匹配的工具</p>
+                    </div>
+                  )}
+                </div>
                 <a href="#tools" className="text-sm font-medium transition-colors text-muted hover:text-primary">
                   工具列表
                 </a>
@@ -1525,12 +1648,12 @@ function App() {
 
             <div className="mt-16 grid grid-cols-3 gap-8 max-w-lg mx-auto">
               <div className="text-center">
-                <div className="text-3xl sm:text-4xl font-bold text-primary">12+</div>
-                <div className="text-sm mt-1 text-subtle">常用工具</div>
+                <div className="text-3xl sm:text-4xl font-bold text-primary">40+</div>
+                <div className="text-sm mt-1 text-subtle">离线工具</div>
               </div>
               <div className="text-center">
-                <div className="text-3xl sm:text-4xl font-bold text-primary">0ms</div>
-                <div className="text-sm mt-1 text-subtle">响应延迟</div>
+                <div className="text-3xl sm:text-4xl font-bold text-primary">192+</div>
+                <div className="text-sm mt-1 text-subtle">AI 工具</div>
               </div>
               <div className="text-center">
                 <div className="text-3xl sm:text-4xl font-bold text-primary">100%</div>
@@ -1553,26 +1676,120 @@ function App() {
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-              {tools.map((tool) => (
-                <button
-                  key={tool.id}
-                  onClick={() => setSelectedTool(tool)}
-                  className="group relative p-6 rounded-2xl bg-secondary/80 border border-secondary hover:border-primary backdrop-blur-xl transition-all hover:scale-105 hover:shadow-xl text-left"
-                >
-                  <div className={`w-12 h-12 rounded-xl ${tool.bgColor} flex items-center justify-center mb-4 group-hover:scale-110 transition-transform`}>
-                    <tool.icon className={`w-6 h-6 bg-gradient-to-br ${tool.color} bg-clip-text`} />
-                  </div>
-                  <h3 className="text-lg font-semibold mb-2 text-primary">
-                    {tool.title}
-                  </h3>
-                  <p className="text-sm text-subtle">
-                    {tool.description}
-                  </p>
-                  <div className={`absolute top-4 right-4 w-6 h-6 rounded-full ${tool.bgColor} flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity`}>
-                    <ChevronRight className={`w-4 h-4 bg-gradient-to-br ${tool.color} bg-clip-text`} />
-                  </div>
-                </button>
-              ))}
+              {tools.map((tool) => {
+                // AI 导航使用独立页面
+                if (tool.id === 'ai-nav') {
+                  return (
+                    <Link
+                      key={tool.id}
+                      to="/ai"
+                      className="group relative p-6 rounded-2xl bg-secondary/80 border border-emerald-500/50 hover:border-emerald-400 backdrop-blur-xl transition-all hover:scale-105 hover:shadow-xl text-left"
+                    >
+                      <div className={`w-12 h-12 rounded-xl ${tool.bgColor} flex items-center justify-center mb-4 group-hover:scale-110 transition-transform`}>
+                        <tool.icon className={`w-6 h-6 bg-gradient-to-br ${tool.color} bg-clip-text`} />
+                      </div>
+                      <h3 className="text-lg font-semibold mb-2 text-primary">
+                        {tool.title}
+                      </h3>
+                      <p className="text-sm text-subtle">
+                        {tool.description}
+                      </p>
+                      <div className={`absolute top-4 right-4 w-6 h-6 rounded-full ${tool.bgColor} flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity`}>
+                        <ChevronRight className={`w-4 h-4 bg-gradient-to-br ${tool.color} bg-clip-text`} />
+                      </div>
+                    </Link>
+                  )
+                }
+                // Coding The World 使用独立页面
+                if (tool.id === 'coding-world') {
+                  return (
+                    <Link
+                      key={tool.id}
+                      to="/coding-the-world"
+                      className="group relative p-6 rounded-2xl bg-secondary/80 border border-blue-500/50 hover:border-blue-400 backdrop-blur-xl transition-all hover:scale-105 hover:shadow-xl text-left"
+                    >
+                      <div className={`w-12 h-12 rounded-xl ${tool.bgColor} flex items-center justify-center mb-4 group-hover:scale-110 transition-transform`}>
+                        <tool.icon className={`w-6 h-6 bg-gradient-to-br ${tool.color} bg-clip-text`} />
+                      </div>
+                      <h3 className="text-lg font-semibold mb-2 text-primary">
+                        {tool.title}
+                      </h3>
+                      <p className="text-sm text-subtle">
+                        {tool.description}
+                      </p>
+                      <div className={`absolute top-4 right-4 w-6 h-6 rounded-full ${tool.bgColor} flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity`}>
+                        <ChevronRight className={`w-4 h-4 bg-gradient-to-br ${tool.color} bg-clip-text`} />
+                      </div>
+                    </Link>
+                  )
+                }
+                // AI 游戏使用独立页面
+                if (tool.id === 'ai-game') {
+                  return (
+                    <Link
+                      key={tool.id}
+                      to="/game"
+                      className="group relative p-6 rounded-2xl bg-secondary/80 border border-purple-500/50 hover:border-purple-400 backdrop-blur-xl transition-all hover:scale-105 hover:shadow-xl text-left"
+                    >
+                      <div className={`w-12 h-12 rounded-xl ${tool.bgColor} flex items-center justify-center mb-4 group-hover:scale-110 transition-transform`}>
+                        <tool.icon className={`w-6 h-6 bg-gradient-to-br ${tool.color} bg-clip-text`} />
+                      </div>
+                      <h3 className="text-lg font-semibold mb-2 text-primary">
+                        {tool.title}
+                      </h3>
+                      <p className="text-sm text-subtle">
+                        {tool.description}
+                      </p>
+                      <div className={`absolute top-4 right-4 w-6 h-6 rounded-full ${tool.bgColor} flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity`}>
+                        <ChevronRight className={`w-4 h-4 bg-gradient-to-br ${tool.color} bg-clip-text`} />
+                      </div>
+                    </Link>
+                  )
+                }
+                // 离线工具使用独立页面
+                if (tool.id === 'offline-tools') {
+                  return (
+                    <Link
+                      key={tool.id}
+                      to="/offline-tools"
+                      className="group relative p-6 rounded-2xl bg-secondary/80 border border-orange-500/50 hover:border-orange-400 backdrop-blur-xl transition-all hover:scale-105 hover:shadow-xl text-left"
+                    >
+                      <div className={`w-12 h-12 rounded-xl ${tool.bgColor} flex items-center justify-center mb-4 group-hover:scale-110 transition-transform`}>
+                        <tool.icon className={`w-6 h-6 bg-gradient-to-br ${tool.color} bg-clip-text`} />
+                      </div>
+                      <h3 className="text-lg font-semibold mb-2 text-primary">
+                        {tool.title}
+                      </h3>
+                      <p className="text-sm text-subtle">
+                        {tool.description}
+                      </p>
+                      <div className={`absolute top-4 right-4 w-6 h-6 rounded-full ${tool.bgColor} flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity`}>
+                        <ChevronRight className={`w-4 h-4 bg-gradient-to-br ${tool.color} bg-clip-text`} />
+                      </div>
+                    </Link>
+                  )
+                }
+                return (
+                  <button
+                    key={tool.id}
+                    onClick={() => setSelectedTool(tool)}
+                    className="group relative p-6 rounded-2xl bg-secondary/80 border border-secondary hover:border-primary backdrop-blur-xl transition-all hover:scale-105 hover:shadow-xl text-left"
+                  >
+                    <div className={`w-12 h-12 rounded-xl ${tool.bgColor} flex items-center justify-center mb-4 group-hover:scale-110 transition-transform`}>
+                      <tool.icon className={`w-6 h-6 bg-gradient-to-br ${tool.color} bg-clip-text`} />
+                    </div>
+                    <h3 className="text-lg font-semibold mb-2 text-primary">
+                      {tool.title}
+                    </h3>
+                    <p className="text-sm text-subtle">
+                      {tool.description}
+                    </p>
+                    <div className={`absolute top-4 right-4 w-6 h-6 rounded-full ${tool.bgColor} flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity`}>
+                      <ChevronRight className={`w-4 h-4 bg-gradient-to-br ${tool.color} bg-clip-text`} />
+                    </div>
+                  </button>
+                )
+              })}
             </div>
           </div>
         </section>
