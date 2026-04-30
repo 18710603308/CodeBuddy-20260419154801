@@ -205,10 +205,13 @@ const tools: Tool[] = [
   // 导航
   { id: 'ai-nav', icon: Bot, title: 'AI 导航黄页', description: '收录全网优质 AI 工具，支持分类浏览和搜索', color: 'from-emerald-400 to-green-600', bgColor: 'bg-emerald-500/10', borderColor: 'border-emerald-500/30' },
   { id: 'coding-world', icon: Globe, title: 'Coding The World', description: '探索优质开源项目', color: 'from-blue-500 to-purple-600', bgColor: 'bg-blue-500/10', borderColor: 'border-blue-500/30' },
-  
+
+  // 经典游戏
+  { id: 'game-collection', icon: Gamepad2, title: '欲买桂花同载酒', description: 'FC、街机、GBA 等经典游戏合集', color: 'from-amber-500 to-orange-600', bgColor: 'bg-amber-500/10', borderColor: 'border-amber-500/30' },
+
   // AI 游戏
-  { id: 'ai-game', icon: Gamepad2, title: 'AI 游戏工坊', description: '输入文字让 AI 生成游戏关卡，文本命令操控角色', color: 'from-purple-500 to-pink-600', bgColor: 'bg-purple-500/10', borderColor: 'border-purple-500/30' },
-  
+  { id: 'ai-game', icon: Bot, title: 'AI 游戏工坊', description: '输入文字让 AI 生成游戏关卡，文本命令操控角色', color: 'from-purple-500 to-pink-600', bgColor: 'bg-purple-500/10', borderColor: 'border-purple-500/30' },
+
   // 离线工具
   { id: 'offline-tools', icon: WifiOff, title: '离线工具', description: '40+ 开发工具，无需网络即开即用', color: 'from-orange-500 to-amber-600', bgColor: 'bg-orange-500/10', borderColor: 'border-orange-500/30' },
 ]
@@ -1535,6 +1538,8 @@ function App() {
                                 window.location.href = '/ai'
                               } else if (tool.id === 'coding-world') {
                                 window.location.href = '/coding-the-world'
+                              } else if (tool.id === 'game-collection') {
+                                window.location.href = '/game-collection'
                               } else if (tool.id === 'ai-game') {
                                 window.location.href = '/game'
                               } else if (tool.id === 'offline-tools') {
@@ -1753,6 +1758,29 @@ function App() {
                       key={tool.id}
                       to="/offline-tools"
                       className="group relative p-6 rounded-2xl bg-secondary/80 border border-orange-500/50 hover:border-orange-400 backdrop-blur-xl transition-all hover:scale-105 hover:shadow-xl text-left"
+                    >
+                      <div className={`w-12 h-12 rounded-xl ${tool.bgColor} flex items-center justify-center mb-4 group-hover:scale-110 transition-transform`}>
+                        <tool.icon className={`w-6 h-6 bg-gradient-to-br ${tool.color} bg-clip-text`} />
+                      </div>
+                      <h3 className="text-lg font-semibold mb-2 text-primary">
+                        {tool.title}
+                      </h3>
+                      <p className="text-sm text-subtle">
+                        {tool.description}
+                      </p>
+                      <div className={`absolute top-4 right-4 w-6 h-6 rounded-full ${tool.bgColor} flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity`}>
+                        <ChevronRight className={`w-4 h-4 bg-gradient-to-br ${tool.color} bg-clip-text`} />
+                      </div>
+                    </Link>
+                  )
+                }
+                // 小霸王游戏使用独立页面
+                if (tool.id === 'game-collection') {
+                  return (
+                    <Link
+                      key={tool.id}
+                      to="/game-collection"
+                      className="group relative p-6 rounded-2xl bg-secondary/80 border border-amber-500/50 hover:border-amber-400 backdrop-blur-xl transition-all hover:scale-105 hover:shadow-xl text-left"
                     >
                       <div className={`w-12 h-12 rounded-xl ${tool.bgColor} flex items-center justify-center mb-4 group-hover:scale-110 transition-transform`}>
                         <tool.icon className={`w-6 h-6 bg-gradient-to-br ${tool.color} bg-clip-text`} />

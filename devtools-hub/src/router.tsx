@@ -4,6 +4,8 @@ import { AINavigator } from './components/ai-navigator'
 import { CodingTheWorld } from './components/coding-the-world'
 import { OfflineTools } from './components/offline-tools'
 import { Game } from './components/game'
+import { RetroGames } from './components/retro-games'
+import { GameCollection } from './components/game-collection'
 
 const router = createBrowserRouter([
   {
@@ -25,6 +27,14 @@ const router = createBrowserRouter([
   {
     path: '/game',
     element: <Game />,
+  },
+  {
+    path: '/retro-games',
+    element: <RetroGames />,
+  },
+  {
+    path: '/game-collection',
+    element: <GameCollection />,
   },
 ])
 
