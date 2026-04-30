@@ -113,6 +113,7 @@ interface BattleLog {
 
 // 角色选择页面
 function CharacterSelect({ onSelect }: { onSelect: (name: string, classType: ClassType) => void }) {
+  const { isDark, toggleTheme } = useTheme()
   const [name, setName] = useState('')
   const [selectedClass, setSelectedClass] = useState<ClassType>('warrior')
 
@@ -123,8 +124,37 @@ function CharacterSelect({ onSelect }: { onSelect: (name: string, classType: Cla
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-primary via-secondary to-primary flex items-center justify-center p-4">
-      <div className="bg-secondary/90 rounded-2xl border border-primary p-8 w-full max-w-2xl shadow-2xl">
+    <div className="min-h-screen bg-gradient-to-br from-primary via-secondary to-primary">
+      {/* 头部 */}
+      <header className="border-b border-border/50 bg-secondary/80 backdrop-blur-xl sticky top-0 z-50">
+        <div className="max-w-7xl mx-auto px-4 py-3">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-4">
+              <Link 
+                to="/" 
+                className="flex items-center gap-2 text-muted hover:text-primary transition-colors"
+              >
+                <ChevronRight className="w-5 h-5 rotate-180" />
+                <Home className="w-4 h-4" />
+                <span className="hidden sm:inline">返回首页</span>
+              </Link>
+              <div className="flex items-center gap-2">
+                <Sword className="w-6 h-6 text-red-500" />
+                <h1 className="text-lg font-bold text-primary">传奇世界</h1>
+              </div>
+            </div>
+            <button
+              onClick={toggleTheme}
+              className="flex items-center gap-2 px-3 py-2 rounded-lg bg-secondary hover:bg-accent transition-colors"
+            >
+              {isDark ? <Sun className="w-5 h-5 text-amber-400" /> : <Moon className="w-5 h-5 text-muted" />}
+            </button>
+          </div>
+        </div>
+      </header>
+
+      <main className="flex items-center justify-center p-4">
+        <div className="bg-secondary/90 rounded-2xl border border-primary p-8 w-full max-w-2xl shadow-2xl">
         <div className="text-center mb-8">
           <h1 className="text-4xl font-bold bg-gradient-to-r from-red-500 via-amber-500 to-purple-500 bg-clip-text text-transparent mb-2">
             传奇世界
@@ -162,8 +192,8 @@ function CharacterSelect({ onSelect }: { onSelect: (name: string, classType: Cla
                       : 'border-border hover:border-primary'
                   }`}
                 >
-                  <div className={`w-16 h-16 mx-auto mb-3 rounded-full bg-gradient-to-br ${config.color} flex items-center justify-center`}>
-                    <Icon className="w-8 h-8 text-white" />
+                  <div className={`w-16 h-16 mx-auto mb-3 rounded-full bg-gradient-to-br ${config.color} flex items-center justify-center shadow-lg`}>
+                    <Icon className="w-8 h-8 text-gray-900 dark:text-white drop-shadow-md" />
                   </div>
                   <h3 className="font-semibold text-primary mb-2">{config.name}</h3>
                   <div className="text-xs text-subtle space-y-1">
@@ -188,6 +218,7 @@ function CharacterSelect({ onSelect }: { onSelect: (name: string, classType: Cla
           <ChevronRight className="w-5 h-5" />
         </button>
       </div>
+      </main>
     </div>
   )
 }
@@ -391,8 +422,12 @@ function BattleScene({
         <div className="max-w-7xl mx-auto px-4 py-3">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
-              <Link to="/" className="p-2 rounded-lg hover:bg-tertiary/50 transition-colors">
-                <Home className="w-5 h-5 text-subtle" />
+              <Link 
+                to="/" 
+                className="flex items-center gap-2 px-3 py-1.5 rounded-lg hover:bg-tertiary/50 transition-colors text-primary"
+              >
+                <Home className="w-4 h-4" />
+                <span className="text-sm font-medium">返回首页</span>
               </Link>
               <div className="flex items-center gap-2">
                 <Sword className="w-6 h-6 text-red-500" />
@@ -550,7 +585,7 @@ function BattleScene({
                   style={{ left: playerPosition.x, top: playerPosition.y, transform: 'translate(-50%, -50%)' }}
                 >
                   <div className={`w-12 h-12 rounded-full bg-gradient-to-br ${classConfig[character.classType].color} flex items-center justify-center shadow-lg border-2 ${isDead ? 'opacity-50' : 'border-gray-900 dark:border-white'}`}>
-                    <span className="text-2xl">
+                    <span className="text-2xl drop-shadow-md">
                       {character.classType === 'warrior' ? '⚔️' : character.classType === 'mage' ? '🔮' : '📿'}
                     </span>
                   </div>
@@ -660,7 +695,7 @@ function BattleScene({
                 >
                   <div className="flex items-center gap-2 mb-1">
                     <div className="w-6 h-6 rounded-full flex items-center justify-center" style={{ backgroundColor: monster.color }}>
-                      <Skull className="w-4 h-4 text-white" />
+                      <Skull className="w-4 h-4 text-gray-900 dark:text-white" />
                     </div>
                     <span className="text-sm font-medium text-primary">{monster.name}</span>
                     <span className="text-xs text-subtle ml-auto">Lv.{monster.level}</span>

@@ -171,7 +171,7 @@ export function AINavigator() {
         <div className="relative">
           <div className="flex items-center gap-3 mb-4">
             <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-emerald-400 to-green-600 flex items-center justify-center shadow-lg shadow-emerald-500/20">
-              <Bot className="w-6 h-6 text-white" />
+              <Bot className="w-6 h-6 text-gray-900 dark:text-white" />
             </div>
             <div>
               <h1 className="text-2xl font-bold text-primary">AI 导航黄页</h1>

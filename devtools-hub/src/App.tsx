@@ -1496,9 +1496,9 @@ function App() {
             <div className="flex items-center justify-between h-16">
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-400 to-green-600 flex items-center justify-center shadow-lg shadow-emerald-500/20">
-                  <Terminal className="w-5 h-5 text-white" />
+                  <Terminal className="w-5 h-5 text-gray-900 dark:text-white" />
                 </div>
-                <span className="text-xl font-bold text-gray-900 dark:text-primary transition-theme">
+                <span className="text-xl font-bold text-gray-900 dark:text-white transition-theme">
                   DevTools Hub
                 </span>
               </div>
@@ -1857,8 +1857,8 @@ function App() {
           <div className="max-w-7xl mx-auto">
             <div className="flex flex-col md:flex-row items-center justify-between gap-4">
               <div className="flex items-center gap-3">
-                <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-emerald-400 to-green-600 flex items-center justify-center">
-                  <Terminal className="w-4 h-4 text-white" />
+                <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-emerald-400 to-green-600 flex items-center justify-center shadow-lg shadow-emerald-500/20">
+                  <Terminal className="w-4 h-4 text-gray-900 dark:text-white" />
                 </div>
                 <span className="font-semibold text-primary">
                   DevTools Hub

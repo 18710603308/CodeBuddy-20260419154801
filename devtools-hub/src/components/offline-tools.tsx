@@ -220,7 +220,7 @@ export function OfflineTools() {
         <div className="relative">
           <div className="flex items-center gap-3 mb-4">
             <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-orange-400 to-amber-600 flex items-center justify-center shadow-lg shadow-orange-500/20">
-              <WifiOff className="w-6 h-6 text-white" />
+              <WifiOff className="w-6 h-6 text-gray-900 dark:text-white" />
             </div>
             <div>
               <h1 className="text-2xl font-bold text-primary">离线工具</h1>

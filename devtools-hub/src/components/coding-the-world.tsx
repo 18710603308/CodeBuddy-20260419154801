@@ -574,7 +574,7 @@ function CategorySection({ category, projects: categoryProjects, viewMode }: {
     <div className="mb-8">
       <div className="flex items-center gap-3 mb-4">
         <div className={`w-10 h-10 rounded-xl bg-gradient-to-br ${category.color} flex items-center justify-center`}>
-          <Icon className="w-5 h-5 text-white" />
+          <Icon className="w-5 h-5 text-gray-900 dark:text-white" />
         </div>
         <div>
           <h3 className="text-lg font-semibold text-primary">{category.name}</h3>
@@ -688,7 +688,7 @@ export function CodingTheWorld() {
         <div className="relative">
           <div className="flex items-center gap-3 mb-4">
             <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-blue-400 to-purple-600 flex items-center justify-center shadow-lg shadow-blue-500/20">
-              <Code2 className="w-6 h-6 text-white" />
+              <Code2 className="w-6 h-6 text-gray-900 dark:text-white" />
             </div>
             <div>
               <h1 className="text-2xl font-bold text-primary">Coding The World</h1>
