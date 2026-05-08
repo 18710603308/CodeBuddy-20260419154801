@@ -65,6 +65,70 @@ import { Link, useNavigate } from 'react-router-dom'
 import './App.css'
 import { AINavigator } from '@/components/ai-navigator'
 
+// 同步高度 Context
+const SyncHeightContext = createContext<{
+  syncedHeight: number
+  setSyncedHeight: (h: number) => void
+} | null>(null)
+
+const useSyncHeight = () => {
+  const ctx = useContext(SyncHeightContext)
+  if (!ctx) throw new Error('useSyncHeight must be used within SyncHeightProvider')
+  return ctx
+}
+
+// 百度联盟广告组件
+interface AdBannerProps {
+  position: 'tools-after' | 'footer' | 'sidebar'
+}
+
+function AdBanner({ position }: AdBannerProps) {
+  // 根据位置返回不同的样式
+  const getStyles = () => {
+    switch (position) {
+      case 'tools-after':
+        return 'my-6 px-4'
+      case 'footer':
+        return 'py-6 px-4'
+      case 'sidebar':
+        return 'sticky top-24'
+      default:
+        return 'my-6'
+    }
+  }
+
+  // 百度联盟广告容器样式
+  const getContainerClass = () => {
+    switch (position) {
+      case 'tools-after':
+        return 'min-h-[100px] md:min-h-[90px]'
+      case 'footer':
+        return 'min-h-[100px] md:min-h-[90px]'
+      default:
+        return 'min-h-[250px]'
+    }
+  }
+
+  return (
+    <div className={`max-w-7xl mx-auto ${getStyles()}`}>
+      {/* 百度联盟广告容器 */}
+      <div 
+        id={`baidu-ad-${position}`}
+        className={`${getContainerClass()} bg-gradient-to-r from-amber-500/5 to-orange-500/5 border border-amber-500/10 rounded-xl overflow-hidden`}
+      >
+        {/* 百度网盟广告代码 - 保留此占位区域，审核通过后会自动显示广告 */}
+        <div className="h-full flex items-center justify-center text-muted/50 text-sm p-4">
+          <div className="text-center">
+            <div className="text-2xl mb-2">📢</div>
+            <div>百度联盟广告位</div>
+            <div className="text-xs mt-1">审核通过后自动显示</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 // 全局内容配置 Context
 interface ContentConfig {
   contentHeight: number
@@ -87,7 +151,7 @@ const useContentConfig = () => {
   return ctx
 }
 
-// 可复用的文本区域组件
+// 可复用的文本区域组件 - 自动扩展高度
 function ContentTextarea({ 
   value, 
   onChange, 
@@ -99,27 +163,33 @@ function ContentTextarea({
   placeholder?: string
   isInput?: boolean
 }) {
-  const { contentHeight, fontSize, isFullscreen } = useContentConfig()
-  const height = isFullscreen ? Math.min(contentHeight, window.innerHeight - 200) : contentHeight
+  const { fontSize, isFullscreen } = useContentConfig()
+  const minHeight = 120
+  const maxHeight = isFullscreen ? window.innerHeight - 200 : 600
   
   return (
-    <div className="relative flex-1 min-h-[200px]">
+    <div className="relative">
       <textarea
         value={value}
         onChange={(e) => onChange?.(e.target.value)}
         readOnly={!isInput}
         placeholder={placeholder}
-        style={{ height: `${height}px`, fontSize: `${fontSize}px` }}
-        className="dev-textarea w-full p-4 rounded-xl border text-primary font-mono resize-none focus:border-emerald-500 transition-theme text-left whitespace-pre overflow-auto"
+        style={{ 
+          fontSize: `${fontSize}px`,
+          minHeight: `${minHeight}px`,
+          maxHeight: `${maxHeight}px`
+        }}
+        className="dev-textarea w-full p-4 rounded-xl border text-primary font-mono resize-y focus:border-emerald-500 transition-theme text-left whitespace-pre overflow-auto bg-background"
       />
     </div>
   )
 }
 
-// 可复用的输出显示组件
+// 可复用的输出显示组件 - 自动扩展高度
 function ContentOutput({ value, placeholder = '输出结果...' }: { value: string; placeholder?: string }) {
-  const { contentHeight, fontSize, isFullscreen } = useContentConfig()
-  const height = isFullscreen ? Math.min(contentHeight, window.innerHeight - 200) : contentHeight
+  const { fontSize, isFullscreen } = useContentConfig()
+  const minHeight = 120
+  const maxHeight = isFullscreen ? window.innerHeight - 200 : 600
   const [copied, setCopied] = useState(false)
   
   const copyOutput = async () => {
@@ -129,10 +199,14 @@ function ContentOutput({ value, placeholder = '输出结果...' }: { value: stri
   }
   
   return (
-    <div className="relative flex-1 min-h-[200px]">
+    <div className="relative">
       <div 
-        style={{ height: `${height}px`, fontSize: `${fontSize}px` }}
-        className="dev-textarea w-full p-4 rounded-xl border text-primary font-mono overflow-auto text-left whitespace-pre transition-theme"
+        style={{ 
+          fontSize: `${fontSize}px`,
+          minHeight: `${minHeight}px`,
+          maxHeight: `${maxHeight}px`
+        }}
+        className="dev-textarea w-full p-4 rounded-xl border text-primary font-mono overflow-auto text-left whitespace-pre transition-theme bg-background"
       >
         {value || <span className="text-subtle">{placeholder}</span>}
       </div>
@@ -264,33 +338,37 @@ function JsonTool() {
   }
 
   return (
-    <div className="flex flex-col gap-4 flex-1">
-      <div className="space-y-2">
+    <div className="flex flex-col lg:flex-row gap-4 flex-1 h-full">
+      {/* 左侧输入区域 */}
+      <div className="flex-1 flex flex-col gap-3 min-w-0">
         <label className="text-sm text-muted flex items-center gap-2">
           <FileText className="w-4 h-4" /> 输入 JSON
         </label>
-        <ContentTextarea value={input} onChange={setInput} placeholder="粘贴 JSON 数据..." />
+        <div className="flex-1">
+          <ContentTextarea value={input} onChange={setInput} placeholder="粘贴 JSON 数据..." />
+        </div>
+        <div className="flex gap-3 flex-wrap">
+          <button onClick={formatJson} className="flex items-center gap-2 px-4 py-2 rounded-lg bg-emerald-500 hover:bg-emerald-600 text-white font-medium transition-colors">
+            <AlignLeft className="w-4 h-4" /> 美化
+          </button>
+          <button onClick={compressJson} className="flex items-center gap-2 px-4 py-2 rounded-lg bg-tertiary hover:bg-border-primary text-white font-medium transition-colors">
+            <Gauge className="w-4 h-4" /> 压缩
+          </button>
+          <button onClick={validateJson} className="flex items-center gap-2 px-4 py-2 rounded-lg bg-tertiary hover:bg-border-primary text-white font-medium transition-colors">
+            <ShieldCheck className="w-4 h-4" /> 校验
+          </button>
+        </div>
+        {error && <div className="p-3 rounded-lg bg-red-500/20 border border-red-500/30 text-red-400 text-sm">{error}</div>}
       </div>
 
-      <div className="flex gap-3 flex-wrap">
-        <button onClick={formatJson} className="flex items-center gap-2 px-4 py-2 rounded-lg bg-emerald-500 hover:bg-emerald-600 text-white font-medium transition-colors">
-          <AlignLeft className="w-4 h-4" /> 美化
-        </button>
-        <button onClick={compressJson} className="flex items-center gap-2 px-4 py-2 rounded-lg bg-tertiary hover:bg-border-primary text-white font-medium transition-colors">
-          <Gauge className="w-4 h-4" /> 压缩
-        </button>
-        <button onClick={validateJson} className="flex items-center gap-2 px-4 py-2 rounded-lg bg-tertiary hover:bg-border-primary text-white font-medium transition-colors">
-          <ShieldCheck className="w-4 h-4" /> 校验
-        </button>
-      </div>
-
-      {error && <div className="p-3 rounded-lg bg-red-500/20 border border-red-500/30 text-red-400 text-sm">{error}</div>}
-
-      <div className="space-y-2 flex-1">
+      {/* 右侧输出区域 */}
+      <div className="flex-1 flex flex-col gap-3 min-w-0">
         <label className="text-sm text-muted flex items-center gap-2">
           <FileText className="w-4 h-4" /> 输出结果
         </label>
-        <ContentOutput value={output} />
+        <div className="flex-1">
+          <ContentOutput value={output} />
+        </div>
       </div>
     </div>
   )
@@ -518,23 +596,27 @@ function XmlTool() {
   }
 
   return (
-    <div className="flex flex-col gap-4 flex-1">
-      <div className="space-y-2">
+    <div className="flex flex-col lg:flex-row gap-4 flex-1 h-full">
+      {/* 左侧输入区域 */}
+      <div className="flex-1 flex flex-col gap-3 min-w-0">
         <label className="text-sm text-muted">输入 XML</label>
-        <ContentTextarea value={input} onChange={setInput} placeholder="粘贴 XML 数据..." />
+        <div className="flex-1">
+          <ContentTextarea value={input} onChange={setInput} placeholder="粘贴 XML 数据..." />
+        </div>
+        <div className="flex gap-3">
+          <button onClick={formatXml} className="flex items-center gap-2 px-4 py-2 rounded-lg bg-emerald-500 hover:bg-emerald-600 text-white font-medium transition-colors">
+            <AlignLeft className="w-4 h-4" /> 美化
+          </button>
+        </div>
+        {error && <div className="p-3 rounded-lg bg-red-500/20 border border-red-500/30 text-red-400 text-sm">{error}</div>}
       </div>
 
-      <div className="flex gap-3">
-        <button onClick={formatXml} className="flex items-center gap-2 px-4 py-2 rounded-lg bg-emerald-500 hover:bg-emerald-600 text-white font-medium transition-colors">
-          <AlignLeft className="w-4 h-4" /> 美化
-        </button>
-      </div>
-
-      {error && <div className="p-3 rounded-lg bg-red-500/20 border border-red-500/30 text-red-400 text-sm">{error}</div>}
-
-      <div className="space-y-2 flex-1">
+      {/* 右侧输出区域 */}
+      <div className="flex-1 flex flex-col gap-3 min-w-0">
         <label className="text-sm text-muted">输出结果（语法高亮）</label>
-        <XmlHighlightedOutput xml={output} />
+        <div className="flex-1">
+          <XmlHighlightedOutput xml={output} />
+        </div>
       </div>
     </div>
   )
@@ -553,10 +635,53 @@ function DiffTool() {
     newLineNum: number | null
   }>>([])
   
+  // 同步高度状态 - 两个文本框共享同一个高度
+  const [syncedHeight, setSyncedHeight] = useState(200)
+  const leftContainerRef = useRef<HTMLDivElement>(null)
+  const rightContainerRef = useRef<HTMLDivElement>(null)
   const scrollRef = useRef<HTMLDivElement>(null)
 
   // 根据字体大小计算行高
   const lineHeight = Math.max(fontSize * 1.5, 24)
+
+  // 同步两个容器的高度
+  useEffect(() => {
+    const leftContainer = leftContainerRef.current
+    const rightContainer = rightContainerRef.current
+    
+    if (!leftContainer || !rightContainer) return
+    
+    const resizeObserver = new ResizeObserver((entries) => {
+      for (const entry of entries) {
+        const height = entry.contentRect.height
+        // 同步另一个容器的高度
+        if (entry.target === leftContainer) {
+          rightContainer.style.height = `${height}px`
+          setSyncedHeight(height)
+        } else if (entry.target === rightContainer) {
+          leftContainer.style.height = `${height}px`
+          setSyncedHeight(height)
+        }
+      }
+    })
+    
+    resizeObserver.observe(leftContainer)
+    resizeObserver.observe(rightContainer)
+    
+    return () => resizeObserver.disconnect()
+  }, [])
+
+  // 同步高度计算样式
+  const getSyncedTextareaStyle = () => {
+    const minHeight = 120
+    const maxHeight = isFullscreen ? window.innerHeight - 300 : 600
+    return {
+      fontSize: `${fontSize}px`,
+      lineHeight: `${lineHeight}px`,
+      minHeight: `${minHeight}px`,
+      maxHeight: `${maxHeight}px`
+    }
+  }
 
   // 计算 Myers 差分算法生成 Git 风格对比
   const computeGitDiff = () => {
@@ -725,9 +850,12 @@ function DiffTool() {
   return (
     <div className="flex flex-col gap-4 h-full">
       {/* 输入区域 */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        <div className="rounded-xl bg-input border border-primary overflow-hidden">
-          <div className="px-4 py-2 text-sm text-red-400 border-b border-slate-700 bg-slate-900/50 font-medium flex items-center gap-2">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 items-stretch">
+        <div 
+          ref={leftContainerRef}
+          className="rounded-xl bg-input border border-primary overflow-hidden flex flex-col min-h-[120px]"
+        >
+          <div className="px-4 py-2 text-sm text-red-400 border-b border-slate-700 bg-slate-900/50 font-medium flex items-center gap-2 shrink-0">
             <Minus className="w-4 h-4" /> 原文
           </div>
           <textarea
@@ -735,12 +863,15 @@ function DiffTool() {
             onChange={(e) => handleInputChange('original', e.target.value)}
             onBlur={handleBlur}
             placeholder="粘贴原始文本..."
-            style={{ fontSize: `${fontSize}px`, lineHeight: `${lineHeight}px`, minHeight: '150px', maxHeight: contentHeight / 2 }}
-            className="w-full p-4 bg-slate-800 text-slate-200 caret-slate-200 font-mono resize-none focus:outline-none text-left whitespace-pre break-words box-border"
+            style={getSyncedTextareaStyle()}
+            className="w-full p-4 bg-background text-primary caret-primary font-mono resize-none focus:outline-none text-left whitespace-pre break-words box-border flex-1"
           />
         </div>
-        <div className="rounded-xl bg-input border border-primary overflow-hidden">
-          <div className="px-4 py-2 text-sm text-emerald-400 border-b border-slate-700 bg-slate-900/50 font-medium flex items-center gap-2">
+        <div 
+          ref={rightContainerRef}
+          className="rounded-xl bg-input border border-primary overflow-hidden flex flex-col min-h-[120px]"
+        >
+          <div className="px-4 py-2 text-sm text-emerald-400 border-b border-slate-700 bg-slate-900/50 font-medium flex items-center gap-2 shrink-0">
             <Plus className="w-4 h-4" /> 新文
           </div>
           <textarea
@@ -748,8 +879,8 @@ function DiffTool() {
             onChange={(e) => handleInputChange('modified', e.target.value)}
             onBlur={handleBlur}
             placeholder="粘贴新文本..."
-            style={{ fontSize: `${fontSize}px`, lineHeight: `${lineHeight}px`, minHeight: '150px', maxHeight: contentHeight / 2 }}
-            className="w-full p-4 bg-slate-800 text-slate-200 caret-slate-200 font-mono resize-none focus:outline-none text-left whitespace-pre break-words box-border"
+            style={getSyncedTextareaStyle()}
+            className="w-full p-4 bg-background text-primary caret-primary font-mono resize-none focus:outline-none text-left whitespace-pre break-words box-border flex-1"
           />
         </div>
       </div>
@@ -857,35 +988,40 @@ function Base64Tool() {
   }
 
   return (
-    <div className="flex flex-col gap-4 flex-1">
-      <div className="space-y-2">
+    <div className="flex flex-col lg:flex-row gap-4 flex-1 h-full">
+      {/* 左侧输入区域 */}
+      <div className="flex-1 flex flex-col gap-3 min-w-0">
         <label className="text-sm text-muted">输入内容</label>
-        <ContentTextarea value={input} onChange={setInput} placeholder="输入要编码/解码的内容..." />
-      </div>
-
-      <div className="flex gap-3 flex-wrap">
-        <div className="flex rounded-lg overflow-hidden">
-          <button 
-            onClick={() => setMode('encode')} 
-            className={`px-4 py-2 font-medium transition-colors ${mode === 'encode' ? 'bg-emerald-500 text-white' : 'bg-slate-700 text-secondary hover:bg-slate-600'}`}
-          >
-            编码
-          </button>
-          <button 
-            onClick={() => setMode('decode')} 
-            className={`px-4 py-2 font-medium transition-colors ${mode === 'decode' ? 'bg-emerald-500 text-white' : 'bg-slate-700 text-secondary hover:bg-slate-600'}`}
-          >
-            解码
+        <div className="flex-1">
+          <ContentTextarea value={input} onChange={setInput} placeholder="输入要编码/解码的内容..." />
+        </div>
+        <div className="flex gap-3 flex-wrap">
+          <div className="flex rounded-lg overflow-hidden">
+            <button 
+              onClick={() => setMode('encode')} 
+              className={`px-4 py-2 font-medium transition-colors ${mode === 'encode' ? 'bg-emerald-500 text-white' : 'bg-slate-700 text-secondary hover:bg-slate-600'}`}
+            >
+              编码
+            </button>
+            <button 
+              onClick={() => setMode('decode')} 
+              className={`px-4 py-2 font-medium transition-colors ${mode === 'decode' ? 'bg-emerald-500 text-white' : 'bg-slate-700 text-secondary hover:bg-slate-600'}`}
+            >
+              解码
+            </button>
+          </div>
+          <button onClick={process} className="flex items-center gap-2 px-4 py-2 rounded-lg bg-emerald-500 hover:bg-emerald-600 text-white font-medium transition-colors">
+            <Terminal className="w-4 h-4" /> {mode === 'encode' ? '编码' : '解码'}
           </button>
         </div>
-        <button onClick={process} className="flex items-center gap-2 px-4 py-2 rounded-lg bg-emerald-500 hover:bg-emerald-600 text-white font-medium transition-colors">
-          <Terminal className="w-4 h-4" /> {mode === 'encode' ? '编码' : '解码'}
-        </button>
       </div>
 
-      <div className="space-y-2 flex-1">
+      {/* 右侧输出区域 */}
+      <div className="flex-1 flex flex-col gap-3 min-w-0">
         <label className="text-sm text-muted">输出结果</label>
-        <ContentOutput value={output} />
+        <div className="flex-1">
+          <ContentOutput value={output} />
+        </div>
       </div>
     </div>
   )
@@ -911,30 +1047,35 @@ function HashTool() {
   }
 
   return (
-    <div className="flex flex-col gap-4 flex-1">
-      <div className="space-y-2">
+    <div className="flex flex-col lg:flex-row gap-4 flex-1 h-full">
+      {/* 左侧输入区域 */}
+      <div className="flex-1 flex flex-col gap-3 min-w-0">
         <label className="text-sm text-muted">输入内容</label>
-        <ContentTextarea value={input} onChange={setInput} placeholder="输入要加密的内容..." />
+        <div className="flex-1">
+          <ContentTextarea value={input} onChange={setInput} placeholder="输入要加密的内容..." />
+        </div>
+        <div className="flex gap-3 flex-wrap items-center">
+          <select 
+            value={algorithm}
+            onChange={(e) => setAlgorithm(e.target.value)}
+            className="px-4 py-2 rounded-lg bg-input border border-primary text-slate-200"
+          >
+            <option>SHA-256</option>
+            <option>SHA-384</option>
+            <option>SHA-512</option>
+          </select>
+          <button onClick={generate} className="flex items-center gap-2 px-4 py-2 rounded-lg bg-emerald-500 hover:bg-emerald-600 text-white font-medium transition-colors">
+            <Hash className="w-4 h-4" /> 生成
+          </button>
+        </div>
       </div>
 
-      <div className="flex gap-3 flex-wrap items-center">
-        <select 
-          value={algorithm}
-          onChange={(e) => setAlgorithm(e.target.value)}
-          className="px-4 py-2 rounded-lg bg-input border border-primary text-slate-200"
-        >
-          <option>SHA-256</option>
-          <option>SHA-384</option>
-          <option>SHA-512</option>
-        </select>
-        <button onClick={generate} className="flex items-center gap-2 px-4 py-2 rounded-lg bg-emerald-500 hover:bg-emerald-600 text-white font-medium transition-colors">
-          <Hash className="w-4 h-4" /> 生成
-        </button>
-      </div>
-
-      <div className="space-y-2 flex-1">
+      {/* 右侧输出区域 */}
+      <div className="flex-1 flex flex-col gap-3 min-w-0">
         <label className="text-sm text-muted">{algorithm} 结果</label>
-        <ContentOutput value={output} />
+        <div className="flex-1">
+          <ContentOutput value={output} />
+        </div>
       </div>
     </div>
   )
@@ -959,35 +1100,40 @@ function UrlTool() {
   }
 
   return (
-    <div className="flex flex-col gap-4 flex-1">
-      <div className="space-y-2">
+    <div className="flex flex-col lg:flex-row gap-4 flex-1 h-full">
+      {/* 左侧输入区域 */}
+      <div className="flex-1 flex flex-col gap-3 min-w-0">
         <label className="text-sm text-muted">输入 URL 或参数</label>
-        <ContentTextarea value={input} onChange={setInput} placeholder="输入要编码/解码的 URL..." />
-      </div>
-
-      <div className="flex gap-3 flex-wrap">
-        <div className="flex rounded-lg overflow-hidden">
-          <button 
-            onClick={() => setMode('encode')} 
-            className={`px-4 py-2 font-medium transition-colors ${mode === 'encode' ? 'bg-emerald-500 text-white' : 'bg-slate-700 text-secondary hover:bg-slate-600'}`}
-          >
-            编码
-          </button>
-          <button 
-            onClick={() => setMode('decode')} 
-            className={`px-4 py-2 font-medium transition-colors ${mode === 'decode' ? 'bg-emerald-500 text-white' : 'bg-slate-700 text-secondary hover:bg-slate-600'}`}
-          >
-            解码
+        <div className="flex-1">
+          <ContentTextarea value={input} onChange={setInput} placeholder="输入要编码/解码的 URL..." />
+        </div>
+        <div className="flex gap-3 flex-wrap">
+          <div className="flex rounded-lg overflow-hidden">
+            <button 
+              onClick={() => setMode('encode')} 
+              className={`px-4 py-2 font-medium transition-colors ${mode === 'encode' ? 'bg-emerald-500 text-white' : 'bg-slate-700 text-secondary hover:bg-slate-600'}`}
+            >
+              编码
+            </button>
+            <button 
+              onClick={() => setMode('decode')} 
+              className={`px-4 py-2 font-medium transition-colors ${mode === 'decode' ? 'bg-emerald-500 text-white' : 'bg-slate-700 text-secondary hover:bg-slate-600'}`}
+            >
+              解码
+            </button>
+          </div>
+          <button onClick={process} className="flex items-center gap-2 px-4 py-2 rounded-lg bg-emerald-500 hover:bg-emerald-600 text-white font-medium transition-colors">
+            <Code2 className="w-4 h-4" /> {mode === 'encode' ? '编码' : '解码'}
           </button>
         </div>
-        <button onClick={process} className="flex items-center gap-2 px-4 py-2 rounded-lg bg-emerald-500 hover:bg-emerald-600 text-white font-medium transition-colors">
-          <Code2 className="w-4 h-4" /> {mode === 'encode' ? '编码' : '解码'}
-        </button>
       </div>
 
-      <div className="space-y-2 flex-1">
+      {/* 右侧输出区域 */}
+      <div className="flex-1 flex flex-col gap-3 min-w-0">
         <label className="text-sm text-muted">输出结果</label>
-        <ContentOutput value={output} />
+        <div className="flex-1">
+          <ContentOutput value={output} />
+        </div>
       </div>
     </div>
   )
@@ -1020,23 +1166,27 @@ function JwtTool() {
   }
 
   return (
-    <div className="flex flex-col gap-4 flex-1">
-      <div className="space-y-2">
+    <div className="flex flex-col lg:flex-row gap-4 flex-1 h-full">
+      {/* 左侧输入区域 */}
+      <div className="flex-1 flex flex-col gap-3 min-w-0">
         <label className="text-sm text-muted">输入 JWT Token</label>
-        <ContentTextarea value={input} onChange={setInput} placeholder="粘贴 JWT Token..." />
+        <div className="flex-1">
+          <ContentTextarea value={input} onChange={setInput} placeholder="粘贴 JWT Token..." />
+        </div>
+        <div className="flex gap-3">
+          <button onClick={decode} className="flex items-center gap-2 px-4 py-2 rounded-lg bg-emerald-500 hover:bg-emerald-600 text-white font-medium transition-colors">
+            <Layers className="w-4 h-4" /> 解码
+          </button>
+        </div>
+        {error && <div className="p-3 rounded-lg bg-red-500/20 border border-red-500/30 text-red-400 text-sm">{error}</div>}
       </div>
 
-      <div className="flex gap-3">
-        <button onClick={decode} className="flex items-center gap-2 px-4 py-2 rounded-lg bg-emerald-500 hover:bg-emerald-600 text-white font-medium transition-colors">
-          <Layers className="w-4 h-4" /> 解码
-        </button>
-      </div>
-
-      {error && <div className="p-3 rounded-lg bg-red-500/20 border border-red-500/30 text-red-400 text-sm">{error}</div>}
-
-      <div className="space-y-2 flex-1">
+      {/* 右侧输出区域 */}
+      <div className="flex-1 flex flex-col gap-3 min-w-0">
         <label className="text-sm text-muted">解码结果</label>
-        <ContentOutput value={output} />
+        <div className="flex-1">
+          <ContentOutput value={output} />
+        </div>
       </div>
     </div>
   )
@@ -1121,21 +1271,26 @@ function SqlTool() {
   }
 
   return (
-    <div className="flex flex-col gap-4 flex-1">
-      <div className="space-y-2">
+    <div className="flex flex-col lg:flex-row gap-4 flex-1 h-full">
+      {/* 左侧输入区域 */}
+      <div className="flex-1 flex flex-col gap-3 min-w-0">
         <label className="text-sm text-muted">输入 SQL</label>
-        <ContentTextarea value={input} onChange={setInput} placeholder="粘贴 SQL 语句..." />
+        <div className="flex-1">
+          <ContentTextarea value={input} onChange={setInput} placeholder="粘贴 SQL 语句..." />
+        </div>
+        <div className="flex gap-3">
+          <button onClick={format} className="flex items-center gap-2 px-4 py-2 rounded-lg bg-emerald-500 hover:bg-emerald-600 text-white font-medium transition-colors">
+            <AlignLeft className="w-4 h-4" /> 美化
+          </button>
+        </div>
       </div>
 
-      <div className="flex gap-3">
-        <button onClick={format} className="flex items-center gap-2 px-4 py-2 rounded-lg bg-emerald-500 hover:bg-emerald-600 text-white font-medium transition-colors">
-          <AlignLeft className="w-4 h-4" /> 美化
-        </button>
-      </div>
-
-      <div className="space-y-2 flex-1">
+      {/* 右侧输出区域 */}
+      <div className="flex-1 flex flex-col gap-3 min-w-0">
         <label className="text-sm text-muted">输出结果</label>
-        <ContentOutput value={output} />
+        <div className="flex-1">
+          <ContentOutput value={output} />
+        </div>
       </div>
     </div>
   )
@@ -1163,21 +1318,26 @@ function CsvTool() {
   }
 
   return (
-    <div className="flex flex-col gap-4 flex-1">
-      <div className="space-y-2">
+    <div className="flex flex-col lg:flex-row gap-4 flex-1 h-full">
+      {/* 左侧输入区域 */}
+      <div className="flex-1 flex flex-col gap-3 min-w-0">
         <label className="text-sm text-muted">输入 CSV</label>
-        <ContentTextarea value={input} onChange={setInput} placeholder="name,age,city&#10;张三,25,北京&#10;李四,30,上海" />
+        <div className="flex-1">
+          <ContentTextarea value={input} onChange={setInput} placeholder="name,age,city&#10;张三,25,北京&#10;李四,30,上海" />
+        </div>
+        <div className="flex gap-3">
+          <button onClick={convert} className="flex items-center gap-2 px-4 py-2 rounded-lg bg-emerald-500 hover:bg-emerald-600 text-white font-medium transition-colors">
+            <Table2 className="w-4 h-4" /> 转为 JSON
+          </button>
+        </div>
       </div>
 
-      <div className="flex gap-3">
-        <button onClick={convert} className="flex items-center gap-2 px-4 py-2 rounded-lg bg-emerald-500 hover:bg-emerald-600 text-white font-medium transition-colors">
-          <Table2 className="w-4 h-4" /> 转为 JSON
-        </button>
-      </div>
-
-      <div className="space-y-2 flex-1">
+      {/* 右侧输出区域 */}
+      <div className="flex-1 flex flex-col gap-3 min-w-0">
         <label className="text-sm text-muted">JSON 输出</label>
-        <ContentOutput value={output} />
+        <div className="flex-1">
+          <ContentOutput value={output} />
+        </div>
       </div>
     </div>
   )
@@ -1211,34 +1371,40 @@ function RegexTool() {
   }
 
   return (
-    <div className="flex flex-col gap-4 flex-1">
-      <div className="space-y-2">
-        <label className="text-sm text-muted">正则表达式</label>
-        <input 
-          type="text"
-          value={pattern}
-          onChange={(e) => setPattern(e.target.value)}
-          placeholder="输入正则表达式，如: \d+"
-          className="w-full px-4 py-3 rounded-xl bg-input border border-primary text-slate-200 font-mono resize-none focus:outline-none focus:border-emerald-500"
-        />
+    <div className="flex flex-col lg:flex-row gap-4 flex-1 h-full">
+      {/* 左侧输入区域 */}
+      <div className="flex-1 flex flex-col gap-3 min-w-0">
+        <div className="space-y-2">
+          <label className="text-sm text-muted">正则表达式</label>
+          <input 
+            type="text"
+            value={pattern}
+            onChange={(e) => setPattern(e.target.value)}
+            placeholder="输入正则表达式，如: \d+"
+            className="w-full px-4 py-3 rounded-xl bg-input border border-primary text-slate-200 font-mono resize-none focus:outline-none focus:border-emerald-500"
+          />
+        </div>
+
+        <div className="flex-1">
+          <label className="text-sm text-muted block mb-2">测试文本</label>
+          <ContentTextarea value={testString} onChange={setTestString} placeholder="输入要测试的文本..." />
+        </div>
+
+        <div className="flex gap-3">
+          <button onClick={test} className="flex items-center gap-2 px-4 py-2 rounded-lg bg-emerald-500 hover:bg-emerald-600 text-white font-medium transition-colors">
+            <Type className="w-4 h-4" /> 测试
+          </button>
+        </div>
+
+        {error && <div className="p-3 rounded-lg bg-red-500/20 border border-red-500/30 text-red-400 text-sm">{error}</div>}
       </div>
 
-      <div className="space-y-2">
-        <label className="text-sm text-muted">测试文本</label>
-        <ContentTextarea value={testString} onChange={setTestString} placeholder="输入要测试的文本..." />
-      </div>
-
-      <div className="flex gap-3">
-        <button onClick={test} className="flex items-center gap-2 px-4 py-2 rounded-lg bg-emerald-500 hover:bg-emerald-600 text-white font-medium transition-colors">
-          <Type className="w-4 h-4" /> 测试
-        </button>
-      </div>
-
-      {error && <div className="p-3 rounded-lg bg-red-500/20 border border-red-500/30 text-red-400 text-sm">{error}</div>}
-
-      <div className="space-y-2 flex-1">
+      {/* 右侧输出区域 */}
+      <div className="flex-1 flex flex-col gap-3 min-w-0">
         <label className="text-sm text-muted">匹配结果</label>
-        <ContentOutput value={output} />
+        <div className="flex-1">
+          <ContentOutput value={output} />
+        </div>
       </div>
     </div>
   )
@@ -1822,6 +1988,9 @@ function App() {
           </div>
         </section>
 
+        {/* 广告位 1 - 工具列表下方 */}
+        <AdBanner position="tools-after" />
+
         {/* Features Section */}
         <section id="features" className="relative py-20 px-4 sm:px-6 lg:px-8">
           <div className="max-w-5xl mx-auto">
@@ -1898,6 +2067,9 @@ function App() {
             </div>
           </div>
         </footer>
+
+        {/* 广告位 2 - 页脚 */}
+        <AdBanner position="footer" />
 
         {/* Tool Panel Modal */}
         {selectedTool && (
@@ -1993,26 +2165,30 @@ function YamlTool() {
   }
 
   return (
-    <div className="flex flex-col gap-4 flex-1">
-      <div className="space-y-2">
+    <div className="flex flex-col lg:flex-row gap-4 flex-1 h-full">
+      {/* 左侧输入区域 */}
+      <div className="flex-1 flex flex-col gap-3 min-w-0">
         <label className="text-sm text-muted">输入 YAML</label>
-        <ContentTextarea value={input} onChange={setInput} placeholder="输入 YAML 数据..." />
+        <div className="flex-1">
+          <ContentTextarea value={input} onChange={setInput} placeholder="输入 YAML 数据..." />
+        </div>
+        <div className="flex gap-3 flex-wrap">
+          <button onClick={formatYaml} className="flex items-center gap-2 px-4 py-2 rounded-lg bg-emerald-500 hover:bg-emerald-600 text-white font-medium transition-colors">
+            <AlignLeft className="w-4 h-4" /> 格式化
+          </button>
+          <button onClick={convertToJson} className="flex items-center gap-2 px-4 py-2 rounded-lg bg-tertiary hover:bg-border-primary text-white font-medium transition-colors">
+            <ArrowRightLeft className="w-4 h-4" /> 转 JSON
+          </button>
+        </div>
+        {error && <div className="p-3 rounded-lg bg-red-500/20 border border-red-500/30 text-red-400 text-sm">{error}</div>}
       </div>
 
-      <div className="flex gap-3 flex-wrap">
-        <button onClick={formatYaml} className="flex items-center gap-2 px-4 py-2 rounded-lg bg-emerald-500 hover:bg-emerald-600 text-white font-medium transition-colors">
-          <AlignLeft className="w-4 h-4" /> 格式化
-        </button>
-        <button onClick={convertToJson} className="flex items-center gap-2 px-4 py-2 rounded-lg bg-tertiary hover:bg-border-primary text-white font-medium transition-colors">
-          <ArrowRightLeft className="w-4 h-4" /> 转 JSON
-        </button>
-      </div>
-
-      {error && <div className="p-3 rounded-lg bg-red-500/20 border border-red-500/30 text-red-400 text-sm">{error}</div>}
-
-      <div className="space-y-2 flex-1">
+      {/* 右侧输出区域 */}
+      <div className="flex-1 flex flex-col gap-3 min-w-0">
         <label className="text-sm text-muted">输出结果</label>
-        <ContentOutput value={output} />
+        <div className="flex-1">
+          <ContentOutput value={output} />
+        </div>
       </div>
     </div>
   )
@@ -2044,35 +2220,40 @@ function UnicodeTool() {
   }
 
   return (
-    <div className="flex flex-col gap-4 flex-1">
-      <div className="space-y-2">
+    <div className="flex flex-col lg:flex-row gap-4 flex-1 h-full">
+      {/* 左侧输入区域 */}
+      <div className="flex-1 flex flex-col gap-3 min-w-0">
         <label className="text-sm text-muted">输入内容</label>
-        <ContentTextarea value={input} onChange={setInput} placeholder={mode === 'toUnicode' ? '输入中文字符...' : '输入 Unicode 编码...'} />
-      </div>
-
-      <div className="flex gap-3 flex-wrap">
-        <div className="flex rounded-lg overflow-hidden">
-          <button 
-            onClick={() => setMode('toUnicode')} 
-            className={`px-4 py-2 font-medium transition-colors ${mode === 'toUnicode' ? 'bg-emerald-500 text-white' : 'bg-slate-700 text-secondary hover:bg-slate-600'}`}
-          >
-            中文 → Unicode
-          </button>
-          <button 
-            onClick={() => setMode('toChinese')} 
-            className={`px-4 py-2 font-medium transition-colors ${mode === 'toChinese' ? 'bg-emerald-500 text-white' : 'bg-slate-700 text-secondary hover:bg-slate-600'}`}
-          >
-            Unicode → 中文
+        <div className="flex-1">
+          <ContentTextarea value={input} onChange={setInput} placeholder={mode === 'toUnicode' ? '输入中文字符...' : '输入 Unicode 编码...'} />
+        </div>
+        <div className="flex gap-3 flex-wrap">
+          <div className="flex rounded-lg overflow-hidden">
+            <button 
+              onClick={() => setMode('toUnicode')} 
+              className={`px-4 py-2 font-medium transition-colors ${mode === 'toUnicode' ? 'bg-emerald-500 text-white' : 'bg-slate-700 text-secondary hover:bg-slate-600'}`}
+            >
+              中文 → Unicode
+            </button>
+            <button 
+              onClick={() => setMode('toChinese')} 
+              className={`px-4 py-2 font-medium transition-colors ${mode === 'toChinese' ? 'bg-emerald-500 text-white' : 'bg-slate-700 text-secondary hover:bg-slate-600'}`}
+            >
+              Unicode → 中文
+            </button>
+          </div>
+          <button onClick={convert} className="flex items-center gap-2 px-4 py-2 rounded-lg bg-emerald-500 hover:bg-emerald-600 text-white font-medium transition-colors">
+            <ArrowRightLeft className="w-4 h-4" /> 转换
           </button>
         </div>
-        <button onClick={convert} className="flex items-center gap-2 px-4 py-2 rounded-lg bg-emerald-500 hover:bg-emerald-600 text-white font-medium transition-colors">
-          <ArrowRightLeft className="w-4 h-4" /> 转换
-        </button>
       </div>
 
-      <div className="space-y-2 flex-1">
+      {/* 右侧输出区域 */}
+      <div className="flex-1 flex flex-col gap-3 min-w-0">
         <label className="text-sm text-muted">输出结果</label>
-        <ContentOutput value={output} />
+        <div className="flex-1">
+          <ContentOutput value={output} />
+        </div>
       </div>
     </div>
   )
@@ -2117,46 +2298,52 @@ function AesTool() {
   }
 
   return (
-    <div className="flex flex-col gap-4 flex-1">
-      <div className="space-y-2">
-        <label className="text-sm text-muted">密钥</label>
-        <input 
-          type="text"
-          value={key}
-          onChange={(e) => setKey(e.target.value)}
-          placeholder="输入加密密钥..."
-          className="w-full px-4 py-3 rounded-xl bg-input border border-primary text-slate-200 font-mono focus:outline-none focus:border-emerald-500"
-        />
-      </div>
+    <div className="flex flex-col lg:flex-row gap-4 flex-1 h-full">
+      {/* 左侧输入区域 */}
+      <div className="flex-1 flex flex-col gap-3 min-w-0">
+        <div className="space-y-2">
+          <label className="text-sm text-muted">密钥</label>
+          <input 
+            type="text"
+            value={key}
+            onChange={(e) => setKey(e.target.value)}
+            placeholder="输入加密密钥..."
+            className="w-full px-4 py-3 rounded-xl bg-input border border-primary text-slate-200 font-mono focus:outline-none focus:border-emerald-500"
+          />
+        </div>
 
-      <div className="space-y-2">
-        <label className="text-sm text-muted">输入内容</label>
-        <ContentTextarea value={input} onChange={setInput} placeholder="输入要加密/解密的内容..." />
-      </div>
+        <div className="flex-1">
+          <label className="text-sm text-muted block mb-2">输入内容</label>
+          <ContentTextarea value={input} onChange={setInput} placeholder="输入要加密/解密的内容..." />
+        </div>
 
-      <div className="flex gap-3 flex-wrap">
-        <div className="flex rounded-lg overflow-hidden">
-          <button 
-            onClick={() => setMode('encrypt')} 
-            className={`px-4 py-2 font-medium transition-colors ${mode === 'encrypt' ? 'bg-emerald-500 text-white' : 'bg-slate-700 text-secondary hover:bg-slate-600'}`}
-          >
-            加密
-          </button>
-          <button 
-            onClick={() => setMode('decrypt')} 
-            className={`px-4 py-2 font-medium transition-colors ${mode === 'decrypt' ? 'bg-emerald-500 text-white' : 'bg-slate-700 text-secondary hover:bg-slate-600'}`}
-          >
-            解密
+        <div className="flex gap-3 flex-wrap">
+          <div className="flex rounded-lg overflow-hidden">
+            <button 
+              onClick={() => setMode('encrypt')} 
+              className={`px-4 py-2 font-medium transition-colors ${mode === 'encrypt' ? 'bg-emerald-500 text-white' : 'bg-slate-700 text-secondary hover:bg-slate-600'}`}
+            >
+              加密
+            </button>
+            <button 
+              onClick={() => setMode('decrypt')} 
+              className={`px-4 py-2 font-medium transition-colors ${mode === 'decrypt' ? 'bg-emerald-500 text-white' : 'bg-slate-700 text-secondary hover:bg-slate-600'}`}
+            >
+              解密
+            </button>
+          </div>
+          <button onClick={process} className="flex items-center gap-2 px-4 py-2 rounded-lg bg-emerald-500 hover:bg-emerald-600 text-white font-medium transition-colors">
+            <Lock className="w-4 h-4" /> {mode === 'encrypt' ? '加密' : '解密'}
           </button>
         </div>
-        <button onClick={process} className="flex items-center gap-2 px-4 py-2 rounded-lg bg-emerald-500 hover:bg-emerald-600 text-white font-medium transition-colors">
-          <Lock className="w-4 h-4" /> {mode === 'encrypt' ? '加密' : '解密'}
-        </button>
       </div>
 
-      <div className="space-y-2 flex-1">
+      {/* 右侧输出区域 */}
+      <div className="flex-1 flex flex-col gap-3 min-w-0">
         <label className="text-sm text-muted">输出结果</label>
-        <ContentOutput value={output} />
+        <div className="flex-1">
+          <ContentOutput value={output} />
+        </div>
       </div>
     </div>
   )
@@ -2421,19 +2608,24 @@ function CamelCaseTool() {
   }
 
   return (
-    <div className="flex flex-col gap-4 flex-1">
-      <div className="space-y-2">
+    <div className="flex flex-col lg:flex-row gap-4 flex-1 h-full">
+      {/* 左侧输入区域 */}
+      <div className="flex-1 flex flex-col gap-3 min-w-0">
         <label className="text-sm text-muted">输入文本</label>
-        <ContentTextarea value={input} onChange={setInput} placeholder="输入要转换的文本，如：user_name 或 user-name" />
+        <div className="flex-1">
+          <ContentTextarea value={input} onChange={setInput} placeholder="输入要转换的文本，如：user_name 或 user-name" />
+        </div>
+        <button onClick={convert} className="flex items-center gap-2 px-4 py-2 rounded-lg bg-emerald-500 hover:bg-emerald-600 text-white font-medium transition-colors self-start">
+          <Shuffle className="w-4 h-4" /> 转换
+        </button>
       </div>
 
-      <button onClick={convert} className="flex items-center gap-2 px-4 py-2 rounded-lg bg-emerald-500 hover:bg-emerald-600 text-white font-medium transition-colors self-start">
-        <Shuffle className="w-4 h-4" /> 转换
-      </button>
-
-      <div className="space-y-2 flex-1">
+      {/* 右侧输出区域 */}
+      <div className="flex-1 flex flex-col gap-3 min-w-0">
         <label className="text-sm text-muted">转换结果</label>
-        <ContentOutput value={output} />
+        <div className="flex-1">
+          <ContentOutput value={output} />
+        </div>
       </div>
     </div>
   )
@@ -2454,19 +2646,24 @@ function CaseTool() {
   }
 
   return (
-    <div className="flex flex-col gap-4 flex-1">
-      <div className="space-y-2">
+    <div className="flex flex-col lg:flex-row gap-4 flex-1 h-full">
+      {/* 左侧输入区域 */}
+      <div className="flex-1 flex flex-col gap-3 min-w-0">
         <label className="text-sm text-muted">输入英文文本</label>
-        <ContentTextarea value={input} onChange={setInput} placeholder="输入要转换的英文文本..." />
+        <div className="flex-1">
+          <ContentTextarea value={input} onChange={setInput} placeholder="输入要转换的英文文本..." />
+        </div>
+        <button onClick={convert} className="flex items-center gap-2 px-4 py-2 rounded-lg bg-emerald-500 hover:bg-emerald-600 text-white font-medium transition-colors self-start">
+          <TextCursorInput className="w-4 h-4" /> 转换
+        </button>
       </div>
 
-      <button onClick={convert} className="flex items-center gap-2 px-4 py-2 rounded-lg bg-emerald-500 hover:bg-emerald-600 text-white font-medium transition-colors self-start">
-        <TextCursorInput className="w-4 h-4" /> 转换
-      </button>
-
-      <div className="space-y-2 flex-1">
+      {/* 右侧输出区域 */}
+      <div className="flex-1 flex flex-col gap-3 min-w-0">
         <label className="text-sm text-muted">转换结果</label>
-        <ContentOutput value={output} />
+        <div className="flex-1">
+          <ContentOutput value={output} />
+        </div>
       </div>
     </div>
   )
@@ -2506,35 +2703,40 @@ function JsTool() {
   }
 
   return (
-    <div className="flex flex-col gap-4 flex-1">
-      <div className="space-y-2">
+    <div className="flex flex-col lg:flex-row gap-4 flex-1 h-full">
+      {/* 左侧输入区域 */}
+      <div className="flex-1 flex flex-col gap-3 min-w-0">
         <label className="text-sm text-muted">输入 JavaScript</label>
-        <ContentTextarea value={input} onChange={setInput} placeholder="输入 JavaScript 代码..." />
-      </div>
-
-      <div className="flex gap-3 flex-wrap">
-        <div className="flex rounded-lg overflow-hidden">
-          <button 
-            onClick={() => setMode('format')} 
-            className={`px-4 py-2 font-medium transition-colors ${mode === 'format' ? 'bg-emerald-500 text-white' : 'bg-slate-700 text-secondary hover:bg-slate-600'}`}
-          >
-            <AlignLeft className="w-4 h-4 inline mr-1" /> 美化
-          </button>
-          <button 
-            onClick={() => setMode('compress')} 
-            className={`px-4 py-2 font-medium transition-colors ${mode === 'compress' ? 'bg-emerald-500 text-white' : 'bg-slate-700 text-secondary hover:bg-slate-600'}`}
-          >
-            <Minimize2 className="w-4 h-4 inline mr-1" /> 压缩
+        <div className="flex-1">
+          <ContentTextarea value={input} onChange={setInput} placeholder="输入 JavaScript 代码..." />
+        </div>
+        <div className="flex gap-3 flex-wrap">
+          <div className="flex rounded-lg overflow-hidden">
+            <button 
+              onClick={() => setMode('format')} 
+              className={`px-4 py-2 font-medium transition-colors ${mode === 'format' ? 'bg-emerald-500 text-white' : 'bg-slate-700 text-secondary hover:bg-slate-600'}`}
+            >
+              <AlignLeft className="w-4 h-4 inline mr-1" /> 美化
+            </button>
+            <button 
+              onClick={() => setMode('compress')} 
+              className={`px-4 py-2 font-medium transition-colors ${mode === 'compress' ? 'bg-emerald-500 text-white' : 'bg-slate-700 text-secondary hover:bg-slate-600'}`}
+            >
+              <Minimize2 className="w-4 h-4 inline mr-1" /> 压缩
+            </button>
+          </div>
+          <button onClick={process} className="flex items-center gap-2 px-4 py-2 rounded-lg bg-emerald-500 hover:bg-emerald-600 text-white font-medium transition-colors">
+            执行
           </button>
         </div>
-        <button onClick={process} className="flex items-center gap-2 px-4 py-2 rounded-lg bg-emerald-500 hover:bg-emerald-600 text-white font-medium transition-colors">
-          执行
-        </button>
       </div>
 
-      <div className="space-y-2 flex-1">
+      {/* 右侧输出区域 */}
+      <div className="flex-1 flex flex-col gap-3 min-w-0">
         <label className="text-sm text-muted">输出结果</label>
-        <ContentOutput value={output} />
+        <div className="flex-1">
+          <ContentOutput value={output} />
+        </div>
       </div>
     </div>
   )
@@ -2572,19 +2774,24 @@ function HtmlTool() {
   }
 
   return (
-    <div className="flex flex-col gap-4 flex-1">
-      <div className="space-y-2">
+    <div className="flex flex-col lg:flex-row gap-4 flex-1 h-full">
+      {/* 左侧输入区域 */}
+      <div className="flex-1 flex flex-col gap-3 min-w-0">
         <label className="text-sm text-muted">输入 HTML</label>
-        <ContentTextarea value={input} onChange={setInput} placeholder="输入 HTML 代码..." />
+        <div className="flex-1">
+          <ContentTextarea value={input} onChange={setInput} placeholder="输入 HTML 代码..." />
+        </div>
+        <button onClick={format} className="flex items-center gap-2 px-4 py-2 rounded-lg bg-emerald-500 hover:bg-emerald-600 text-white font-medium transition-colors self-start">
+          <AlignLeft className="w-4 h-4" /> 格式化
+        </button>
       </div>
 
-      <button onClick={format} className="flex items-center gap-2 px-4 py-2 rounded-lg bg-emerald-500 hover:bg-emerald-600 text-white font-medium transition-colors self-start">
-        <AlignLeft className="w-4 h-4" /> 格式化
-      </button>
-
-      <div className="space-y-2 flex-1">
+      {/* 右侧输出区域 */}
+      <div className="flex-1 flex flex-col gap-3 min-w-0">
         <label className="text-sm text-muted">输出结果</label>
-        <ContentOutput value={output} />
+        <div className="flex-1">
+          <ContentOutput value={output} />
+        </div>
       </div>
     </div>
   )
@@ -2619,19 +2826,24 @@ function CssTool() {
   }
 
   return (
-    <div className="flex flex-col gap-4 flex-1">
-      <div className="space-y-2">
+    <div className="flex flex-col lg:flex-row gap-4 flex-1 h-full">
+      {/* 左侧输入区域 */}
+      <div className="flex-1 flex flex-col gap-3 min-w-0">
         <label className="text-sm text-muted">输入 CSS</label>
-        <ContentTextarea value={input} onChange={setInput} placeholder="输入 CSS 代码..." />
+        <div className="flex-1">
+          <ContentTextarea value={input} onChange={setInput} placeholder="输入 CSS 代码..." />
+        </div>
+        <button onClick={format} className="flex items-center gap-2 px-4 py-2 rounded-lg bg-emerald-500 hover:bg-emerald-600 text-white font-medium transition-colors self-start">
+          <AlignLeft className="w-4 h-4" /> 格式化
+        </button>
       </div>
 
-      <button onClick={format} className="flex items-center gap-2 px-4 py-2 rounded-lg bg-emerald-500 hover:bg-emerald-600 text-white font-medium transition-colors self-start">
-        <AlignLeft className="w-4 h-4" /> 格式化
-      </button>
-
-      <div className="space-y-2 flex-1">
+      {/* 右侧输出区域 */}
+      <div className="flex-1 flex flex-col gap-3 min-w-0">
         <label className="text-sm text-muted">输出结果</label>
-        <ContentOutput value={output} />
+        <div className="flex-1">
+          <ContentOutput value={output} />
+        </div>
       </div>
     </div>
   )
