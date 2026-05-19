@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>EmulatorJS - NES</title>
+  <link rel="stylesheet" href="src/emulator.css">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { 
+      background: #000; 
+      display: flex; 
+      justify-content: center; 
+      align-items: center; 
+      height: 100vh; 
+      overflow: hidden;
+    }
+    #game {
+      width: 100%;
+      height: 100%;
+    }
+    .emulator {
+      width: 100% !important;
+      height: 100% !important;
+    }
+  </style>
+</head>
+<body>
+  <div id="game" class="emulator"></div>
+  <script>
+    // EmulatorJS配置
+    var EJS_pathtodata = "./";
+    var EJS_core = "fceumm";
+    var EJS_gameUrl = "/roms/Sanmo.nes";
+    var EJS_startOnLoaded = true;
+    var EJS_volume = 0.5;
+    var EJS_player = 1;
+    var EJS_gameName = "Sanmo";
+    var EJS_oldUI = true;
+    var EJS_autoTouch = false;
+    var EJS_DEBUG_XX = true; // 使用非压缩版本
+  </script>
+  <script src="src/emulator.js"></script>
+</body>
+</html>

@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>伏魔记 - 步步高电子词典版</title>
+    <script src="js/jquery.min.js"></script>
+    <script src="js/encoding-indexes.js"></script>
+    <script src="js/encoding.js"></script>
+    <script>window.__fmjScale=5;</script>
+    <script src="js/sys.js"></script>
+    <script src="js/kotlin.js"></script>
+    <script src="js/font.js"></script>
+    <script src="rom.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        html, body {
+            width: 100%; height: 100%;
+            overflow: hidden;
+            background-color: #0f0f23;
+        }
+        #game-container {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        #lcd-wrapper {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        #lcd {
+            image-rendering: pixelated;
+            image-rendering: crisp-edges;
+            background: #9bbc0f;
+            display: block;
+        }
+    </style>
+</head>
+<body>
+    <div id="game-container">
+        <div id="lcd-wrapper">
+            <canvas id="lcd"></canvas>
+        </div>
+    </div>
+</body>
+<script src="js/fmj.core.js"></script>
+<script>
+(function() {
+    var c = document.getElementById('lcd');
+    var g = document.getElementById('game-container');
+    function fit() {
+        var cw = g.clientWidth, ch = g.clientHeight;
+        if (!cw || !ch) return;
+        // canvas 物理尺寸由引擎设置 (800x480), CSS 尺寸填满容器
+        var s = Math.min(cw / c.width, ch / c.height) * 1.0;
+        c.style.width = Math.round(c.width * s) + 'px';
+        c.style.height = Math.round(c.height * s) + 'px';
+    }
+    new MutationObserver(fit).observe(c, { attributes: true, attributeFilter: ['width','height'] });
+    window.addEventListener('resize', fit);
+    setInterval(fit, 500);
+})();
+</script>

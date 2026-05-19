@@ -16,7 +16,14 @@
         }
       })();
     </script>
-  </head>
+  <style>
+    @keyframes scaleIn {
+      from { transform: scale(0.8); opacity: 0; }
+      to { transform: scale(1); opacity: 1; }
+    }
+    /* 安全区域适配 */
+    body { padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left); }
+  </style>
   <body>
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>

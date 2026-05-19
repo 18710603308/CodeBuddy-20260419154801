@@ -1,23 +1,5 @@
 import { useState, useEffect, useMemo, createContext, useContext, useRef } from 'react'
 import {
-  Braces,
-  FileCode2,
-  GitCompare,
-  Hash,
-  Terminal,
-  Clipboard,
-  Database,
-  Table2,
-  Type,
-  Code2,
-  Layers,
-  Search,
-  Sparkles,
-  Zap,
-  Sun,
-  Moon,
-  Menu,
-  X,
   ChevronRight,
   Copy,
   Check,
@@ -25,41 +7,50 @@ import {
   ArrowLeftRight,
   FileText,
   ShieldCheck,
-  Gauge,
   Maximize2,
   Minimize2,
   ChevronsUpDown,
-  AArrowUp,
-  AArrowDown,
+  ArrowRightLeft,
+  AlertCircle,
+  Type,
+  TextCursorInput,
+  Table2,
   StretchHorizontal,
-  Palette,
-  Clock,
-  Binary,
-  Key,
-  Globe,
-  FileJson,
-  FileCode,
-  FileText as FileTextIcon,
   Shuffle,
   Wand2,
-  Calculator,
-  TextCursorInput,
-  Image,
   QrCode,
-  Unlink,
+  Menu,
   Lock,
-  Unlock,
-  ArrowRightLeft,
-  SortAsc,
-  SortDesc,
-  Expand,
+  Layers,
+  Key,
+  Hash,
+  Sun,
+  Moon,
+  Sparkles,
+  Search,
+  X,
+  Terminal,
+  Gamepad2,
+  WifiOff,
+  Zap,
+  Globe,
+  Gauge,
+  GitCompare,
+  Code2,
+  Clock,
+  Braces,
+  FileCode,
+  FileJson,
   Coffee,
-  AlertCircle,
+  Binary,
   Cog,
   Code,
   Bot,
-  WifiOff,
-  Gamepad2
+  Link as LinkIcon,
+  Bomb as BombIcon,
+  Hash as HashIcon,
+  AArrowUp,
+  AArrowDown,
 } from 'lucide-react'
 import { Link, useNavigate } from 'react-router-dom'
 import './App.css'
@@ -282,6 +273,42 @@ const tools: Tool[] = [
 
   // 经典游戏
   { id: 'game-collection', icon: Gamepad2, title: '欲买桂花同载酒', description: 'FC、街机、GBA 等经典游戏合集', color: 'from-amber-500 to-orange-600', bgColor: 'bg-amber-500/10', borderColor: 'border-amber-500/30' },
+
+  // 休闲游戏
+  { id: 'link-game', icon: LinkIcon, title: '连连看', description: '经典的连连看消消乐游戏', color: 'from-pink-500 to-rose-600', bgColor: 'bg-pink-500/10', borderColor: 'border-pink-500/30' },
+
+  // 蜘蛛纸牌
+  { id: 'spider-solitaire', icon: Gamepad2, title: '蜘蛛纸牌', description: '经典Windows蜘蛛纸牌，单人纸牌游戏', color: 'from-amber-600 to-orange-700', bgColor: 'bg-amber-500/10', borderColor: 'border-amber-500/30' },
+
+  // 扫雷
+  { id: 'minesweeper', icon: BombIcon, title: '扫雷', description: '经典扫雷游戏，挑战最高难度', color: 'from-emerald-500 to-teal-600', bgColor: 'bg-emerald-500/10', borderColor: 'border-emerald-500/30' },
+
+  // 2048
+  { id: 'game2048', icon: HashIcon, title: '2048', description: '经典数字合成游戏，挑战2048', color: 'from-orange-500 to-amber-600', bgColor: 'bg-orange-500/10', borderColor: 'border-orange-500/30' },
+
+  // 魂斗罗FC版
+  { id: 'contra-fc', icon: Gamepad2, title: '魂斗罗 FC', description: '原汁原味FC经典复刻，jsnes模拟器', color: 'from-red-500 to-orange-600', bgColor: 'bg-red-500/10', borderColor: 'border-red-500/30' },
+
+  // 坦克大战FC版
+  { id: 'tank-battle', icon: Gamepad2, title: '坦克大战 FC', description: '经典FC坦克大战，jsnes模拟器', color: 'from-green-500 to-emerald-600', bgColor: 'bg-green-500/10', borderColor: 'border-green-500/30' },
+
+  // 超级马里奥FC版
+  { id: 'super-mario', icon: Gamepad2, title: '超级马里奥 FC', description: '经典FC超级马里奥，jsnes模拟器', color: 'from-red-500 to-red-600', bgColor: 'bg-red-500/10', borderColor: 'border-red-500/30' },
+
+  // Flappy Bird NES
+  { id: 'flappy-bird', icon: Gamepad2, title: 'Flappy Bird', description: '开源NES游戏复刻，jsnes模拟器', color: 'from-yellow-400 to-orange-500', bgColor: 'bg-yellow-500/10', borderColor: 'border-yellow-500/30' },
+
+  // 淘金者
+  { id: 'lode-runner', icon: Gamepad2, title: '淘金者', description: '经典FC淘金者复刻，收集金块躲避敌人', color: 'from-amber-500 to-yellow-600', bgColor: 'bg-amber-500/10', borderColor: 'border-amber-500/30' },
+
+  // 三目童子
+  { id: 'sanmo', icon: Gamepad2, title: '三目童子', description: '经典FC三目童子，第三只眼能量攻击', color: 'from-indigo-500 to-purple-600', bgColor: 'bg-indigo-500/10', borderColor: 'border-indigo-500/30' },
+
+  // 伏魔记
+  { id: 'fumojì', icon: Gamepad2, title: '伏魔记', description: '经典步步高词典RPG，封神榜之伏魔三太子', color: 'from-red-600 to-pink-600', bgColor: 'bg-red-500/10', borderColor: 'border-red-500/30' },
+
+  // 伏魔记步步高版
+  { id: 'fumojì-bbk', icon: Gamepad2, title: '伏魔记 BBK', description: '步步高电子词典原版网页移植，Baye引擎', color: 'from-amber-600 to-orange-700', bgColor: 'bg-amber-500/10', borderColor: 'border-amber-500/30' },
 
   // AI 游戏
   { id: 'ai-game', icon: Bot, title: 'AI 游戏工坊', description: '输入文字让 AI 生成游戏关卡，文本命令操控角色', color: 'from-purple-500 to-pink-600', bgColor: 'bg-purple-500/10', borderColor: 'border-purple-500/30' },
@@ -1706,6 +1733,30 @@ function App() {
                                 window.location.href = '/coding-the-world'
                               } else if (tool.id === 'game-collection') {
                                 window.location.href = '/game-collection'
+                              } else if (tool.id === 'link-game') {
+                                window.location.href = '/link-game'
+                              } else if (tool.id === 'spider-solitaire') {
+                                window.location.href = '/spider-solitaire'
+                              } else if (tool.id === 'minesweeper') {
+                                window.location.href = '/minesweeper'
+                              } else if (tool.id === 'game2048') {
+                                window.location.href = '/game2048'
+                              } else if (tool.id === 'contra-fc') {
+                                window.location.href = '/contra-fc'
+                              } else if (tool.id === 'tank-battle') {
+                                window.location.href = '/tank-battle'
+                              } else if (tool.id === 'super-mario') {
+                                window.location.href = '/super-mario'
+                              } else if (tool.id === 'flappy-bird') {
+                                window.location.href = '/flappy-bird'
+                              } else if (tool.id === 'lode-runner') {
+                                window.location.href = '/lode-runner'
+                              } else if (tool.id === 'sanmo') {
+                                window.location.href = '/sanmo'
+                              } else if (tool.id === 'fumojì') {
+                                window.location.href = '/fumojì'
+                              } else if (tool.id === 'fumojì-bbk') {
+                                window.location.href = '/fumojì-bbk'
                               } else if (tool.id === 'ai-game') {
                                 window.location.href = '/game'
                               } else if (tool.id === 'offline-tools') {
@@ -1959,6 +2010,278 @@ function App() {
                       </p>
                       <div className={`absolute top-4 right-4 w-6 h-6 rounded-full ${tool.bgColor} flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity`}>
                         <ChevronRight className={`w-4 h-4 bg-gradient-to-br ${tool.color} bg-clip-text`} />
+                      </div>
+                    </Link>
+                  )
+                }
+                // 连连看游戏使用独立页面
+                if (tool.id === 'link-game') {
+                  return (
+                    <Link
+                      key={tool.id}
+                      to="/link-game"
+                      className="group relative p-6 rounded-2xl bg-secondary/80 border border-pink-500/50 hover:border-pink-400 backdrop-blur-xl transition-all hover:scale-105 hover:shadow-xl text-left"
+                    >
+                      <div className={`w-12 h-12 rounded-xl ${tool.bgColor} flex items-center justify-center mb-4 group-hover:scale-110 transition-transform`}>
+                        <tool.icon className={`w-6 h-6 bg-gradient-to-br ${tool.color} bg-clip-text`} />
+                      </div>
+                      <h3 className="text-lg font-semibold mb-2 text-primary">
+                        {tool.title}
+                      </h3>
+                      <p className="text-sm text-subtle">
+                        {tool.description}
+                      </p>
+                      <div className={`absolute top-4 right-4 w-6 h-6 rounded-full ${tool.bgColor} flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity`}>
+                        <ChevronRight className={`w-4 h-4 bg-gradient-to-br ${tool.color} bg-clip-text`} />
+                      </div>
+                    </Link>
+                  )
+                }
+                // 扫雷游戏使用独立页面
+                if (tool.id === 'minesweeper') {
+                  return (
+                    <Link
+                      key={tool.id}
+                      to="/minesweeper"
+                      className="group relative p-6 rounded-2xl bg-secondary/80 border border-emerald-500/50 hover:border-emerald-400 backdrop-blur-xl transition-all hover:scale-105 hover:shadow-xl text-left"
+                    >
+                      <div className={`w-12 h-12 rounded-xl ${tool.bgColor} flex items-center justify-center mb-4 group-hover:scale-110 transition-transform`}>
+                        <tool.icon className={`w-6 h-6 bg-gradient-to-br ${tool.color} bg-clip-text`} />
+                      </div>
+                      <h3 className="text-lg font-semibold mb-2 text-primary">
+                        {tool.title}
+                      </h3>
+                      <p className="text-sm text-subtle">
+                        {tool.description}
+                      </p>
+                      <div className={`absolute top-4 right-4 w-6 h-6 rounded-full ${tool.bgColor} flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity`}>
+                        <ChevronRight className={`w-4 h-4 bg-gradient-to-br ${tool.color} bg-clip-text`} />
+                      </div>
+                    </Link>
+                  )
+                }
+                // 蜘蛛纸牌使用独立页面
+                if (tool.id === 'spider-solitaire') {
+                  return (
+                    <Link
+                      key={tool.id}
+                      to="/spider-solitaire"
+                      className="group relative p-6 rounded-2xl bg-secondary/80 border border-amber-500/50 hover:border-amber-400 backdrop-blur-xl transition-all hover:scale-105 hover:shadow-xl text-left"
+                    >
+                      <div className={`w-12 h-12 rounded-xl ${tool.bgColor} flex items-center justify-center mb-4 group-hover:scale-110 transition-transform`}>
+                        <tool.icon className={`w-6 h-6 bg-gradient-to-br ${tool.color} bg-clip-text`} />
+                      </div>
+                      <h3 className="text-lg font-semibold mb-2 text-primary">
+                        {tool.title}
+                      </h3>
+                      <p className="text-sm text-subtle">
+                        {tool.description}
+                      </p>
+                      <div className={`absolute top-4 right-4 w-6 h-6 rounded-full ${tool.bgColor} flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity`}>
+                        <ChevronRight className={`w-4 h-4 bg-gradient-to-br ${tool.color} bg-clip-text`} />
+                      </div>
+                    </Link>
+                  )
+                }
+                // 2048游戏使用独立页面
+                if (tool.id === 'game2048') {
+                  return (
+                    <Link
+                      key={tool.id}
+                      to="/game2048"
+                      className="group relative p-6 rounded-2xl bg-secondary/80 border border-orange-500/50 hover:border-orange-400 backdrop-blur-xl transition-all hover:scale-105 hover:shadow-xl text-left"
+                    >
+                      <div className={`w-12 h-12 rounded-xl ${tool.bgColor} flex items-center justify-center mb-4 group-hover:scale-110 transition-transform`}>
+                        <tool.icon className={`w-6 h-6 bg-gradient-to-br ${tool.color} bg-clip-text`} />
+                      </div>
+                      <h3 className="text-lg font-semibold mb-2 text-primary">
+                        {tool.title}
+                      </h3>
+                      <p className="text-sm text-subtle">
+                        {tool.description}
+                      </p>
+                      <div className={`absolute top-4 right-4 w-6 h-6 rounded-full ${tool.bgColor} flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity`}>
+                        <ChevronRight className={`w-4 h-4 bg-gradient-to-br ${tool.color} bg-clip-text`} />
+                      </div>
+                    </Link>
+                  )
+                }
+                // 魂斗罗FC版使用独立页面
+                if (tool.id === 'contra-fc') {
+                  return (
+                    <Link
+                      key={tool.id}
+                      to="/contra-fc"
+                      className="group relative p-6 rounded-2xl bg-secondary/80 border border-red-500/50 hover:border-red-400 backdrop-blur-xl transition-all hover:scale-105 hover:shadow-xl text-left"
+                    >
+                      <div className={`w-12 h-12 rounded-xl ${tool.bgColor} flex items-center justify-center mb-4 group-hover:scale-110 transition-transform`}>
+                        <tool.icon className={`w-6 h-6 bg-gradient-to-br ${tool.color} bg-clip-text`} />
+                      </div>
+                      <h3 className="text-lg font-semibold mb-2 text-primary">
+                        {tool.title}
+                      </h3>
+                      <p className="text-sm text-subtle">
+                        {tool.description}
+                      </p>
+                      <div className={`absolute top-4 right-4 w-6 h-6 rounded-full ${tool.bgColor} flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity`}>
+                        <ChevronRight className={`w-4 h-4 bg-gradient-to-br ${tool.color} bg-clip-text`} />
+                      </div>
+                    </Link>
+                  )
+                }
+                // 坦克大战FC版使用独立页面
+                if (tool.id === 'tank-battle') {
+                  return (
+                    <Link
+                      key={tool.id}
+                      to="/tank-battle"
+                      className="group relative p-6 rounded-2xl bg-secondary/80 border border-green-500/50 hover:border-green-400 backdrop-blur-xl transition-all hover:scale-105 hover:shadow-xl text-left"
+                    >
+                      <div className={`w-12 h-12 rounded-xl ${tool.bgColor} flex items-center justify-center mb-4 group-hover:scale-110 transition-transform`}>
+                        <tool.icon className={`w-6 h-6 bg-gradient-to-br ${tool.color} bg-clip-text`} />
+                      </div>
+                      <h3 className="font-semibold text-foreground mb-1">{tool.title}</h3>
+                      <p className="text-sm text-muted-foreground">{tool.description}</p>
+                      <div className="absolute top-2 right-2 px-2 py-1 rounded-md bg-green-500/20 text-green-400 text-xs">
+                        FC
+                      </div>
+                    </Link>
+                  )
+                }
+                // 超级马里奥FC版使用独立页面
+                if (tool.id === 'super-mario') {
+                  return (
+                    <Link
+                      key={tool.id}
+                      to="/super-mario"
+                      className="group relative p-6 rounded-2xl bg-secondary/80 border border-red-500/50 hover:border-red-400 backdrop-blur-xl transition-all hover:scale-105 hover:shadow-xl text-left"
+                    >
+                      <div className={`w-12 h-12 rounded-xl ${tool.bgColor} flex items-center justify-center mb-4 group-hover:scale-110 transition-transform`}>
+                        <tool.icon className={`w-6 h-6 bg-gradient-to-br ${tool.color} bg-clip-text`} />
+                      </div>
+                      <h3 className="text-lg font-semibold mb-2 text-primary">
+                        {tool.title}
+                      </h3>
+                      <p className="text-sm text-subtle">
+                        {tool.description}
+                      </p>
+                      <div className="absolute top-2 right-2 px-2 py-1 rounded-md bg-red-500/20 text-red-400 text-xs">
+                        FC
+                      </div>
+                    </Link>
+                  )
+                }
+                // Flappy Bird使用独立页面
+                if (tool.id === 'flappy-bird') {
+                  return (
+                    <Link
+                      key={tool.id}
+                      to="/flappy-bird"
+                      className="group relative p-6 rounded-2xl bg-secondary/80 border border-yellow-500/50 hover:border-yellow-400 backdrop-blur-xl transition-all hover:scale-105 hover:shadow-xl text-left"
+                    >
+                      <div className={`w-12 h-12 rounded-xl ${tool.bgColor} flex items-center justify-center mb-4 group-hover:scale-110 transition-transform`}>
+                        <tool.icon className={`w-6 h-6 bg-gradient-to-br ${tool.color} bg-clip-text`} />
+                      </div>
+                      <h3 className="text-lg font-semibold mb-2 text-primary">
+                        {tool.title}
+                      </h3>
+                      <p className="text-sm text-subtle">
+                        {tool.description}
+                      </p>
+                      <div className="absolute top-2 right-2 px-2 py-1 rounded-md bg-yellow-500/20 text-yellow-400 text-xs">
+                        NES
+                      </div>
+                    </Link>
+                  )
+                }
+                // 淘金者使用独立页面
+                if (tool.id === 'lode-runner') {
+                  return (
+                    <Link
+                      key={tool.id}
+                      to="/lode-runner"
+                      className="group relative p-6 rounded-2xl bg-secondary/80 border border-amber-500/50 hover:border-amber-400 backdrop-blur-xl transition-all hover:scale-105 hover:shadow-xl text-left"
+                    >
+                      <div className={`w-12 h-12 rounded-xl ${tool.bgColor} flex items-center justify-center mb-4 group-hover:scale-110 transition-transform`}>
+                        <tool.icon className={`w-6 h-6 bg-gradient-to-br ${tool.color} bg-clip-text`} />
+                      </div>
+                      <h3 className="text-lg font-semibold mb-2 text-primary">
+                        {tool.title}
+                      </h3>
+                      <p className="text-sm text-subtle">
+                        {tool.description}
+                      </p>
+                      <div className="absolute top-2 right-2 px-2 py-1 rounded-md bg-amber-500/20 text-amber-400 text-xs">
+                        FC
+                      </div>
+                    </Link>
+                  )
+                }
+                // 三目童子使用独立页面
+                if (tool.id === 'sanmo') {
+                  return (
+                    <Link
+                      key={tool.id}
+                      to="/sanmo"
+                      className="group relative p-6 rounded-2xl bg-secondary/80 border border-indigo-500/50 hover:border-indigo-400 backdrop-blur-xl transition-all hover:scale-105 hover:shadow-xl text-left"
+                    >
+                      <div className={`w-12 h-12 rounded-xl ${tool.bgColor} flex items-center justify-center mb-4 group-hover:scale-110 transition-transform`}>
+                        <tool.icon className={`w-6 h-6 bg-gradient-to-br ${tool.color} bg-clip-text`} />
+                      </div>
+                      <h3 className="text-lg font-semibold mb-2 text-primary">
+                        {tool.title}
+                      </h3>
+                      <p className="text-sm text-subtle">
+                        {tool.description}
+                      </p>
+                      <div className="absolute top-2 right-2 px-2 py-1 rounded-md bg-indigo-500/20 text-indigo-400 text-xs">
+                        FC
+                      </div>
+                    </Link>
+                  )
+                }
+                // 伏魔记使用独立页面
+                if (tool.id === 'fumojì') {
+                  return (
+                    <Link
+                      key={tool.id}
+                      to="/fumojì"
+                      className="group relative p-6 rounded-2xl bg-secondary/80 border border-red-500/50 hover:border-red-400 backdrop-blur-xl transition-all hover:scale-105 hover:shadow-xl text-left"
+                    >
+                      <div className={`w-12 h-12 rounded-xl ${tool.bgColor} flex items-center justify-center mb-4 group-hover:scale-110 transition-transform`}>
+                        <tool.icon className={`w-6 h-6 bg-gradient-to-br ${tool.color} bg-clip-text`} />
+                      </div>
+                      <h3 className="text-lg font-semibold mb-2 text-primary">
+                        {tool.title}
+                      </h3>
+                      <p className="text-sm text-subtle">
+                        {tool.description}
+                      </p>
+                      <div className="absolute top-2 right-2 px-2 py-1 rounded-md bg-red-500/20 text-red-400 text-xs">
+                        FC
+                      </div>
+                    </Link>
+                  )
+                }
+                // 伏魔记BBK版使用独立页面
+                if (tool.id === 'fumojì-bbk') {
+                  return (
+                    <Link
+                      key={tool.id}
+                      to="/fumojì-bbk"
+                      className="group relative p-6 rounded-2xl bg-secondary/80 border border-amber-500/50 hover:border-amber-400 backdrop-blur-xl transition-all hover:scale-105 hover:shadow-xl text-left"
+                    >
+                      <div className={`w-12 h-12 rounded-xl ${tool.bgColor} flex items-center justify-center mb-4 group-hover:scale-110 transition-transform`}>
+                        <tool.icon className={`w-6 h-6 bg-gradient-to-br ${tool.color} bg-clip-text`} />
+                      </div>
+                      <h3 className="text-lg font-semibold mb-2 text-primary">
+                        {tool.title}
+                      </h3>
+                      <p className="text-sm text-subtle">
+                        {tool.description}
+                      </p>
+                      <div className="absolute top-2 right-2 px-2 py-1 rounded-md bg-amber-500/20 text-amber-400 text-xs">
+                        Web
                       </div>
                     </Link>
                   )
