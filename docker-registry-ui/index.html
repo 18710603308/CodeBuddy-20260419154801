@@ -1,0 +1,420 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Docker Registry UI</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        .header {
+            background: white;
+            border-radius: 16px;
+            padding: 30px;
+            margin-bottom: 30px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.1);
+        }
+        
+        .header h1 {
+            color: #333;
+            font-size: 28px;
+            margin-bottom: 10px;
+        }
+        
+        .header p {
+            color: #666;
+            margin-bottom: 20px;
+        }
+        
+        .registry-form {
+            display: flex;
+            gap: 10px;
+        }
+        
+        .registry-input {
+            flex: 1;
+            padding: 12px 20px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 16px;
+            transition: border-color 0.3s;
+        }
+        
+        .registry-input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        
+        .btn {
+            padding: 12px 30px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(102, 126, 234, 0.4);
+        }
+        
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+        
+        .repositories {
+            display: grid;
+            gap: 20px;
+        }
+        
+        .repo-card {
+            background: white;
+            border-radius: 16px;
+            padding: 25px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.1);
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        
+        .repo-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 50px rgba(0,0,0,0.15);
+        }
+        
+        .repo-name {
+            font-size: 20px;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 10px;
+        }
+        
+        .repo-tags {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+        
+        .tag {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 13px;
+        }
+        
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.7);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .modal.active {
+            display: flex;
+        }
+        
+        .modal-content {
+            background: white;
+            border-radius: 16px;
+            padding: 30px;
+            max-width: 800px;
+            width: 90%;
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+        
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        
+        .modal-title {
+            font-size: 24px;
+            font-weight: 600;
+            color: #333;
+        }
+        
+        .close-btn {
+            background: none;
+            border: none;
+            font-size: 30px;
+            cursor: pointer;
+            color: #999;
+        }
+        
+        .close-btn:hover {
+            color: #333;
+        }
+        
+        .image-list {
+            display: grid;
+            gap: 15px;
+        }
+        
+        .image-item {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 12px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .image-name {
+            font-size: 18px;
+            font-weight: 500;
+            color: #333;
+        }
+        
+        .pull-cmd {
+            font-family: 'Courier New', monospace;
+            background: #2d3748;
+            color: #68d391;
+            padding: 8px 16px;
+            border-radius: 6px;
+            font-size: 14px;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        
+        .pull-cmd:hover {
+            background: #4a5568;
+        }
+        
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: white;
+            font-size: 18px;
+        }
+        
+        .error {
+            background: #fed7d7;
+            color: #c53030;
+            padding: 15px 20px;
+            border-radius: 8px;
+            margin-top: 20px;
+        }
+        
+        .success {
+            background: #c6f6d5;
+            color: #2f855a;
+            padding: 15px 20px;
+            border-radius: 8px;
+            margin-top: 20px;
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🐳 Docker Registry UI</h1>
+            <p>管理你的 Docker 镜像仓库</p>
+            
+            <div class="registry-form">
+                <input 
+                    type="text" 
+                    class="registry-input" 
+                    id="registryUrl" 
+                    placeholder="请输入 Registry 地址，例如：http://110.42.247.238"
+                    value="http://110.42.247.238"
+                >
+                <button class="btn" id="loadBtn" onclick="loadRepositories()">加载仓库</button>
+            </div>
+            
+            <div class="error" id="error" style="display:none;"></div>
+            <div class="success" id="success">✓ 复制成功！</div>
+        </div>
+        
+        <div class="repositories" id="repositories">
+            <div class="loading" id="loading" style="display:none;">
+                加载中，请稍候...
+            </div>
+        </div>
+    </div>
+    
+    <!-- Modal -->
+    <div class="modal" id="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div class="modal-title" id="modalTitle">镜像列表</div>
+                <button class="close-btn" onclick="closeModal()">&times;</button>
+            </div>
+            <div class="image-list" id="imageList"></div>
+        </div>
+    </div>
+    
+    <script>
+        let currentRegistry = '';
+        
+        async function loadRepositories() {
+            const registryUrl = document.getElementById('registryUrl').value.trim();
+            if (!registryUrl) {
+                showError('请输入 Registry 地址');
+                return;
+            }
+            
+            currentRegistry = registryUrl;
+            const loading = document.getElementById('loading');
+            const error = document.getElementById('error');
+            
+            loading.style.display = 'block';
+            error.style.display = 'none';
+            
+            try {
+                // 获取仓库列表
+                const catalogResponse = await fetch(`${registryUrl}/v2/_catalog`);
+                if (!catalogResponse.ok) {
+                    throw new Error('无法连接到 Registry');
+                }
+                
+                const catalog = await catalogResponse.json();
+                const repos = catalog.repositories || [];
+                
+                loading.style.display = 'none';
+                
+                if (repos.length === 0) {
+                    document.getElementById('repositories').innerHTML = `
+                        <div class="loading" style="background:white;border-radius:16px;">
+                            暂无可用仓库
+                        </div>
+                    `;
+                    return;
+                }
+                
+                // 获取每个仓库的标签
+                const reposWithTags = await Promise.all(
+                    repos.map(async (repo) => {
+                        try {
+                            const tagsResponse = await fetch(`${registryUrl}/v2/${repo}/tags/list`);
+                            if (!tagsResponse.ok) return { name: repo, tags: [] };
+                            const tagsData = await tagsResponse.json();
+                            return { name: repo, tags: tagsData.tags || [] };
+                        } catch {
+                            return { name: repo, tags: [] };
+                        }
+                    })
+                );
+                
+                displayRepositories(reposWithTags);
+            } catch (err) {
+                loading.style.display = 'none';
+                showError('连接失败：' + err.message);
+            }
+        }
+        
+        function displayRepositories(repos) {
+            const container = document.getElementById('repositories');
+            container.innerHTML = repos.map(repo => `
+                <div class="repo-card" onclick="loadTags('${repo.name}')">
+                    <div class="repo-name">📦 ${repo.name}</div>
+                    <div class="repo-tags">
+                        ${repo.tags.length > 0 
+                            ? repo.tags.slice(0, 10).map(tag => `<span class="tag">${tag}</span>`).join('')
+                            : '<span style="color:#999;">暂无标签</span>'
+                        }
+                        ${repo.tags.length > 10 ? `<span class="tag">+${repo.tags.length - 10} 更多</span>` : ''}
+                    </div>
+                </div>
+            `).join('');
+        }
+        
+        async function loadTags(repoName) {
+            const modal = document.getElementById('modal');
+            const modalTitle = document.getElementById('modalTitle');
+            const imageList = document.getElementById('imageList');
+            
+            modalTitle.textContent = repoName;
+            imageList.innerHTML = '<div class="loading">加载中...</div>';
+            modal.classList.add('active');
+            
+            try {
+                const response = await fetch(`${currentRegistry}/v2/${repoName}/tags/list`);
+                if (!response.ok) throw new Error('获取标签失败');
+                
+                const data = await response.json();
+                const tags = data.tags || [];
+                
+                if (tags.length === 0) {
+                    imageList.innerHTML = '<div class="loading">暂无标签</div>';
+                    return;
+                }
+                
+                imageList.innerHTML = tags.map(tag => {
+                    const fullName = `${currentRegistry.replace(/^https?:\/\//, '')}/${repoName}:${tag}`;
+                    return `
+                        <div class="image-item">
+                            <div class="image-name">🏷️ ${repoName}:${tag}</div>
+                            <div class="pull-cmd" onclick="copyPullCommand('${fullName}', event)">
+                                docker pull ${fullName}
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+            } catch (err) {
+                imageList.innerHTML = `<div class="error">加载失败：${err.message}</div>`;
+            }
+        }
+        
+        function copyPullCommand(command, event) {
+            event.stopPropagation();
+            navigator.clipboard.writeText(command).then(() => {
+                const success = document.getElementById('success');
+                success.style.display = 'block';
+                setTimeout(() => {
+                    success.style.display = 'none';
+                }, 2000);
+            });
+        }
+        
+        function closeModal() {
+            document.getElementById('modal').classList.remove('active');
+        }
+        
+        function showError(message) {
+            const error = document.getElementById('error');
+            error.textContent = message;
+            error.style.display = 'block';
+        }
+        
+        // 点击模态框外部关闭
+        document.getElementById('modal').addEventListener('click', function(e) {
+            if (e.target === this) {
+                closeModal();
+            }
+        });
+        
+        // 初始加载
+        window.onload = loadRepositories;
+    </script>
+</body>
+</html>

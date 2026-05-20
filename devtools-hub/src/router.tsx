@@ -18,6 +18,7 @@ import Sanmo from './components/Sanmo'
 import SpiderSolitaire from './components/SpiderSolitaire'
 import Fumojì from './components/Fumojì'
 import FumojìBBK from './components/FumojìBBK'
+import { RegistryViewer } from './components/registry-viewer'
 
 const router = createBrowserRouter([
   { path: '/', element: <App /> },
@@ -39,6 +40,7 @@ const router = createBrowserRouter([
   { path: '/spider-solitaire', element: <SpiderSolitaire /> },
   { path: '/fumojì', element: <Fumojì /> },
   { path: '/fumojì-bbk', element: <FumojìBBK /> },
+  { path: '/registry', element: <RegistryViewer /> },
 ])
 
 export default function RouterConfig() {

@@ -1,2 +1,9 @@
 /devtools-hub/dist/
 /devtools-hub/node_modules/
+.DS_Store
+.idea/
+.env.local
+dist/
+*.tar.gz
+.codebuddy/
+docker-api/node_modules/

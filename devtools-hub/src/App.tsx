@@ -51,6 +51,7 @@ import {
   Hash as HashIcon,
   AArrowUp,
   AArrowDown,
+  Box,
 } from 'lucide-react'
 import { Link, useNavigate } from 'react-router-dom'
 import './App.css'
@@ -270,6 +271,7 @@ const tools: Tool[] = [
   // 导航
   { id: 'ai-nav', icon: Bot, title: 'AI 导航黄页', description: '收录全网优质 AI 工具，支持分类浏览和搜索', color: 'from-emerald-400 to-green-600', bgColor: 'bg-emerald-500/10', borderColor: 'border-emerald-500/30' },
   { id: 'coding-world', icon: Globe, title: 'Coding The World', description: '探索优质开源项目', color: 'from-blue-500 to-purple-600', bgColor: 'bg-blue-500/10', borderColor: 'border-blue-500/30' },
+  { id: 'registry', icon: Box, title: 'Docker Registry', description: 'Docker 镜像仓库管理和查看工具', color: 'from-cyan-500 to-blue-600', bgColor: 'bg-cyan-500/10', borderColor: 'border-cyan-500/30' },
 
   // 经典游戏
   { id: 'game-collection', icon: Gamepad2, title: '欲买桂花同载酒', description: 'FC、街机、GBA 等经典游戏合集', color: 'from-amber-500 to-orange-600', bgColor: 'bg-amber-500/10', borderColor: 'border-amber-500/30' },
@@ -1929,6 +1931,29 @@ function App() {
                       key={tool.id}
                       to="/coding-the-world"
                       className="group relative p-6 rounded-2xl bg-secondary/80 border border-blue-500/50 hover:border-blue-400 backdrop-blur-xl transition-all hover:scale-105 hover:shadow-xl text-left"
+                    >
+                      <div className={`w-12 h-12 rounded-xl ${tool.bgColor} flex items-center justify-center mb-4 group-hover:scale-110 transition-transform`}>
+                        <tool.icon className={`w-6 h-6 bg-gradient-to-br ${tool.color} bg-clip-text`} />
+                      </div>
+                      <h3 className="text-lg font-semibold mb-2 text-primary">
+                        {tool.title}
+                      </h3>
+                      <p className="text-sm text-subtle">
+                        {tool.description}
+                      </p>
+                      <div className={`absolute top-4 right-4 w-6 h-6 rounded-full ${tool.bgColor} flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity`}>
+                        <ChevronRight className={`w-4 h-4 bg-gradient-to-br ${tool.color} bg-clip-text`} />
+                      </div>
+                    </Link>
+                  )
+                }
+                // Docker Registry 使用独立页面
+                if (tool.id === 'registry') {
+                  return (
+                    <Link
+                      key={tool.id}
+                      to="/registry"
+                      className="group relative p-6 rounded-2xl bg-secondary/80 border border-cyan-500/50 hover:border-cyan-400 backdrop-blur-xl transition-all hover:scale-105 hover:shadow-xl text-left"
                     >
                       <div className={`w-12 h-12 rounded-xl ${tool.bgColor} flex items-center justify-center mb-4 group-hover:scale-110 transition-transform`}>
                         <tool.icon className={`w-6 h-6 bg-gradient-to-br ${tool.color} bg-clip-text`} />
