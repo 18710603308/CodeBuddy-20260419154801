@@ -8,9 +8,9 @@ pipeline {
         FRONTEND_IMAGE = 'frontend'
         API_IMAGE = 'docker-api'
 
-        // 服务器配置 (从 Jenkins Credentials 读取)
-        SERVER = credentials('deploy-server')
-        DEPLOY_USER = credentials('deploy-user')
+        // 服务器配置 (可选: 从 Jenkins Credentials 读取)
+        // SERVER = credentials('deploy-server')
+        // DEPLOY_USER = credentials('deploy-user')
 
         // 项目路径
         FRONTEND_DIR = 'devtools-hub'
@@ -215,10 +215,6 @@ pipeline {
     }
 
     post {
-        always {
-            echo '===== 流水线结束 ====='
-            cleanWs()
-        }
         success {
             echo "✅ 构建成功！镜像标签: ${env.IMAGE_TAG}"
         }
