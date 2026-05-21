@@ -23,8 +23,8 @@ interface ImageInfo {
   created?: string;
 }
 
-// 默认 Registry 地址
-const DEFAULT_REGISTRY = 'http://110.42.247.238';
+// 默认使用本地代理路径
+const DEFAULT_REGISTRY = window.location.origin + '/registry';
 
 export function RegistryViewer() {
   const navigate = useNavigate();

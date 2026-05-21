@@ -19,6 +19,7 @@ import SpiderSolitaire from './components/SpiderSolitaire'
 import Fumojì from './components/Fumojì'
 import FumojìBBK from './components/FumojìBBK'
 import { RegistryViewer } from './components/registry-viewer'
+import { DevOpsPipeline } from './components/DevOpsPipeline'
 
 const router = createBrowserRouter([
   { path: '/', element: <App /> },
@@ -41,6 +42,7 @@ const router = createBrowserRouter([
   { path: '/fumojì', element: <Fumojì /> },
   { path: '/fumojì-bbk', element: <FumojìBBK /> },
   { path: '/registry', element: <RegistryViewer /> },
+  { path: '/devops', element: <DevOpsPipeline /> },
 ])
 
 export default function RouterConfig() {
