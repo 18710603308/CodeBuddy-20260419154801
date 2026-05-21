@@ -1,0 +1,123 @@
+jenkins:
+  systemMessage: "DevTools Hub CI/CD - Jenkins自动化流水线"
+  numExecutors: 2
+  mode: NORMAL
+  securityRealm:
+    local:
+      allowsSignup: false
+      users:
+        - id: admin
+          password: admin123
+          name: "Administrator"
+          permissions:
+            - Overall/Administer
+  authorizationStrategy:
+    loggedInUsersCanDoAnything:
+      allowAnonymousRead: false
+
+  # 禁用初始安装向导
+  installState: "RUNNING"
+
+# 预安装插件
+plugins:
+  - id: workflow-aggregator
+  - id: docker-workflow
+  - id: docker-plugin
+  - id: git
+  - id: github-branch-source
+  - id: blue-ocean
+  - id: pipeline-stage-view
+  - id: timestamper
+  - id: ws-cleanup
+  - id: credentials-binding
+  - id: ssh-agent
+  - id: parameterized-trigger
+  - id: pipeline-build-step
+  - id: build-timeout
+  - id: junit
+  - id: htmlpublisher
+
+# 工具配置
+tool:
+  nodejs:
+    installations:
+      - name: "NodeJS-18"
+        properties:
+          - installSource:
+              installers:
+                - nodeJSInstaller:
+                    id: "18.20.4"
+                    npmPackages: ""
+                    npmPackagesRefreshHours: 72
+
+# 全局环境变量
+credentials:
+  system:
+    domainCredentials:
+      - credentials:
+          # SSH 密钥 (用于部署到服务器)
+          - file:
+              scope: GLOBAL
+              id: "ssh-devtools-key"
+              description: "SSH Key for deployment"
+              fileName: "devtools_key"
+              # secretBytes will be injected at runtime or manually configured
+          # 服务器部署信息
+          - string:
+              scope: GLOBAL
+              id: "deploy-server"
+              description: "Production server IP"
+              secret: "110.42.247.238"
+          - string:
+              scope: GLOBAL
+              id: "deploy-user"
+              description: "Production server user"
+              secret: "root"
+
+# 任务配置
+jobs:
+  - script: >
+      pipelineJob('DevTools-Hub-Pipeline') {
+        description('DevTools Hub 完整 CI/CD 流水线')
+        definition {
+          cpsScm {
+            scm {
+              git {
+                remote {
+                  url('/workspace')
+                }
+                branches('*/main', '*/master')
+                scriptPath('Jenkinsfile')
+              }
+            }
+          }
+        }
+        properties {
+          pipelineTriggers {
+            triggers {
+              // 手动触发，不设置自动触发器
+            }
+          }
+        }
+      }
+
+      // 创建第二个任务：仅构建
+      pipelineJob('DevTools-Hub-Build-Only') {
+        description('DevTools Hub 仅构建（不部署）')
+        definition {
+          cpsScm {
+            scm {
+              git {
+                remote {
+                  url('/workspace')
+                }
+                branches('*/main', '*/master')
+                scriptPath('Jenkinsfile')
+              }
+            }
+          }
+        }
+        parameters {
+          stringParam('DEPLOY_STAGE', 'build-only', 'Build only, skip deploy')
+        }
+      }
