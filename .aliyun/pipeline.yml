@@ -1,0 +1,40 @@
+# 阿里云DevOps流水线配置示例
+# 此文件为配置参考，实际在阿里云DevOps控制台配置
+
+stages:
+  - stage: build
+    name: 构建镜像
+    jobs:
+      - job: build
+        name: 构建并推送
+        steps:
+          - checkout: self
+            name: 拉取代码
+          - task: DockerBuild@1
+            name: 构建Docker镜像
+            inputs:
+              dockerfile: Dockerfile.frontend
+              tags: |
+                $(registry).$(namespace)/$(repo):$(tag)
+          - task: DockerPush@1
+            name: 推送到ACR
+            inputs:
+              tags: |
+                $(registry).$(namespace)/$(repo):$(tag)
+
+  - stage: deploy
+    name: 部署到服务器
+    jobs:
+      - job: deploy
+        name: 部署应用
+        steps:
+          - task: SSHExecute@1
+            name: 执行部署脚本
+            inputs:
+              command: |
+                cd /tmp
+                cat > deploy.sh << 'EOF'
+                $(cat .aliyun/deploy-to-server.sh)
+                EOF
+                chmod +x deploy.sh
+                IMAGE_TAG=$(tag) bash deploy.sh
