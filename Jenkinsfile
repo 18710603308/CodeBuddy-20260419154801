@@ -3,7 +3,7 @@ pipeline {
 
     environment {
         // 镜像仓库配置
-        REGISTRY = '110.42.247.238:5000'
+        REGISTRY = 'localhost:5001'
         NAMESPACE = 'devtools-hub'
         FRONTEND_IMAGE = 'frontend'
         API_IMAGE = 'docker-api'
