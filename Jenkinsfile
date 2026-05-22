@@ -172,7 +172,7 @@ pipeline {
 
         stage('Push to Registry') {
             when {
-                expression { params.DEPLOY_STAGE != 'deploy-only' }
+                expression { params.DEPLOY_STAGE == 'build-and-deploy' }
             }
             steps {
                 script {
