@@ -1,0 +1,31 @@
+version: "3.8"
+
+services:
+  frontend:
+    build:
+      context: ./devtools-hub
+      dockerfile: Dockerfile
+    container_name: devtools-frontend
+    ports:
+      - "8081:80"
+    depends_on:
+      - api
+    networks:
+      - devtools-network
+
+  api:
+    build:
+      context: ./docker-api
+      dockerfile: Dockerfile
+    container_name: devtools-api
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=production
+      - PORT=3000
+    networks:
+      - devtools-network
+
+networks:
+  devtools-network:
+    driver: bridge

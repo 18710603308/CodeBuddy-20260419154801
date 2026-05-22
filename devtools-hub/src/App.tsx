@@ -51,7 +51,6 @@ import {
   Hash as HashIcon,
   AArrowUp,
   AArrowDown,
-  Activity,
 } from 'lucide-react'
 import { Link, useNavigate } from 'react-router-dom'
 import './App.css'
@@ -317,8 +316,7 @@ const tools: Tool[] = [
   // 离线工具
   { id: 'offline-tools', icon: WifiOff, title: '离线工具', description: '40+ 开发工具，无需网络即开即用', color: 'from-orange-500 to-amber-600', bgColor: 'bg-orange-500/10', borderColor: 'border-orange-500/30' },
   
-  // DevOps 管理
-  { id: 'devops', icon: Activity, title: 'DevOps 管理', description: '可视化部署与运维管理平台', color: 'from-cyan-500 to-blue-600', bgColor: 'bg-cyan-500/10', borderColor: 'border-cyan-500/30' },
+
 ]
 
 const features = [
@@ -1956,29 +1954,6 @@ function App() {
                       key={tool.id}
                       to="/game"
                       className="group relative p-6 rounded-2xl bg-secondary/80 border border-purple-500/50 hover:border-purple-400 backdrop-blur-xl transition-all hover:scale-105 hover:shadow-xl text-left"
-                    >
-                      <div className={`w-12 h-12 rounded-xl ${tool.bgColor} flex items-center justify-center mb-4 group-hover:scale-110 transition-transform`}>
-                        <tool.icon className={`w-6 h-6 bg-gradient-to-br ${tool.color} bg-clip-text`} />
-                      </div>
-                      <h3 className="text-lg font-semibold mb-2 text-primary">
-                        {tool.title}
-                      </h3>
-                      <p className="text-sm text-subtle">
-                        {tool.description}
-                      </p>
-                      <div className={`absolute top-4 right-4 w-6 h-6 rounded-full ${tool.bgColor} flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity`}>
-                        <ChevronRight className={`w-4 h-4 bg-gradient-to-br ${tool.color} bg-clip-text`} />
-                      </div>
-                    </Link>
-                  )
-                }
-                // DevOps 管理使用独立页面
-                if (tool.id === 'devops') {
-                  return (
-                    <Link
-                      key={tool.id}
-                      to="/devops"
-                      className="group relative p-6 rounded-2xl bg-secondary/80 border border-cyan-500/50 hover:border-cyan-400 backdrop-blur-xl transition-all hover:scale-105 hover:shadow-xl text-left"
                     >
                       <div className={`w-12 h-12 rounded-xl ${tool.bgColor} flex items-center justify-center mb-4 group-hover:scale-110 transition-transform`}>
                         <tool.icon className={`w-6 h-6 bg-gradient-to-br ${tool.color} bg-clip-text`} />
