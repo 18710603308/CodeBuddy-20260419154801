@@ -1,8 +1,10 @@
 FROM node:22-alpine AS builder
 WORKDIR /app
 COPY package*.json ./
+ENV ESBUILD_SKIP_BINARY_DOWNLOAD=1
 RUN npm install --legacy-peer-deps
 COPY . .
+RUN npx esbuild --version || npm install esbuild --legacy-peer-deps
 RUN npm run build
 
 FROM nginx:alpine
