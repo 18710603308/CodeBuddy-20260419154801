@@ -78,7 +78,7 @@ pipeline {
                     }
                     steps {
                         dir(env.FRONTEND_DIR) {
-                            sh 'npm ci'
+                            sh 'npm ci --legacy-peer-deps'
                         }
                     }
                 }
@@ -88,7 +88,7 @@ pipeline {
                     }
                     steps {
                         dir(env.API_DIR) {
-                            sh 'npm ci'
+                            sh 'npm ci --legacy-peer-deps'
                         }
                     }
                 }
