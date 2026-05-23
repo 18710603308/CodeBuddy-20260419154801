@@ -580,6 +580,10 @@ curl http://110.42.247.238:5000/v2/_catalog
 | 2026-05-21 | 新增本地 DevOps 流水线 (`local-deploy.sh`) | 本文档 |
 | 2026-05-21 | 完善流水线脚本，修复 SSH 变量传递问题，支持参数化部署 | `local-deploy.sh` |
 | 2026-05-21 | 新增使用运维文档 (`DEPLOY_OPERATIONS.md`) | `DEPLOY_OPERATIONS.md` |
+| 2026-05-23 | 游戏中心重构：街机(EmulatorJS) + FC/NES模拟器 + 黄金矿工 | 本次 |
+| 2026-05-23 | ArcadeGame/NESGame/GameHub 组件开发，ifram 跨域修复 | 本次 |
+| 2026-05-23 | 删除 FlappyBird，Contra/Sanmo/SuperMario/TankBattle 改用 EmulatorJS | 本次 |
+| 2026-05-23 | 项目归档：代码提交 (7108910)，最终部署到 110.42.247.238 | 本次 |
 
 ---
 
