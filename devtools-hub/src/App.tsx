@@ -51,6 +51,7 @@ import {
   Hash as HashIcon,
   AArrowUp,
   AArrowDown,
+  Joystick,
 } from 'lucide-react'
 import { Link, useNavigate } from 'react-router-dom'
 import './App.css'
@@ -272,7 +273,10 @@ const tools: Tool[] = [
   { id: 'coding-world', icon: Globe, title: 'Coding The World', description: '探索优质开源项目', color: 'from-blue-500 to-purple-600', bgColor: 'bg-blue-500/10', borderColor: 'border-blue-500/30' },
 
   // 经典游戏
-  { id: 'game-collection', icon: Gamepad2, title: '欲买桂花同载酒', description: 'FC、街机、GBA 等经典游戏合集', color: 'from-amber-500 to-orange-600', bgColor: 'bg-amber-500/10', borderColor: 'border-amber-500/30' },
+  { id: 'game-collection', icon: Gamepad2, title: '欲买桂花同载酒', description: '第三方游戏平台合集，FC、街机、GBA 等经典游戏', color: 'from-amber-500 to-orange-600', bgColor: 'bg-amber-500/10', borderColor: 'border-amber-500/30' },
+
+  // 游戏合集中心（自托管模拟器）
+  { id: 'game-hub', icon: Joystick, title: '游戏合集中心', description: '40款自托管模拟器游戏，一键切换无需跳转', color: 'from-violet-500 to-purple-600', bgColor: 'bg-violet-500/10', borderColor: 'border-violet-500/30' },
 
   // 休闲游戏
   { id: 'link-game', icon: LinkIcon, title: '连连看', description: '经典的连连看消消乐游戏', color: 'from-pink-500 to-rose-600', bgColor: 'bg-pink-500/10', borderColor: 'border-pink-500/30' },
@@ -286,17 +290,17 @@ const tools: Tool[] = [
   // 2048
   { id: 'game2048', icon: HashIcon, title: '2048', description: '经典数字合成游戏，挑战2048', color: 'from-orange-500 to-amber-600', bgColor: 'bg-orange-500/10', borderColor: 'border-orange-500/30' },
 
+  // 黄金矿工
+  { id: 'gold-miner', icon: Gamepad2, title: '黄金矿工', description: '经典益智小游戏，抓取金块得分', color: 'from-yellow-500 to-orange-600', bgColor: 'bg-yellow-500/10', borderColor: 'border-yellow-500/30' },
+
   // 魂斗罗FC版
-  { id: 'contra-fc', icon: Gamepad2, title: '魂斗罗 FC', description: '原汁原味FC经典复刻，jsnes模拟器', color: 'from-red-500 to-orange-600', bgColor: 'bg-red-500/10', borderColor: 'border-red-500/30' },
+  { id: 'contra-fc', icon: Gamepad2, title: '魂斗罗 FC', description: '原汁原味FC经典复刻，EmulatorJS模拟器', color: 'from-red-500 to-orange-600', bgColor: 'bg-red-500/10', borderColor: 'border-red-500/30' },
 
   // 坦克大战FC版
-  { id: 'tank-battle', icon: Gamepad2, title: '坦克大战 FC', description: '经典FC坦克大战，jsnes模拟器', color: 'from-green-500 to-emerald-600', bgColor: 'bg-green-500/10', borderColor: 'border-green-500/30' },
+  { id: 'tank-battle', icon: Gamepad2, title: '坦克大战 FC', description: '经典FC坦克大战，EmulatorJS模拟器', color: 'from-green-500 to-emerald-600', bgColor: 'bg-green-500/10', borderColor: 'border-green-500/30' },
 
   // 超级马里奥FC版
-  { id: 'super-mario', icon: Gamepad2, title: '超级马里奥 FC', description: '经典FC超级马里奥，jsnes模拟器', color: 'from-red-500 to-red-600', bgColor: 'bg-red-500/10', borderColor: 'border-red-500/30' },
-
-  // Flappy Bird NES
-  { id: 'flappy-bird', icon: Gamepad2, title: 'Flappy Bird', description: '开源NES游戏复刻，jsnes模拟器', color: 'from-yellow-400 to-orange-500', bgColor: 'bg-yellow-500/10', borderColor: 'border-yellow-500/30' },
+  { id: 'super-mario', icon: Gamepad2, title: '超级马里奥 FC', description: '经典FC超级马里奥，EmulatorJS模拟器', color: 'from-red-500 to-red-600', bgColor: 'bg-red-500/10', borderColor: 'border-red-500/30' },
 
   // 淘金者
   { id: 'lode-runner', icon: Gamepad2, title: '淘金者', description: '经典FC淘金者复刻，收集金块躲避敌人', color: 'from-amber-500 to-yellow-600', bgColor: 'bg-amber-500/10', borderColor: 'border-amber-500/30' },
@@ -309,6 +313,26 @@ const tools: Tool[] = [
 
   // 伏魔记步步高版
   { id: 'fumojì-bbk', icon: Gamepad2, title: '伏魔记 BBK', description: '步步高电子词典原版网页移植，Baye引擎', color: 'from-amber-600 to-orange-700', bgColor: 'bg-amber-500/10', borderColor: 'border-amber-500/30' },
+
+  // 街机游戏 (已移除)
+  { id: 'snowbros', icon: Gamepad2, title: '雪人兄弟', description: '经典街机雪人兄弟，EmulatorJS模拟器', color: 'from-cyan-400 to-blue-600', bgColor: 'bg-cyan-500/10', borderColor: 'border-cyan-500/30' },
+  { id: 'pooyan-arcade', icon: Gamepad2, title: '猪小弟(街机)', description: '经典街机猪小弟，EmulatorJS模拟器', color: 'from-pink-400 to-rose-600', bgColor: 'bg-pink-500/10', borderColor: 'border-pink-500/30' },
+  { id: 'gberet', icon: Gamepad2, title: '绿色兵团', description: '经典街机绿色兵团，EmulatorJS模拟器', color: 'from-green-400 to-emerald-600', bgColor: 'bg-green-500/10', borderColor: 'border-green-500/30' },
+  { id: 'dino', icon: Gamepad2, title: '恐龙快打', description: '经典街机恐龙快打，EmulatorJS模拟器', color: 'from-amber-500 to-orange-600', bgColor: 'bg-amber-500/10', borderColor: 'border-amber-500/30' },
+  { id: 'punisher', icon: Gamepad2, title: '惩罚者', description: '经典街机惩罚者，EmulatorJS模拟器', color: 'from-red-500 to-rose-700', bgColor: 'bg-red-500/10', borderColor: 'border-red-500/30' },
+  { id: 'kof97', icon: Gamepad2, title: '拳皇97', description: '经典街机拳皇97，EmulatorJS模拟器', color: 'from-purple-500 to-pink-600', bgColor: 'bg-purple-500/10', borderColor: 'border-purple-500/30' },
+  { id: 'kof2002', icon: Gamepad2, title: '拳皇2002', description: '经典街机拳皇2002，EmulatorJS模拟器', color: 'from-violet-500 to-purple-700', bgColor: 'bg-violet-500/10', borderColor: 'border-violet-500/30' },
+  { id: 'orlegend', icon: Gamepad2, title: '西游释厄传', description: '经典街机西游释厄传，EmulatorJS模拟器', color: 'from-orange-500 to-red-600', bgColor: 'bg-orange-500/10', borderColor: 'border-orange-500/30' },
+  { id: 'sangokushi', icon: Gamepad2, title: '三国战纪', description: '经典街机三国战纪，EmulatorJS模拟器', color: 'from-red-600 to-amber-600', bgColor: 'bg-red-500/10', borderColor: 'border-red-500/30' },
+  { id: 'ldrun-arcade', icon: Gamepad2, title: '淘金者(街机)', description: '经典街机淘金者，EmulatorJS模拟器', color: 'from-yellow-500 to-amber-600', bgColor: 'bg-yellow-500/10', borderColor: 'border-yellow-500/30' },
+
+  // NES/FC游戏
+  { id: 'river-city', icon: Gamepad2, title: '热血街头', description: '经典FC热血街头，EmulatorJS模拟器', color: 'from-red-400 to-pink-600', bgColor: 'bg-red-500/10', borderColor: 'border-red-500/30' },
+  { id: 'battle-city-nes', icon: Gamepad2, title: '坦克要塞', description: '经典FC坦克要塞，EmulatorJS模拟器', color: 'from-green-400 to-emerald-600', bgColor: 'bg-green-500/10', borderColor: 'border-green-500/30' },
+  { id: 'adventure-island', icon: Gamepad2, title: '恐龙冒险岛', description: '经典FC恐龙冒险岛，EmulatorJS模拟器', color: 'from-teal-400 to-green-600', bgColor: 'bg-teal-500/10', borderColor: 'border-teal-500/30' },
+  { id: 'chip-dale', icon: Gamepad2, title: '松鼠大战', description: '经典FC松鼠大战，EmulatorJS模拟器', color: 'from-brown-400 to-amber-600', bgColor: 'bg-amber-500/10', borderColor: 'border-amber-500/30' },
+  { id: 'lode-runner-nes', icon: Gamepad2, title: '淘金者(NES)', description: '经典FC淘金者，EmulatorJS模拟器', color: 'from-amber-400 to-yellow-600', bgColor: 'bg-yellow-500/10', borderColor: 'border-yellow-500/30' },
+  { id: 'pooyan-nes', icon: Gamepad2, title: '猪小弟(NES)', description: '经典FC猪小弟，EmulatorJS模拟器', color: 'from-pink-400 to-rose-600', bgColor: 'bg-pink-500/10', borderColor: 'border-pink-500/30' },
 
   // AI 游戏
   { id: 'ai-game', icon: Bot, title: 'AI 游戏工坊', description: '输入文字让 AI 生成游戏关卡，文本命令操控角色', color: 'from-purple-500 to-pink-600', bgColor: 'bg-purple-500/10', borderColor: 'border-purple-500/30' },
@@ -1735,30 +1759,18 @@ function App() {
                                 window.location.href = '/coding-the-world'
                               } else if (tool.id === 'game-collection') {
                                 window.location.href = '/game-collection'
-                              } else if (tool.id === 'link-game') {
-                                window.location.href = '/link-game'
-                              } else if (tool.id === 'spider-solitaire') {
-                                window.location.href = '/spider-solitaire'
-                              } else if (tool.id === 'minesweeper') {
-                                window.location.href = '/minesweeper'
-                              } else if (tool.id === 'game2048') {
-                                window.location.href = '/game2048'
-                              } else if (tool.id === 'contra-fc') {
-                                window.location.href = '/contra-fc'
-                              } else if (tool.id === 'tank-battle') {
-                                window.location.href = '/tank-battle'
-                              } else if (tool.id === 'super-mario') {
-                                window.location.href = '/super-mario'
-                              } else if (tool.id === 'flappy-bird') {
-                                window.location.href = '/flappy-bird'
-                              } else if (tool.id === 'lode-runner') {
-                                window.location.href = '/lode-runner'
-                              } else if (tool.id === 'sanmo') {
-                                window.location.href = '/sanmo'
-                              } else if (tool.id === 'fumojì') {
-                                window.location.href = '/fumojì'
-                              } else if (tool.id === 'fumojì-bbk') {
-                                window.location.href = '/fumojì-bbk'
+                              } else if (tool.id === 'game-hub') {
+                                window.location.href = '/game-hub'
+                              } else if ([
+                                'contra-fc', 'tank-battle', 'super-mario', 'lode-runner',
+                                'snowbros', 'pooyan-arcade', 'gberet', 'dino', 'punisher',
+                                'kof97', 'kof2002', 'orlegend', 'sangokushi', 'ldrun-arcade',
+                                'river-city', 'battle-city-nes', 'adventure-island', 'chip-dale',
+                                'lode-runner-nes', 'pooyan-nes',
+                                'link-game', 'spider-solitaire', 'minesweeper', 'game2048', 'gold-miner',
+                                'sanmo', 'fumojì', 'fumojì-bbk',
+                              ].includes(tool.id)) {
+                                window.location.href = '/game-hub'
                               } else if (tool.id === 'ai-game') {
                                 window.location.href = '/game'
                               } else if (tool.id === 'offline-tools') {
@@ -1900,7 +1912,16 @@ function App() {
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-              {tools.map((tool) => {
+              {// 已在游戏合集中心(GameHub)的游戏，首页不再独立展示
+              tools.filter(t => ![
+                'contra-fc', 'tank-battle', 'super-mario', 'lode-runner',
+                'snowbros', 'pooyan-arcade', 'gberet', 'dino', 'punisher',
+                'kof97', 'kof2002', 'orlegend', 'sangokushi', 'ldrun-arcade',
+                'river-city', 'battle-city-nes', 'adventure-island', 'chip-dale',
+                'lode-runner-nes', 'pooyan-nes',
+                'link-game', 'spider-solitaire', 'minesweeper', 'game2048', 'gold-miner',
+                'sanmo', 'fumojì', 'fumojì-bbk',
+              ].includes(t.id)).map((tool) => {
                 // AI 导航使用独立页面
                 if (tool.id === 'ai-nav') {
                   return (
@@ -1993,13 +2014,36 @@ function App() {
                     </Link>
                   )
                 }
-                // 小霸王游戏使用独立页面
+                // 欲买桂花同载酒 — 第三方游戏平台合集
                 if (tool.id === 'game-collection') {
                   return (
                     <Link
                       key={tool.id}
                       to="/game-collection"
                       className="group relative p-6 rounded-2xl bg-secondary/80 border border-amber-500/50 hover:border-amber-400 backdrop-blur-xl transition-all hover:scale-105 hover:shadow-xl text-left"
+                    >
+                      <div className={`w-12 h-12 rounded-xl ${tool.bgColor} flex items-center justify-center mb-4 group-hover:scale-110 transition-transform`}>
+                        <tool.icon className={`w-6 h-6 bg-gradient-to-br ${tool.color} bg-clip-text`} />
+                      </div>
+                      <h3 className="text-lg font-semibold mb-2 text-primary">
+                        {tool.title}
+                      </h3>
+                      <p className="text-sm text-subtle">
+                        {tool.description}
+                      </p>
+                      <div className={`absolute top-4 right-4 w-6 h-6 rounded-full ${tool.bgColor} flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity`}>
+                        <ChevronRight className={`w-4 h-4 bg-gradient-to-br ${tool.color} bg-clip-text`} />
+                      </div>
+                    </Link>
+                  )
+                }
+                // 游戏合集中心（自托管模拟器，一页切换）
+                if (tool.id === 'game-hub') {
+                  return (
+                    <Link
+                      key={tool.id}
+                      to="/game-hub"
+                      className="group relative p-6 rounded-2xl bg-secondary/80 border border-violet-500/50 hover:border-violet-400 backdrop-blur-xl transition-all hover:scale-105 hover:shadow-xl text-left"
                     >
                       <div className={`w-12 h-12 rounded-xl ${tool.bgColor} flex items-center justify-center mb-4 group-hover:scale-110 transition-transform`}>
                         <tool.icon className={`w-6 h-6 bg-gradient-to-br ${tool.color} bg-clip-text`} />
@@ -2108,6 +2152,29 @@ function App() {
                     </Link>
                   )
                 }
+                // 黄金矿工游戏使用独立页面
+                if (tool.id === 'gold-miner') {
+                  return (
+                    <Link
+                      key={tool.id}
+                      to="/gold-miner"
+                      className="group relative p-6 rounded-2xl bg-secondary/80 border border-yellow-500/50 hover:border-yellow-400 backdrop-blur-xl transition-all hover:scale-105 hover:shadow-xl text-left"
+                    >
+                      <div className={`w-12 h-12 rounded-xl ${tool.bgColor} flex items-center justify-center mb-4 group-hover:scale-110 transition-transform`}>
+                        <tool.icon className={`w-6 h-6 bg-gradient-to-br ${tool.color} bg-clip-text`} />
+                      </div>
+                      <h3 className="text-lg font-semibold mb-2 text-primary">
+                        {tool.title}
+                      </h3>
+                      <p className="text-sm text-subtle">
+                        {tool.description}
+                      </p>
+                      <div className={`absolute top-4 right-4 w-6 h-6 rounded-full ${tool.bgColor} flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity`}>
+                        <ChevronRight className={`w-4 h-4 bg-gradient-to-br ${tool.color} bg-clip-text`} />
+                      </div>
+                    </Link>
+                  )
+                }
                 // 魂斗罗FC版使用独立页面
                 if (tool.id === 'contra-fc') {
                   return (
@@ -2169,29 +2236,6 @@ function App() {
                       </p>
                       <div className="absolute top-2 right-2 px-2 py-1 rounded-md bg-red-500/20 text-red-400 text-xs">
                         FC
-                      </div>
-                    </Link>
-                  )
-                }
-                // Flappy Bird使用独立页面
-                if (tool.id === 'flappy-bird') {
-                  return (
-                    <Link
-                      key={tool.id}
-                      to="/flappy-bird"
-                      className="group relative p-6 rounded-2xl bg-secondary/80 border border-yellow-500/50 hover:border-yellow-400 backdrop-blur-xl transition-all hover:scale-105 hover:shadow-xl text-left"
-                    >
-                      <div className={`w-12 h-12 rounded-xl ${tool.bgColor} flex items-center justify-center mb-4 group-hover:scale-110 transition-transform`}>
-                        <tool.icon className={`w-6 h-6 bg-gradient-to-br ${tool.color} bg-clip-text`} />
-                      </div>
-                      <h3 className="text-lg font-semibold mb-2 text-primary">
-                        {tool.title}
-                      </h3>
-                      <p className="text-sm text-subtle">
-                        {tool.description}
-                      </p>
-                      <div className="absolute top-2 right-2 px-2 py-1 rounded-md bg-yellow-500/20 text-yellow-400 text-xs">
-                        NES
                       </div>
                     </Link>
                   )
@@ -2284,6 +2328,77 @@ function App() {
                       </p>
                       <div className="absolute top-2 right-2 px-2 py-1 rounded-md bg-amber-500/20 text-amber-400 text-xs">
                         Web
+                      </div>
+                    </Link>
+                  )
+                }
+               // 三国战纪使用独立页面
+                if (tool.id === 'sangokushi') {
+                  return (
+                    <Link
+                      key={tool.id}
+                      to="/sangokushi"
+                      className="group relative p-6 rounded-2xl bg-secondary/80 border border-red-500/50 hover:border-red-400 backdrop-blur-xl transition-all hover:scale-105 hover:shadow-xl text-left"
+                    >
+                      <div className={`w-12 h-12 rounded-xl ${tool.bgColor} flex items-center justify-center mb-4 group-hover:scale-110 transition-transform`}>
+                        <tool.icon className={`w-6 h-6 bg-gradient-to-br ${tool.color} bg-clip-text`} />
+                      </div>
+                      <h3 className="text-lg font-semibold mb-2 text-primary">
+                        {tool.title}
+                      </h3>
+                      <p className="text-sm text-subtle">
+                        {tool.description}
+                      </p>
+                      <div className="absolute top-2 right-2 px-2 py-1 rounded-md bg-red-500/20 text-red-400 text-xs">
+                        Arcade
+                      </div>
+                    </Link>
+                  )
+                }
+                // 新街机游戏使用独立页面
+                const arcadeGames = ['snowbros', "pooyan-arcade", "gberet", "dino", "punisher", "kof97", "kof2002", "orlegend", "ldrun-arcade"];
+                const nesGames = ["river-city", "battle-city-nes", "adventure-island", "chip-dale", "lode-runner-nes", "pooyan-nes"];
+                if (arcadeGames.includes(tool.id)) {
+                  return (
+                    <Link
+                      key={tool.id}
+                      to={`/${tool.id}`}
+                      className="group relative p-6 rounded-2xl bg-secondary/80 border border-blue-500/50 hover:border-blue-400 backdrop-blur-xl transition-all hover:scale-105 hover:shadow-xl text-left"
+                    >
+                      <div className={`w-12 h-12 rounded-xl ${tool.bgColor} flex items-center justify-center mb-4 group-hover:scale-110 transition-transform`}>
+                        <tool.icon className={`w-6 h-6 bg-gradient-to-br ${tool.color} bg-clip-text`} />
+                      </div>
+                      <h3 className="text-lg font-semibold mb-2 text-primary">
+                        {tool.title}
+                      </h3>
+                      <p className="text-sm text-subtle">
+                        {tool.description}
+                      </p>
+                      <div className="absolute top-2 right-2 px-2 py-1 rounded-md bg-blue-500/20 text-blue-400 text-xs">
+                        Arcade
+                      </div>
+                    </Link>
+                  )
+                }
+                // 新NES游戏使用独立页面
+                if (nesGames.includes(tool.id)) {
+                  return (
+                    <Link
+                      key={tool.id}
+                      to={`/${tool.id}`}
+                      className="group relative p-6 rounded-2xl bg-secondary/80 border border-green-500/50 hover:border-green-400 backdrop-blur-xl transition-all hover:scale-105 hover:shadow-xl text-left"
+                    >
+                      <div className={`w-12 h-12 rounded-xl ${tool.bgColor} flex items-center justify-center mb-4 group-hover:scale-110 transition-transform`}>
+                        <tool.icon className={`w-6 h-6 bg-gradient-to-br ${tool.color} bg-clip-text`} />
+                      </div>
+                      <h3 className="text-lg font-semibold mb-2 text-primary">
+                        {tool.title}
+                      </h3>
+                      <p className="text-sm text-subtle">
+                        {tool.description}
+                      </p>
+                      <div className="absolute top-2 right-2 px-2 py-1 rounded-md bg-green-500/20 text-green-400 text-xs">
+                        FC
                       </div>
                     </Link>
                   )

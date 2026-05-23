@@ -89,7 +89,7 @@ const Fumojì: React.FC = () => {
           style={{ aspectRatio: '256/240' }}
         >
           <EmulatorJS
-            EJS_pathtodata="https://cdn.emulatorjs.org/stable/data"
+            EJS_pathtodata="/emulatorjs/data"
             EJS_core="nes"
             EJS_gameUrl="/roms/Fumoj%C3%AC.nes"
             EJS_startOnLoaded={true}

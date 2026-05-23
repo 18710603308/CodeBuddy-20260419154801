@@ -95,7 +95,7 @@ const Sanmo: React.FC = () => {
         {/* 游戏画面 */}
         <div className="w-full h-full">
           <EmulatorJS
-            EJS_pathtodata="https://cdn.emulatorjs.org/stable/data"
+            EJS_pathtodata="/emulatorjs/data"
             EJS_core="nes"
             EJS_gameUrl="/roms/Sanmo.nes"
             EJS_startOnLoaded={true}
@@ -176,7 +176,7 @@ const Sanmo: React.FC = () => {
           }}
         >
           <EmulatorJS
-            EJS_pathtodata="https://cdn.emulatorjs.org/stable/data"
+            EJS_pathtodata="/emulatorjs/data"
             EJS_core="nes"
             EJS_gameUrl="/roms/Sanmo.nes"
             EJS_startOnLoaded={true}

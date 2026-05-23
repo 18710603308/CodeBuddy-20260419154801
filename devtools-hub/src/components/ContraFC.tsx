@@ -160,6 +160,7 @@ const ContraFC: React.FC = () => {
           const ctx = canvas.getContext('2d')
           if (!ctx) return
 
+          // 直接渲染到Canvas，Canvas会通过CSS缩放
           const imageData = ctx.createImageData(256, 240)
           for (let i = 0; i < 256 * 240; i++) {
             const pixel = frameBuffer[i]
@@ -526,26 +527,45 @@ const ContraFC: React.FC = () => {
       </div>
 
       {/* Main Content */}
-      <div className="flex flex-col items-center p-4">
+      <div className="flex flex-col items-center justify-center min-h-[calc(100vh-60px)] px-4 pb-8">
         {/* Title */}
-        <h1 className={`font-bold mb-2 ${isMobile ? 'text-2xl' : 'text-4xl'} ${theme.text}`}>
-          🎮 魂斗罗 CONTRA
-        </h1>
-        <p className={`${theme.textSubtle} text-sm mb-4`}>原汁原味FC经典复刻</p>
+        {!isMobile && (
+          <>
+            <h1 className={`font-bold mb-2 text-4xl ${theme.text}`}>
+               CONTRA
+            </h1>
+            <p className={`${theme.textSubtle} text-sm mb-4`}>魂斗罗 FC复刻版</p>
+          </>
+        )}
+        {isMobile && (
+          <>
+            <h1 className={`font-bold mb-2 text-2xl ${theme.text}`}>
+               CONTRA
+            </h1>
+            <p className={`${theme.textSubtle} text-xs mb-2`}>魂斗罗 FC复刻版</p>
+          </>
+        )}
 
         {/* Game Canvas */}
-        <div ref={canvasContainerRef} className="relative select-none" style={{ WebkitUserSelect: 'none', userSelect: 'none', WebkitTouchCallout: 'none' }}>
+        <div 
+          className="relative select-none overflow-hidden bg-black rounded-2xl border-4 border-white/10 flex items-center justify-center"
+          style={{ 
+            maxWidth: '640px',
+            width: '100%',
+            aspectRatio: '256/240'
+          }}
+        >
           <canvas
             ref={canvasRef}
             width={256}
             height={240}
             tabIndex={0}
             onClick={handleCanvasClick}
-            className="rounded-lg border-4 border-white/20 shadow-2xl cursor-pointer outline-none"
-            style={{
-              width: canvasWidth,
-              height: canvasWidth * (240 / 256),
+            style={{ 
               imageRendering: 'pixelated',
+              width: '100%',
+              height: '100%',
+              display: 'block'
             }}
           />
 
@@ -692,14 +712,16 @@ const ContraFC: React.FC = () => {
           </div>
         )}
 
-        {/* Instructions */}
-        <div className="mt-6 text-center max-w-md">
-          <h3 className={`${theme.text} font-semibold mb-1`}>操作说明</h3>
-          <p className={`${theme.textSubtle} text-xs leading-relaxed`}>
-            键盘：← → 移动 | ↑ 跳跃 | ↓ 下蹲<br/>
-            <span className="text-green-400">C</span> 跳跃 | <span className="text-yellow-400">X</span> 射击 | Enter 开始
-          </p>
-        </div>
+        {/* Instructions - PC端显示 */}
+        {!isMobile && (
+          <div className="mt-6 text-center max-w-md">
+            <h3 className={`${theme.text} font-semibold mb-1`}>操作说明</h3>
+            <p className={`${theme.textSubtle} text-xs leading-relaxed`}>
+              键盘：← → 移动 | ↑ 跳跃 | ↓ 下蹲<br/>
+              <span className="text-green-400">C</span> 跳跃 | <span className="text-yellow-400">X</span> 射击 | Enter 开始
+            </p>
+          </div>
+        )}
       </div>
     </div>
   )

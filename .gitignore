@@ -1,9 +1,50 @@
-/devtools-hub/dist/
-/devtools-hub/node_modules/
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+node_modules
+dist
+dist-ssr
+*.local
+
+# Editor directories and files
+.vscode/*
+!.vscode/extensions.json
+.idea
 .DS_Store
-.idea/
-.env.local
-dist/
-*.tar.gz
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# IDE / tool internal data
 .codebuddy/
-docker-api/node_modules/
+.trae/
+
+# Large runtime dependencies (documented separately)
+devtools-hub/public/emulatorjs/data/
+devtools-hub/public/roms/
+
+# Conversation logs
+完整对话记录_*.md
+
+# Root-level accidental template files
+/index.html
+/package.json
+/package-lock.json
+/src/
+/public/
+/vite.config.ts
+/tsconfig.json
+/tsconfig.app.json
+/tsconfig.node.json
+/tailwind.config.js
+/postcss.config.js
+/eslint.config.js
+/README.md

@@ -156,48 +156,20 @@ const SuperMario: React.FC = () => {
         setTimeout(playAudio, (bufferSize / sampleRate) * 1000 - 30)
       }
 
-      // 缓存源帧数据，避免每帧重新分配
-      const srcPixels = new Uint32Array(256 * 240)
-
       const nes = new NES({
         onFrame: (frameBuffer: any) => {
           const ctx = canvas.getContext('2d')
           if (!ctx) return
 
-          // 1. 提取源帧像素到 Uint32Array（RGBA）
+          // 直接渲染到Canvas，Canvas会通过CSS缩放
+          const imageData = ctx.createImageData(256, 240)
           for (let i = 0; i < 256 * 240; i++) {
             const pixel = frameBuffer[i]
-            const r = (pixel & 0xFF) || 0
-            const g = ((pixel >> 8) & 0xFF) || 0
-            const b = ((pixel >> 16) & 0xFF) || 0
-            srcPixels[i] = (255 << 24) | (b << 16) | (g << 8) | r
+            imageData.data[i * 4] = (pixel & 0xFF) || 0
+            imageData.data[i * 4 + 1] = (pixel >> 8) & 0xFF || 0
+            imageData.data[i * 4 + 2] = (pixel >> 16) & 0xFF || 0
+            imageData.data[i * 4 + 3] = 255
           }
-
-          // 2. 手动最近邻插值缩放到目标尺寸
-          const dstW = canvas.width
-          const dstH = canvas.height
-          const imageData = ctx.createImageData(dstW, dstH)
-          const dstData = imageData.data
-
-          const scaleX = 256 / dstW
-          const scaleY = 240 / dstH
-
-          for (let dy = 0; dy < dstH; dy++) {
-            const sy = (dy * scaleY) | 0
-            const srcRow = sy * 256
-            const dstRow = dy * dstW
-            for (let dx = 0; dx < dstW; dx++) {
-              const sx = (dx * scaleX) | 0
-              const color = srcPixels[srcRow + sx]
-              const dstIdx = (dstRow + dx) << 2
-              dstData[dstIdx] = color & 0xFF           // R
-              dstData[dstIdx + 1] = (color >> 8) & 0xFF  // G
-              dstData[dstIdx + 2] = (color >> 16) & 0xFF // B
-              dstData[dstIdx + 3] = 255                  // A
-              dstData[dstIdx + 3] = 255
-            }
-          }
-
           ctx.putImageData(imageData, 0, 0)
         },
         onAudioSample: (left: number, right: number) => {
@@ -574,22 +546,46 @@ const SuperMario: React.FC = () => {
       </div>
 
       {/* Main Content */}
-      <div className="flex flex-col items-center p-4 pb-32">
+      <div className="flex flex-col items-center justify-center min-h-[calc(100vh-60px)] px-4 pb-8">
         {/* Title */}
-        <h1 className={`font-bold mb-2 ${isMobile ? 'text-2xl' : 'text-4xl'} ${theme.text}`}>
-          🎮 SUPER MARIO BROS
-        </h1>
-        <p className={`${theme.textSubtle} text-sm mb-4`}>超级马里奥兄弟 FC复刻版</p>
+        {!isMobile && (
+          <>
+            <h1 className={`font-bold mb-2 text-4xl ${theme.text}`}>
+              🎮 SUPER MARIO BROS
+            </h1>
+            <p className={`${theme.textSubtle} text-sm mb-4`}>超级马里奥兄弟 FC复刻版</p>
+          </>
+        )}
+        {isMobile && (
+          <>
+            <h1 className={`font-bold mb-2 text-2xl ${theme.text}`}>
+              🎮 SUPER MARIO BROS
+            </h1>
+            <p className={`${theme.textSubtle} text-xs mb-2`}>超级马里奥兄弟 FC复刻版</p>
+          </>
+        )}
 
         {/* Game Canvas */}
-        <div ref={canvasContainerRef} className="relative inline-block select-none" style={{ width: displayWidth, height: displayHeight, WebkitUserSelect: 'none', userSelect: 'none', WebkitTouchCallout: 'none' }}>
+        <div 
+          className="relative select-none overflow-hidden bg-black rounded-2xl border-4 border-white/10 flex items-center justify-center"
+          style={{ 
+            maxWidth: '640px',
+            width: '100%',
+            aspectRatio: '256/240'
+          }}
+        >
           <canvas
             ref={canvasRef}
-            width={displayWidth}
-            height={displayHeight}
+            width={256}
+            height={240}
             tabIndex={0}
             onClick={handleCanvasClick}
-            className="rounded-lg border-4 border-white/20 shadow-2xl cursor-pointer outline-none block"
+            style={{ 
+              imageRendering: 'pixelated',
+              width: '100%',
+              height: '100%',
+              display: 'block'
+            }}
           />
 
           {/* Loading */}
@@ -744,14 +740,16 @@ const SuperMario: React.FC = () => {
           </div>
         )}
 
-        {/* Instructions */}
-        <div className="mt-6 text-center max-w-md">
-          <h3 className={`${theme.text} font-semibold mb-1`}>操作说明</h3>
-          <p className={`${theme.textSubtle} text-xs leading-relaxed`}>
-            键盘：← → ↑ ↓ 移动 | <span className="text-green-400">Z</span> 跳跃 | Enter 开始<br/>
-            踩敌人、吃蘑菇变强，救出公主！
-          </p>
-        </div>
+        {/* Instructions - PC端显示 */}
+        {!isMobile && (
+          <div className="mt-6 text-center max-w-md">
+            <h3 className={`${theme.text} font-semibold mb-1`}>操作说明</h3>
+            <p className={`${theme.textSubtle} text-xs leading-relaxed`}>
+              键盘：← → ↑ ↓ 移动 | <span className="text-green-400">Z</span> 跳跃 | Enter 开始<br/>
+              踩敌人、吃蘑菇变强，救出公主！
+            </p>
+          </div>
+        )}
       </div>
     </div>
   )
