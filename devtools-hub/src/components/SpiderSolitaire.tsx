@@ -138,11 +138,10 @@ const SpiderSolitaire: React.FC = () => {
         const targetCol = cols[to]
 
         if (targetCol.length === 0) {
-          // K入空列：只有能翻牌时才有意义（优先级3）
-          if (seq.firstValue === 13 && canReveal) {
-            if (!bestMove || bestMove.priority < 3) {
-              bestMove = { from, to, count: seq.count, priority: 3 }
-            }
+          // 单色模式：任意牌可入空列，优先能翻牌的
+          const prio = canReveal ? 3 : 1
+          if (!bestMove || bestMove.priority < prio) {
+            bestMove = { from, to, count: seq.count, priority: prio }
           }
         } else {
           const targetCard = targetCol[targetCol.length - 1]
@@ -167,32 +166,8 @@ const SpiderSolitaire: React.FC = () => {
       setSelected(null)
       selectedRef.current = null
     } else if (stockRef.current.length > 0 && hasEmptyCol) {
-      // 有空列：检查是否有K可移入空列（以便发牌）
-      let kToEmpty: Move | null = null
-      for (let from = 0; from < cols.length; from++) {
-        const seq = getMovableSeq(cols[from])
-        if (!seq || seq.firstValue !== 13) continue
-        for (let to = 0; to < cols.length; to++) {
-          if (from === to || cols[to].length !== 0) continue
-          kToEmpty = { from, to, count: seq.count, priority: 0 }
-          break
-        }
-        if (kToEmpty) break
-      }
-
-      if (kToEmpty) {
-        // 有K可移入空列 → 高亮并提示
-        setHint({ from: kToEmpty.from, to: kToEmpty.to })
-        setSelected({ col: kToEmpty.from, count: kToEmpty.count })
-        selectedRef.current = { col: kToEmpty.from, count: kToEmpty.count }
-        // 同时显示文字说明
-        setHint({ from: -2, to: kToEmpty.to })
-      } else {
-        // 无K可移入空列 → 真正的死局前兆，提示撤回
-        setHint({ from: -3, to: -3 })
-        setSelected(null)
-        selectedRef.current = null
-      }
+      // 有空列：单色模式下任意牌可移入空列，提示发牌前先填满空列
+      setHint({ from: -2, to: -1 })
     }
   }
 
@@ -211,7 +186,7 @@ const SpiderSolitaire: React.FC = () => {
         if (from === to) continue
         const targetCol = cols[to]
         if (targetCol.length === 0) {
-          if (seq.firstValue === 13) hasMove = true
+          hasMove = true
         } else {
           const tc = targetCol[targetCol.length - 1]
           if (tc.faceUp && tc.value === seq.firstValue + 1) hasMove = true
@@ -246,14 +221,9 @@ const SpiderSolitaire: React.FC = () => {
       const sourceValue = sourceCards[0].value
       
       if (col.length === 0) {
-        // 空列只能放 K
-        if (sourceValue === 13) {
-          saveHistory()
-          doMoveWithSelected(sel, colIndex)
-        } else {
-          setSelected(null)
-          selectedRef.current = null
-        }
+        // 单色模式：空列可放任意牌
+        saveHistory()
+        doMoveWithSelected(sel, colIndex)
         return
       }
       
@@ -549,7 +519,7 @@ const SpiderSolitaire: React.FC = () => {
       )}
       {hint?.from === -2 && (
         <div className="fixed top-24 left-1/2 -translate-x-1/2 bg-orange-500/90 text-white px-4 py-2 rounded-lg shadow-lg z-50 animate-bounce">
-          💡 将高亮K移入空列（绿色虚线框），然后发牌
+          💡 请先将牌移入空列，再发牌
         </div>
       )}
       {hint?.from === -3 && (
