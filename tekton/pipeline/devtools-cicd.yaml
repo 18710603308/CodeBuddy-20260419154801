@@ -1,0 +1,132 @@
+apiVersion: tekton.dev/v1
+kind: Pipeline
+metadata:
+  name: devtools-cicd
+  namespace: devtools-hub
+  labels:
+    app: devtools-hub
+    pipeline: cicd
+spec:
+  description: |
+    DevTools Hub CI/CD Pipeline
+    Stages: Clone → Build → Docker Build/Push → Deploy
+
+  params:
+    - name: repo-url
+      description: Git repository URL
+      type: string
+      default: "https://github.com/your-org/devtools-hub.git"
+    - name: repo-revision
+      description: Git revision (branch/tag/commit)
+      type: string
+      default: "main"
+    - name: image-registry
+      description: Container image registry
+      type: string
+      default: "localhost:5001"
+    - name: deploy-server
+      description: Target deployment server
+      type: string
+      default: "110.42.247.238"
+    - name: build-target
+      description: "Which target to build (valid values: all, frontend-only, api-only)"
+      type: string
+      default: "all"
+    - name: deploy-target
+      description: "Which service to deploy (valid values: frontend, docker-api, nginx, all)"
+      type: string
+      default: "frontend"
+    - name: node-version
+      description: Node.js version
+      type: string
+      default: "20"
+    - name: skip-lint
+      description: Skip lint step for faster builds
+      type: string
+      default: "false"
+
+  workspaces:
+    - name: shared-source
+      description: Shared workspace for source code
+    - name: ssh-keys
+      description: SSH private key and known_hosts for deployment
+    - name: docker-config
+      description: Docker registry credentials (optional)
+      optional: true
+
+  tasks:
+    # ==================== Stage 1: Git Clone ====================
+    - name: clone
+      displayName: "📦 Git Clone"
+      taskRef:
+        name: git-clone
+      params:
+        - name: url
+          value: $(params.repo-url)
+        - name: revision
+          value: $(params.repo-revision)
+        - name: depth
+          value: "1"
+      workspaces:
+        - name: source
+          workspace: shared-source
+
+    # ==================== Stage 2: Build ====================
+    - name: build
+      displayName: "🔨 Build"
+      runAfter:
+        - clone
+      taskRef:
+        name: npm-build
+      params:
+        - name: node-version
+          value: $(params.node-version)
+        - name: build-target
+          value: $(params.build-target)
+        - name: skip-lint
+          value: $(params.skip-lint)
+      workspaces:
+        - name: source
+          workspace: shared-source
+
+    # ==================== Stage 3: Docker Build & Push ====================
+    - name: docker
+      displayName: "🐳 Docker Build & Push"
+      runAfter:
+        - build
+      taskRef:
+        name: docker-build-push
+      params:
+        - name: image-registry
+          value: $(params.image-registry)
+        - name: namespace
+          value: "devtools-hub"
+        - name: image-tag
+          value: "$(tasks.clone.results.git-short-sha)"
+        - name: build-target
+          value: $(params.build-target)
+      workspaces:
+        - name: source
+          workspace: shared-source
+        - name: docker-config
+          workspace: docker-config
+
+    # ==================== Stage 4: Deploy ====================
+    - name: deploy
+      displayName: "🚀 Deploy"
+      runAfter:
+        - docker
+      taskRef:
+        name: deploy-ssh
+      params:
+        - name: server
+          value: $(params.deploy-server)
+        - name: deploy-target
+          value: $(params.deploy-target)
+        - name: deploy-mode
+          value: "full"
+      workspaces:
+        - name: source
+          workspace: shared-source
+        - name: ssh-keys
+          workspace: ssh-keys

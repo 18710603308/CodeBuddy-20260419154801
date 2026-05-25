@@ -1,0 +1,127 @@
+apiVersion: tekton.dev/v1
+kind: Task
+metadata:
+  name: deploy-ssh
+  namespace: devtools-hub
+spec:
+  description: Deploy to remote server via SSH (rsync + remote commands)
+  params:
+    - name: server
+      description: Target server IP or hostname
+      type: string
+      default: "110.42.247.238"
+    - name: deploy-target
+      description: Which service to deploy (frontend | docker-api | nginx | all)
+      type: string
+      default: "frontend"
+    - name: deploy-mode
+      description: Deploy mode (full | incremental)
+      type: string
+      default: "full"
+  workspaces:
+    - name: source
+      description: Workspace with built source code
+    - name: ssh-keys
+      description: SSH private key and known_hosts
+      mountPath: /root/.ssh
+  steps:
+    # ---- Deploy Frontend ----
+    - name: deploy-frontend
+      image: alpine:latest
+      when:
+        - input: "$(params.deploy-target)"
+          operator: in
+          values: ["frontend", "all"]
+      script: |
+        #!/bin/sh
+        set -e
+        apk add --no-cache openssh-client rsync curl > /dev/null
+        chmod 600 /root/.ssh/* 2>/dev/null || true
+
+        SERVER="$(params.server)"
+        DIST_DIR="$(workspaces.source.path)/devtools-hub/dist"
+        REMOTE_DIR="/usr/share/nginx/html"
+
+        echo "===== Deploying frontend to $SERVER ====="
+        echo "Source: $DIST_DIR"
+        echo "Target: $REMOTE_DIR"
+
+        # Backup old files
+        ssh -o StrictHostKeyChecking=no "root@$SERVER" \
+          "cp -r $REMOTE_DIR /tmp/html-backup-\$(date +%Y%m%d%H%M) 2>/dev/null || true"
+
+        # Sync files
+        rsync -avz --delete -e "ssh -o StrictHostKeyChecking=no" \
+          "$DIST_DIR/" "root@$SERVER:$REMOTE_DIR/"
+
+        # Verify
+        STATUS=$(ssh -o StrictHostKeyChecking=no "root@$SERVER" \
+          "curl -s -o /dev/null -w '%{http_code}' http://localhost/")
+        echo "Deploy result: HTTP $STATUS"
+        if [ "$STATUS" = "200" ] || [ "$STATUS" = "301" ]; then
+          echo "✅ Frontend deployed successfully"
+        else
+          echo "⚠️  Warning: HTTP $STATUS"
+        fi
+
+    # ---- Deploy Docker API ----
+    - name: deploy-api
+      image: alpine:latest
+      when:
+        - input: "$(params.deploy-target)"
+          operator: in
+          values: ["docker-api", "all"]
+      script: |
+        #!/bin/sh
+        set -e
+        apk add --no-cache openssh-client > /dev/null
+        chmod 600 /root/.ssh/* 2>/dev/null || true
+
+        SERVER="$(params.server)"
+        API_DIR="$(workspaces.source.path)/docker-api"
+        REMOTE_DIR="/opt/docker-api"
+
+        echo "===== Deploying Docker API to $SERVER ====="
+
+        # Upload code
+        cd "$API_DIR"
+        tar -czf /tmp/docker-api.tar.gz --exclude=node_modules .
+        scp -o StrictHostKeyChecking=no /tmp/docker-api.tar.gz "root@$SERVER:/tmp/"
+        ssh -o StrictHostKeyChecking=no "root@$SERVER" \
+          "mkdir -p $REMOTE_DIR && cd $REMOTE_DIR && tar -xzf /tmp/docker-api.tar.gz && npm install --silent && rm /tmp/docker-api.tar.gz"
+
+        # Restart service
+        ssh -o StrictHostKeyChecking=no "root@$SERVER" \
+          "pkill -f 'node.*server.js' 2>/dev/null || true && sleep 1 && cd $REMOTE_DIR && nohup node server.js > /var/log/docker-api.log 2>&1 &"
+
+        sleep 2
+        RESULT=$(ssh -o StrictHostKeyChecking=no "root@$SERVER" \
+          "curl -s http://localhost:3000/api/docker-images | head -c 50")
+        if echo "$RESULT" | grep -q '"success"'; then
+          echo "✅ Docker API deployed successfully"
+        else
+          echo "⚠️  Docker API may not be ready"
+        fi
+
+    # ---- Deploy Nginx Config ----
+    - name: deploy-nginx
+      image: alpine:latest
+      when:
+        - input: "$(params.deploy-target)"
+          operator: in
+          values: ["nginx", "all"]
+      script: |
+        #!/bin/sh
+        set -e
+        apk add --no-cache openssh-client > /dev/null
+        chmod 600 /root/.ssh/* 2>/dev/null || true
+
+        SERVER="$(params.server)"
+        NGINX_CONF="$(workspaces.source.path)/nginx.conf"
+        REMOTE_CONF="/etc/nginx/sites-enabled/default"
+
+        echo "===== Deploying Nginx config to $SERVER ====="
+        scp -o StrictHostKeyChecking=no "$NGINX_CONF" "root@$SERVER:$REMOTE_CONF"
+        ssh -o StrictHostKeyChecking=no "root@$SERVER" \
+          "nginx -t && nginx -s reload"
+        echo "✅ Nginx config deployed and reloaded"

@@ -1,0 +1,91 @@
+apiVersion: tekton.dev/v1
+kind: Task
+metadata:
+  name: npm-build
+  namespace: devtools-hub
+spec:
+  description: Install dependencies, lint, type-check, and build the frontend
+  params:
+    - name: node-version
+      description: Node.js version to use
+      type: string
+      default: "20"
+    - name: build-target
+      description: Which target to build (all | frontend-only | api-only)
+      type: string
+      default: "all"
+    - name: skip-lint
+      description: Skip linting step
+      type: string
+      default: "false"
+  workspaces:
+    - name: source
+      description: Workspace with cloned source code
+  steps:
+    # ---- Frontend Build ----
+    - name: install-frontend
+      image: node:$(params.node-version)-alpine
+      workingDir: $(workspaces.source.path)/devtools-hub
+      script: |
+        #!/bin/sh
+        set -e
+        echo "===== Installing frontend dependencies ====="
+        npm ci --legacy-peer-deps
+
+    - name: lint-frontend
+      image: node:$(params.node-version)-alpine
+      workingDir: $(workspaces.source.path)/devtools-hub
+      when:
+        - input: "$(params.build-target)"
+          operator: in
+          values: ["all", "frontend-only"]
+        - input: "$(params.skip-lint)"
+          operator: notin
+          values: ["true"]
+      script: |
+        #!/bin/sh
+        set -e
+        echo "===== Linting frontend ====="
+        npm run lint || true
+
+    - name: typecheck-frontend
+      image: node:$(params.node-version)-alpine
+      workingDir: $(workspaces.source.path)/devtools-hub
+      when:
+        - input: "$(params.build-target)"
+          operator: in
+          values: ["all", "frontend-only"]
+      script: |
+        #!/bin/sh
+        set -e
+        echo "===== TypeScript compile check ====="
+        npx tsc -b --noEmit
+
+    - name: build-frontend
+      image: node:$(params.node-version)-alpine
+      workingDir: $(workspaces.source.path)/devtools-hub
+      when:
+        - input: "$(params.build-target)"
+          operator: in
+          values: ["all", "frontend-only"]
+      script: |
+        #!/bin/sh
+        set -e
+        echo "===== Building frontend (Vite) ====="
+        npm run build
+        echo "Build complete. Files in dist/:"
+        ls -la dist/ | head -20
+
+    # ---- API Install (no build needed for Node.js) ----
+    - name: install-api
+      image: node:$(params.node-version)-alpine
+      workingDir: $(workspaces.source.path)/docker-api
+      when:
+        - input: "$(params.build-target)"
+          operator: in
+          values: ["all", "api-only"]
+      script: |
+        #!/bin/sh
+        set -e
+        echo "===== Installing API dependencies ====="
+        npm ci --legacy-peer-deps

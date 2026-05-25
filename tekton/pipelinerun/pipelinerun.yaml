@@ -1,0 +1,51 @@
+apiVersion: tekton.dev/v1
+kind: PipelineRun
+metadata:
+  generateName: devtools-cicd-
+  namespace: devtools-hub
+  labels:
+    app: devtools-hub
+    tekton.dev/pipeline: devtools-cicd
+spec:
+  pipelineRef:
+    name: devtools-cicd
+  params:
+    - name: repo-url
+      value: "https://github.com/18710603308/CodeBuddy-20260419154801.git"
+    - name: repo-revision
+      value: "main"
+    - name: image-registry
+      value: "localhost:5001"
+    - name: deploy-server
+      value: "110.42.247.238"
+    - name: build-target
+      value: "all"
+    - name: deploy-target
+      value: "all"
+    - name: skip-lint
+      value: "false"
+  workspaces:
+    - name: shared-source
+      volumeClaimTemplate:
+        spec:
+          accessModes:
+            - ReadWriteOnce
+          resources:
+            requests:
+              storage: 2Gi
+    - name: ssh-keys
+      secret:
+        secretName: deploy-ssh-keys
+        items:
+          - key: id_rsa
+            path: id_rsa
+            mode: 0600
+          - key: known_hosts
+            path: known_hosts
+            mode: 0644
+    - name: docker-config
+      secret:
+        secretName: docker-registry-auth
+        items:
+          - key: .dockerconfigjson
+            path: config.json

@@ -1,0 +1,50 @@
+apiVersion: tekton.dev/v1
+kind: Task
+metadata:
+  name: git-clone
+  namespace: devtools-hub
+spec:
+  description: Clone the DevTools Hub repository
+  params:
+    - name: url
+      description: Git repository URL
+      type: string
+      default: "https://github.com/your-org/devtools-hub.git"
+    - name: revision
+      description: Git revision (branch/tag/commit)
+      type: string
+      default: "main"
+    - name: depth
+      description: Shallow clone depth
+      type: string
+      default: "1"
+  workspaces:
+    - name: source
+      description: Workspace for the cloned source code
+  steps:
+    - name: clone
+      image: alpine/git:latest
+      script: |
+        #!/bin/sh
+        set -e
+        echo "Cloning $(params.url) @ $(params.revision)"
+        git clone \
+          --depth $(params.depth) \
+          --branch $(params.revision) \
+          --single-branch \
+          $(params.url) \
+          $(workspaces.source.path)
+        cd $(workspaces.source.path)
+        echo "Commit: $(git rev-parse --short HEAD)"
+
+    - name: short-sha
+      image: alpine:latest
+      script: |
+        #!/bin/sh
+        cd $(workspaces.source.path)
+        SHORT_SHA=$(git rev-parse --short HEAD)
+        echo -n "$SHORT_SHA" > $(results.git-short-sha.path)
+        echo "Short SHA: $SHORT_SHA"
+  results:
+    - name: git-short-sha
+      description: Short git commit SHA

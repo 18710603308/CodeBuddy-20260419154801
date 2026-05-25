@@ -1,0 +1,85 @@
+apiVersion: tekton.dev/v1
+kind: Task
+metadata:
+  name: docker-build-push
+  namespace: devtools-hub
+spec:
+  description: Build Docker images using Kaniko and push to registry
+  params:
+    - name: image-registry
+      description: Container registry host (e.g. localhost:5001)
+      type: string
+      default: "localhost:5001"
+    - name: namespace
+      description: Registry namespace
+      type: string
+      default: "devtools-hub"
+    - name: image-tag
+      description: Image tag (e.g. git short SHA)
+      type: string
+      default: "latest"
+    - name: build-target
+      description: Which images to build (all | frontend-only | api-only)
+      type: string
+      default: "all"
+    - name: dockerfile-frontend
+      description: Path to frontend Dockerfile
+      type: string
+      default: "Dockerfile.frontend"
+    - name: dockerfile-api
+      description: Path to API Dockerfile
+      type: string
+      default: "docker-api/Dockerfile"
+  workspaces:
+    - name: source
+      description: Workspace with built source code
+    - name: docker-config
+      description: Docker registry credentials
+      optional: true
+      mountPath: /kaniko/.docker
+  steps:
+    # ---- Build & Push Frontend Image ----
+    - name: build-push-frontend
+      image: gcr.io/kaniko-project/executor:latest
+      workingDir: $(workspaces.source.path)
+      when:
+        - input: "$(params.build-target)"
+          operator: in
+          values: ["all", "frontend-only"]
+      args:
+        - --dockerfile=$(params.dockerfile-frontend)
+        - --context=$(workspaces.source.path)
+        - --destination=$(params.image-registry)/$(params.namespace)/frontend:$(params.image-tag)
+        - --destination=$(params.image-registry)/$(params.namespace)/frontend:latest
+        - --cache=true
+        - --cache-ttl=24h
+        - --skip-unused-stages=true
+        - --snapshot-mode=redo
+        - --push-retry=3
+        - --verbosity=info
+
+    # ---- Build & Push API Image ----
+    - name: build-push-api
+      image: gcr.io/kaniko-project/executor:latest
+      workingDir: $(workspaces.source.path)
+      when:
+        - input: "$(params.build-target)"
+          operator: in
+          values: ["all", "api-only"]
+      args:
+        - --dockerfile=$(params.dockerfile-api)
+        - --context=$(workspaces.source.path)
+        - --destination=$(params.image-registry)/$(params.namespace)/docker-api:$(params.image-tag)
+        - --destination=$(params.image-registry)/$(params.namespace)/docker-api:latest
+        - --cache=true
+        - --cache-ttl=24h
+        - --skip-unused-stages=true
+        - --snapshot-mode=redo
+        - --push-retry=3
+        - --verbosity=info
+
+  results:
+    - name: frontend-image
+      description: Frontend image full reference
+    - name: api-image
+      description: API image full reference

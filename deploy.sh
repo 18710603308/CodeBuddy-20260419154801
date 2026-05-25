@@ -9,11 +9,15 @@
 #    nginx       - Nginx 配置
 #    all         - 全部部署
 #
+#  选项:
+#    --incremental / -i   增量部署 (rsync，只传变化的文件)
+#    --skip-build  / -s   跳过构建 (使用已有 dist)
+#
 #  示例:
-#    ./deploy.sh                # 部署前端
-#    ./deploy.sh frontend       # 部署前端
-#    ./deploy.sh docker-api     # 部署 Docker API
-#    ./deploy.sh all            # 一键全部部署
+#    ./deploy.sh                     # 全量部署前端
+#    ./deploy.sh frontend -i         # 增量部署前端
+#    ./deploy.sh frontend -s -i      # 跳过构建 + 增量部署
+#    ./deploy.sh all                 # 一键全部部署
 # =============================================
 set -e
 
@@ -64,23 +68,41 @@ upload_dir() {
 # ==================== 部署步骤 ====================
 
 deploy_frontend() {
-    title "🚀 部署前端 (devtools-hub)"
+    local mode="${1:-full}"  # full | incremental
+    local skip_build="${2:-false}"
 
-    step "1/4 构建项目..."
-    cd "$FRONTEND_DIR"
-    [ -d node_modules ] || npm install
-    npm run build
-    info "构建完成: $FRONTEND_DIR/dist"
+    if [ "$skip_build" = "true" ]; then
+        title "🚀 部署前端 (devtools-hub) [跳过构建]"
+    else
+        title "🚀 部署前端 (devtools-hub)"
+    fi
+
+    if [ "$skip_build" != "true" ]; then
+        step "1/4 构建项目..."
+        cd "$FRONTEND_DIR"
+        [ -d node_modules ] || npm install
+        npm run build
+        info "构建完成: $FRONTEND_DIR/dist"
+    fi
 
     step "2/4 备份服务器旧文件..."
     remote "cp -r $SERVER_FRONTEND /tmp/html-backup-\$(date +%Y%m%d%H%M) 2>/dev/null || true"
 
-    step "3/4 上传并替换静态文件..."
-    cd "$FRONTEND_DIR/dist"
-    tar -czf /tmp/frontend.tar.gz .
-    scp $SSH_OPTS -i "$SSH_KEY" /tmp/frontend.tar.gz root@"$SERVER":/tmp/
-    remote "rm -rf $SERVER_FRONTEND/* && cd $SERVER_FRONTEND && tar -xzf /tmp/frontend.tar.gz && rm /tmp/frontend.tar.gz"
-    rm -f /tmp/frontend.tar.gz
+    if [ "$mode" = "incremental" ]; then
+        step "3/4 增量同步 (rsync)..."
+        rsync -avz --delete \
+            -e "ssh $SSH_OPTS -i $SSH_KEY" \
+            "$FRONTEND_DIR/dist/" \
+            "root@$SERVER:$SERVER_FRONTEND/"
+        info "增量同步完成"
+    else
+        step "3/4 上传并替换静态文件..."
+        cd "$FRONTEND_DIR/dist"
+        tar -czf /tmp/frontend.tar.gz .
+        scp $SSH_OPTS -i "$SSH_KEY" /tmp/frontend.tar.gz root@"$SERVER":/tmp/
+        remote "rm -rf $SERVER_FRONTEND/* && cd $SERVER_FRONTEND && tar -xzf /tmp/frontend.tar.gz && rm /tmp/frontend.tar.gz"
+        rm -f /tmp/frontend.tar.gz
+    fi
 
     step "4/4 验证..."
     local status=$(remote "curl -s -o /dev/null -w '%{http_code}' http://localhost/")
@@ -178,13 +200,23 @@ show_help() {
 
 # ==================== 入口 ====================
 
-SERVICE="${1:-frontend}"
+SERVICE="frontend"
+MODE="full"
+SKIP_BUILD="false"
+
+for arg in "$@"; do
+    case "$arg" in
+        frontend|docker-api|nginx|all) SERVICE="$arg" ;;
+        --incremental|-i)             MODE="incremental" ;;
+        --skip-build|-s)              SKIP_BUILD="true" ;;
+        -h|--help)                    show_help; exit 0 ;;
+    esac
+done
 
 case "$SERVICE" in
-    frontend)     deploy_frontend ;;
+    frontend)     deploy_frontend "$MODE" "$SKIP_BUILD" ;;
     docker-api)   deploy_docker_api ;;
     nginx)        deploy_nginx ;;
     all)          deploy_all ;;
-    -h|--help)    show_help ;;
     *)            echo "未知服务: $SERVICE"; show_help; exit 1 ;;
 esac

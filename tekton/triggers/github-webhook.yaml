@@ -1,0 +1,82 @@
+apiVersion: tekton.dev/v1beta1
+kind: TriggerTemplate
+metadata:
+  name: devtools-trigger-template
+  namespace: devtools-hub
+spec:
+  params:
+    - name: repo-url
+      description: Git repository URL
+    - name: repo-revision
+      description: Git revision (branch/tag)
+  resourcetemplates:
+    - apiVersion: tekton.dev/v1
+      kind: PipelineRun
+      metadata:
+        generateName: devtools-cicd-
+        labels:
+          app: devtools-hub
+          tekton.dev/pipeline: devtools-cicd
+      spec:
+        pipelineRef:
+          name: devtools-cicd
+        params:
+          - name: repo-url
+            value: $(tt.params.repo-url)
+          - name: repo-revision
+            value: $(tt.params.repo-revision)
+          - name: image-registry
+            value: "localhost:5001"
+          - name: deploy-server
+            value: "110.42.247.238"
+          - name: build-target
+            value: "all"
+          - name: deploy-target
+            value: "all"
+        workspaces:
+          - name: shared-source
+            volumeClaimTemplate:
+              spec:
+                accessModes:
+                  - ReadWriteOnce
+                resources:
+                  requests:
+                    storage: 2Gi
+          - name: ssh-keys
+            secret:
+              secretName: deploy-ssh-keys
+          - name: docker-config
+            secret:
+              secretName: docker-registry-auth
+---
+apiVersion: tekton.dev/v1beta1
+kind: TriggerBinding
+metadata:
+  name: github-push-binding
+  namespace: devtools-hub
+spec:
+  params:
+    - name: repo-url
+      value: $(body.repository.clone_url)
+    - name: repo-revision
+      value: $(body.after)
+---
+apiVersion: tekton.dev/v1beta1
+kind: EventListener
+metadata:
+  name: devtools-github-listener
+  namespace: devtools-hub
+spec:
+  serviceAccountName: tekton-triggers-sa
+  triggers:
+    - name: github-push
+      interceptors:
+        - ref:
+            name: "cel"
+          params:
+            - name: "filter"
+              value: "body.ref == 'refs/heads/main'"
+      bindings:
+        - ref: github-push-binding
+      template:
+        ref: devtools-trigger-template
