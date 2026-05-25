@@ -1,0 +1,8 @@
+User-agent: *
+Allow: /
+
+# Sitemap
+Sitemap: https://52cv.top/sitemap.xml
+
+# Crawl-delay (friendly to search engines)
+Crawl-delay: 5
