@@ -56,6 +56,7 @@ import {
 import { Link, useNavigate } from 'react-router-dom'
 import './App.css'
 import { AINavigator } from '@/components/ai-navigator'
+import OffWorkCountdown from '@/components/OffWorkCountdown'
 
 // 同步高度 Context
 const SyncHeightContext = createContext<{
@@ -1703,7 +1704,8 @@ function App() {
   }
 
   return (
-    <ContentConfigContext.Provider value={contentConfig}>
+    <>
+      <ContentConfigContext.Provider value={contentConfig}>
       <div className="min-h-screen transition-theme bg-primary">
         {/* Background Gradient */}
         <div className="fixed inset-0 overflow-hidden pointer-events-none">
@@ -2555,8 +2557,15 @@ function App() {
         )}
       </div>
     </ContentConfigContext.Provider>
-  )
+
+    {/* 下班倒计时浮动组件 */}
+    <OffWorkCountdown />
+  </>
+)
 }
+
+// ==================== 新增工具组件 ====================
+
 
 // ==================== 新增工具组件 ====================
 
