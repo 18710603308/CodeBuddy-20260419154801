@@ -39,6 +39,7 @@ const GAME_LIBRARY: GameConfig[] = [
   { id: 'pooyan-nes', title: '猪小弟', subtitle: 'Pooyan', romPath: '/roms/nes/pooyan.nes', category: 'nes', core: 'nes' },
   { id: 'sanmo', title: '三目童子', subtitle: 'Mitsume ga Tooru', romPath: '/roms/Sanmo.nes', category: 'nes', core: 'nes' },
   { id: 'fumoji', title: '伏魔记', subtitle: '封神榜之伏魔三太子', romPath: '/roms/Fumojì.nes', category: 'nes', core: 'nes' },
+  { id: 'gunnac', title: '加纳战机', subtitle: 'Gun-Nac', romPath: '/roms/nes/gun_nac.nes', category: 'nes', core: 'nes' },
 
   // ---- 街机 ----
   { id: 'snowbros', title: '雪人兄弟', subtitle: 'Snow Bros', romPath: '/roms/arcade/snowbros.zip', category: 'arcade', core: 'fbneo' },

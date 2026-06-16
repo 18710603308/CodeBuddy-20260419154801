@@ -52,6 +52,7 @@ import {
   AArrowUp,
   AArrowDown,
   Joystick,
+  Crosshair,
 } from 'lucide-react'
 import { Link, useNavigate } from 'react-router-dom'
 import './App.css'
@@ -292,6 +293,7 @@ const tools: Tool[] = [
 
   // 黄金矿工
   { id: 'gold-miner', icon: Gamepad2, title: '黄金矿工', description: '经典益智小游戏，抓取金块得分', color: 'from-yellow-500 to-orange-600', bgColor: 'bg-yellow-500/10', borderColor: 'border-yellow-500/30' },
+  { id: 'gunnac', icon: Crosshair, title: '加纳战机', description: '经典FC射击游戏，多种武器BOSS战', color: 'from-cyan-400 to-blue-600', bgColor: 'bg-cyan-500/10', borderColor: 'border-cyan-500/30' },
 
   // 魂斗罗FC版
   { id: 'contra-fc', icon: Gamepad2, title: '魂斗罗 FC', description: '原汁原味FC经典复刻，EmulatorJS模拟器', color: 'from-red-500 to-orange-600', bgColor: 'bg-red-500/10', borderColor: 'border-red-500/30' },

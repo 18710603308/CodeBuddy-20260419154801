@@ -141,6 +141,7 @@ const router = createBrowserRouter([
       { path: '/gold-miner', element: <GoldMiner />, handle: { seo: SEO.GOLD_MINER } },
       { path: '/gold-mine', element: <GoldMiner />, handle: { seo: SEO.GOLD_MINER } },
       { path: '/spider-solitaire', element: <SpiderSolitaire />, handle: { seo: SEO.SPIDER_SOLITAIRE } },
+      { path: '/gunnac', element: <NESGame title="加纳战机" romPath="/roms/nes/gun_nac.nes" />, handle: { seo: nesSEO('加纳战机', '经典FC纵版射击游戏，武器升级系统，Gun-Nac。') } },
 
       // 特殊小游戏
       { path: '/sanmo', element: <Sanmo />, handle: { seo: SEO.SANMO } },
