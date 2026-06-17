@@ -73,6 +73,8 @@ const GAME_LIBRARY: GameConfig[] = [
   { id: 'game2048', title: '2048', subtitle: '经典数字合成游戏', category: 'web', iframeUrl: '/game2048' },
   { id: 'gold-miner', title: '黄金矿工', subtitle: '经典益智小游戏', category: 'web', iframeUrl: '/gold-miner' },
   { id: 'fumoji-bbk', title: '伏魔记 BBK', subtitle: '步步高电子词典原版网页移植', category: 'web', iframeUrl: '/fumojì-bbk' },
+  { id: 'texas-holdem', title: '德州扑克（单机）', subtitle: '经典德州扑克人机对战', category: 'web', iframeUrl: '/games/texas-holdem/' },
+  { id: 'texas-holdem-online', title: '德州扑克（联机）', subtitle: '6人实时联机，完整盲注/边池/牌局', category: 'web', iframeUrl: '/poker/' },
 ]
 
 // ==================== 分类定义 ====================

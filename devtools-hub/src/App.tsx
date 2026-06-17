@@ -294,6 +294,9 @@ const tools: Tool[] = [
   // 黄金矿工
   { id: 'gold-miner', icon: Gamepad2, title: '黄金矿工', description: '经典益智小游戏，抓取金块得分', color: 'from-yellow-500 to-orange-600', bgColor: 'bg-yellow-500/10', borderColor: 'border-yellow-500/30' },
 
+  // 德州扑克
+  { id: 'texas-holdem', icon: Gamepad2, title: '德州扑克', description: '经典德州扑克人机对战，仿真实牌局', color: 'from-red-600 to-rose-800', bgColor: 'bg-red-600/10', borderColor: 'border-red-600/30' },
+
   // 魂斗罗FC版
   { id: 'contra-fc', icon: Gamepad2, title: '魂斗罗 FC', description: '原汁原味FC经典复刻，EmulatorJS模拟器', color: 'from-red-500 to-orange-600', bgColor: 'bg-red-500/10', borderColor: 'border-red-500/30' },
 
@@ -1770,7 +1773,7 @@ function App() {
                                 'river-city', 'battle-city-nes', 'adventure-island', 'chip-dale',
                                 'lode-runner-nes', 'pooyan-nes',
                                 'link-game', 'spider-solitaire', 'minesweeper', 'game2048', 'gold-miner',
-                                'sanmo', 'fumojì', 'fumojì-bbk',
+                                'sanmo', 'fumojì', 'fumojì-bbk', 'texas-holdem', 'texas-holdem',
                               ].includes(tool.id)) {
                                 window.location.href = '/game-hub'
                               } else if (tool.id === 'ai-game') {
@@ -1922,7 +1925,7 @@ function App() {
                 'river-city', 'battle-city-nes', 'adventure-island', 'chip-dale',
                 'lode-runner-nes', 'pooyan-nes',
                 'link-game', 'spider-solitaire', 'minesweeper', 'game2048', 'gold-miner',
-                'sanmo', 'fumojì', 'fumojì-bbk',
+                'sanmo', 'fumojì', 'fumojì-bbk', 'texas-holdem',
               ].includes(t.id)).map((tool) => {
                 // AI 导航使用独立页面
                 if (tool.id === 'ai-nav') {
