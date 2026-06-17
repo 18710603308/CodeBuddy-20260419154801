@@ -21,6 +21,8 @@ interface GameConfig {
   parentGame?: string
   iframeUrl?: string  // Web/HTML5 游戏用 iframe 嵌入
   broken?: string     // 游戏不可用原因说明
+  noSandbox?: boolean // 全栈联机游戏需要，不启用 sandbox
+  redirect?: boolean  // 直接页面跳转而非新窗口
 }
 
 // ==================== 游戏库配置 ====================
@@ -74,7 +76,7 @@ const GAME_LIBRARY: GameConfig[] = [
   { id: 'gold-miner', title: '黄金矿工', subtitle: '经典益智小游戏', category: 'web', iframeUrl: '/gold-miner' },
   { id: 'fumoji-bbk', title: '伏魔记 BBK', subtitle: '步步高电子词典原版网页移植', category: 'web', iframeUrl: '/fumojì-bbk' },
   { id: 'texas-holdem', title: '德州扑克（单机）', subtitle: '经典德州扑克人机对战', category: 'web', iframeUrl: '/games/texas-holdem/' },
-  { id: 'texas-holdem-online', title: '德州扑克（联机）', subtitle: '6人实时联机，完整盲注/边池/牌局', category: 'web', iframeUrl: '/poker/' },
+  { id: 'texas-holdem-online', title: '德州扑克（联机）', subtitle: '6人实时联机', category: 'web', iframeUrl: '/poker/', noSandbox: true },
 ]
 
 // ==================== 分类定义 ====================
@@ -113,6 +115,15 @@ const GameHub: React.FC = () => {
   // 切换游戏
   const switchGame = useCallback((game: GameConfig) => {
     if (game.id === selectedGame.id) return
+    // 联机游戏直接新窗口打开
+    if (game.redirect && game.iframeUrl) {
+      window.location.href = game.iframeUrl
+      return
+    }
+    if (game.noSandbox && game.iframeUrl) {
+      window.open(game.iframeUrl, '_blank')
+      return
+    }
     setSelectedGame(game)
     setGameKey(prev => prev + 1)
     if (isMobile) setSidebarOpen(false)
@@ -367,7 +378,11 @@ const GameHub: React.FC = () => {
                   src={selectedGame.iframeUrl}
                   className="w-full h-full border-0"
                   title={selectedGame.title}
-                  sandbox="allow-scripts allow-same-origin allow-forms"
+                  {...(selectedGame.noSandbox
+                    ? {}
+                    : { sandbox: 'allow-scripts allow-same-origin allow-forms allow-popups allow-modals allow-popups-to-escape-sandbox' })
+                  }
+                  allow="camera;microphone;fullscreen;autoplay"
                 />
               </div>
             ) : selectedGame.romPath && currentRomValid === false ? (
