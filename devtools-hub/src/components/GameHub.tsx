@@ -15,8 +15,8 @@ interface GameConfig {
   title: string
   subtitle?: string
   romPath?: string
-  category: 'nes' | 'arcade' | 'arcade-variant' | 'web'
-  core?: 'nes' | 'fbneo' | 'mame2003' | 'mame2003_plus'
+  category: 'nes' | 'arcade' | 'arcade-variant' | 'gba' | 'gbc' | 'snes' | 'md' | 'n64' | 'web'
+  core?: 'nes' | 'fbneo' | 'mame2003' | 'mame2003_plus' | 'mgba' | 'gambatte' | 'snes9x' | 'genesis_plus_gx' | 'mupen64plus_next'
   biosPath?: string
   parentGame?: string
   iframeUrl?: string  // Web/HTML5 游戏用 iframe 嵌入
@@ -68,6 +68,66 @@ const GAME_LIBRARY: GameConfig[] = [
   { id: 'ddragonb', title: '双截龙 Bootleg', subtitle: 'Double Dragon Bootleg', romPath: '/roms/arcade/ddragonb.zip', category: 'arcade-variant', core: 'fbneo', parentGame: 'ddragon' },
   { id: 'kovplusa', title: '三国战纪 Plus 另一版', subtitle: 'KOV Plus Alt', romPath: '/roms/arcade/kovplusa.zip', category: 'arcade-variant', core: 'fbneo', biosPath: '/roms/arcade/pgm.zip', parentGame: 'sangokushi', broken: 'ROM 版本与核心不兼容，需更新 ROM' },
 
+  // ---- GBA ----
+  { id: 'gba-koudai-hong', title: '口袋妖怪 红宝石', subtitle: 'Pokémon Ruby', romPath: '/roms/gba/pokemon_ruby.gba', category: 'gba', core: 'mgba' },
+  { id: 'gba-koudai-lv', title: '口袋妖怪 绿宝石', subtitle: 'Pokémon Emerald', romPath: '/roms/gba/pokemon_emerald.gba', category: 'gba', core: 'mgba' },
+  { id: 'gba-koudai-huo', title: '口袋妖怪 火红', subtitle: 'Pokémon FireRed', romPath: '/roms/gba/pokemon_firered.gba', category: 'gba', core: 'mgba' },
+  { id: 'gba-super-mario', title: '超级马里奥世界', subtitle: 'Super Mario Advance 2', romPath: '/roms/gba/super_mario_advance2.gba', category: 'gba', core: 'mgba' },
+  { id: 'gba-mario-kart', title: '马里奥赛车', subtitle: 'Mario Kart Super Circuit', romPath: '/roms/gba/mario_kart.gba', category: 'gba', core: 'mgba' },
+  { id: 'gba-zelda', title: '塞尔达传说 缩小帽', subtitle: 'The Legend of Zelda: Minish Cap', romPath: '/roms/gba/zelda_minish_cap.gba', category: 'gba', core: 'mgba' },
+  { id: 'gba-metroid', title: '银河战士 融合', subtitle: 'Metroid Fusion', romPath: '/roms/gba/metroid_fusion.gba', category: 'gba', core: 'mgba' },
+  { id: 'gba-castlevania', title: '恶魔城 晓月圆舞曲', subtitle: 'Castlevania: Aria of Sorrow', romPath: '/roms/gba/castlevania_aria.gba', category: 'gba', core: 'mgba' },
+  { id: 'gba-golden-sun', title: '黄金太阳', subtitle: 'Golden Sun', romPath: '/roms/gba/golden_sun.gba', category: 'gba', core: 'mgba' },
+  { id: 'gba-fire-emblem', title: '火焰纹章 封印之剑', subtitle: 'Fire Emblem: Binding Blade', romPath: '/roms/gba/fire_emblem.gba', category: 'gba', core: 'mgba' },
+  { id: 'gba-advance-wars', title: '高级战争', subtitle: 'Advance Wars', romPath: '/roms/gba/advance_wars.gba', category: 'gba', core: 'mgba' },
+  { id: 'gba-kirby', title: '星之卡比 梦之泉', subtitle: 'Kirby: Nightmare in Dream Land', romPath: '/roms/gba/kirby_nightmare.gba', category: 'gba', core: 'mgba' },
+
+  // ---- GBC ----
+  { id: 'gbc-koudai-jin', title: '口袋妖怪 金', subtitle: 'Pokémon Gold', romPath: '/roms/gbc/pokemon_gold.gbc', category: 'gbc', core: 'gambatte' },
+  { id: 'gbc-koudai-yin', title: '口袋妖怪 银', subtitle: 'Pokémon Silver', romPath: '/roms/gbc/pokemon_silver.gbc', category: 'gbc', core: 'gambatte' },
+  { id: 'gbc-koudai-shui', title: '口袋妖怪 水晶', subtitle: 'Pokémon Crystal', romPath: '/roms/gbc/pokemon_crystal.gbc', category: 'gbc', core: 'gambatte' },
+  { id: 'gbc-zelda-dx', title: '塞尔达传说 梦见岛DX', subtitle: "Zelda: Link's Awakening DX", romPath: '/roms/gbc/zelda_links_awakening.gbc', category: 'gbc', core: 'gambatte' },
+  { id: 'gbc-zelda-oracle', title: '塞尔达传说 时空之章', subtitle: 'Zelda: Oracle of Ages', romPath: '/roms/gbc/zelda_oracle_ages.gbc', category: 'gbc', core: 'gambatte' },
+  { id: 'gbc-super-mario', title: '超级马里奥DX', subtitle: 'Super Mario Bros. Deluxe', romPath: '/roms/gbc/super_mario_dx.gbc', category: 'gbc', core: 'gambatte' },
+  { id: 'gbc-mario-tennis', title: '马里奥网球', subtitle: 'Mario Tennis', romPath: '/roms/gbc/mario_tennis.gbc', category: 'gbc', core: 'gambatte' },
+  { id: 'gbc-donkey-kong', title: '大金刚国度', subtitle: 'Donkey Kong Country', romPath: '/roms/gbc/donkey_kong_country.gbc', category: 'gbc', core: 'gambatte' },
+
+  // ---- SNES/SFC ----
+  { id: 'snes-super-mario', title: '超级马里奥世界', subtitle: 'Super Mario World', romPath: '/roms/snes/super_mario_world.sfc', category: 'snes', core: 'snes9x' },
+  { id: 'snes-zelda', title: '塞尔达传说 众神的三角力量', subtitle: 'The Legend of Zelda: A Link to the Past', romPath: '/roms/snes/zelda_link_to_past.sfc', category: 'snes', core: 'snes9x' },
+  { id: 'snes-donkey-kong', title: '超级大金刚', subtitle: 'Donkey Kong Country', romPath: '/roms/snes/donkey_kong_country.sfc', category: 'snes', core: 'snes9x' },
+  { id: 'snes-super-metroid', title: '超级银河战士', subtitle: 'Super Metroid', romPath: '/roms/snes/super_metroid.sfc', category: 'snes', core: 'snes9x' },
+  { id: 'snes-chrono', title: '超时空之钥', subtitle: 'Chrono Trigger', romPath: '/roms/snes/chrono_trigger.sfc', category: 'snes', core: 'snes9x' },
+  { id: 'snes-ff6', title: '最终幻想6', subtitle: 'Final Fantasy VI', romPath: '/roms/snes/final_fantasy_6.sfc', category: 'snes', core: 'snes9x' },
+  { id: 'snes-kirby', title: '星之卡比 超级豪华', subtitle: 'Kirby Super Star', romPath: '/roms/snes/kirby_super_star.sfc', category: 'snes', core: 'snes9x' },
+  { id: 'snes-mario-kart', title: '马里奥赛车', subtitle: 'Super Mario Kart', romPath: '/roms/snes/super_mario_kart.sfc', category: 'snes', core: 'snes9x' },
+  { id: 'snes-earthbound', title: '地球冒险', subtitle: 'EarthBound', romPath: '/roms/snes/earthbound.sfc', category: 'snes', core: 'snes9x' },
+  { id: 'snes-mario-rpg', title: '超级马里奥RPG', subtitle: 'Super Mario RPG', romPath: '/roms/snes/super_mario_rpg.sfc', category: 'snes', core: 'snes9x' },
+
+  // ---- Sega MD/Genesis ----
+  { id: 'md-sonic1', title: '索尼克', subtitle: 'Sonic the Hedgehog', romPath: '/roms/md/sonic1.md', category: 'md', core: 'genesis_plus_gx' },
+  { id: 'md-sonic2', title: '索尼克2', subtitle: 'Sonic the Hedgehog 2', romPath: '/roms/md/sonic2.md', category: 'md', core: 'genesis_plus_gx' },
+  { id: 'md-sonic3', title: '索尼克3', subtitle: 'Sonic the Hedgehog 3', romPath: '/roms/md/sonic3.md', category: 'md', core: 'genesis_plus_gx' },
+  { id: 'md-streets-rage', title: '怒之铁拳', subtitle: 'Streets of Rage', romPath: '/roms/md/streets_of_rage.md', category: 'md', core: 'genesis_plus_gx' },
+  { id: 'md-gunstar', title: '火枪英雄', subtitle: 'Gunstar Heroes', romPath: '/roms/md/gunstar_heroes.md', category: 'md', core: 'genesis_plus_gx' },
+  { id: 'md-shinobi', title: '超级忍', subtitle: 'The Revenge of Shinobi', romPath: '/roms/md/revenge_of_shinobi.md', category: 'md', core: 'genesis_plus_gx' },
+  { id: 'md-altered', title: '兽王记', subtitle: 'Altered Beast', romPath: '/roms/md/altered_beast.md', category: 'md', core: 'genesis_plus_gx' },
+  { id: 'md-golden-axe', title: '战斧', subtitle: 'Golden Axe', romPath: '/roms/md/golden_axe.md', category: 'md', core: 'genesis_plus_gx' },
+  { id: 'md-comix-zone', title: '漫画地带', subtitle: 'Comix Zone', romPath: '/roms/md/comix_zone.md', category: 'md', core: 'genesis_plus_gx' },
+  { id: 'md-contra-hard', title: '魂斗罗 铁血兵团', subtitle: 'Contra: Hard Corps', romPath: '/roms/md/contra_hard_corps.md', category: 'md', core: 'genesis_plus_gx' },
+
+  // ---- N64 ----
+  { id: 'n64-mario64', title: '超级马里奥64', subtitle: 'Super Mario 64', romPath: '/roms/n64/super_mario_64.z64', category: 'n64', core: 'mupen64plus_next' },
+  { id: 'n64-zelda', title: '塞尔达传说 时之笛', subtitle: "The Legend of Zelda: Ocarina of Time", romPath: '/roms/n64/zelda_ocarina.z64', category: 'n64', core: 'mupen64plus_next' },
+  { id: 'n64-mario-kart', title: '马里奥赛车64', subtitle: 'Mario Kart 64', romPath: '/roms/n64/mario_kart_64.z64', category: 'n64', core: 'mupen64plus_next' },
+  { id: 'n64-goldeneye', title: '007 黄金眼', subtitle: 'GoldenEye 007', romPath: '/roms/n64/goldeneye.z64', category: 'n64', core: 'mupen64plus_next' },
+  { id: 'n64-star-fox', title: '星际火狐64', subtitle: 'Star Fox 64', romPath: '/roms/n64/star_fox_64.z64', category: 'n64', core: 'mupen64plus_next' },
+  { id: 'n64-smash', title: '任天堂明星大乱斗', subtitle: 'Super Smash Bros.', romPath: '/roms/n64/super_smash_bros.z64', category: 'n64', core: 'mupen64plus_next' },
+  { id: 'n64-banjo', title: '班卓熊大冒险', subtitle: 'Banjo-Kazooie', romPath: '/roms/n64/banjo_kazooie.z64', category: 'n64', core: 'mupen64plus_next' },
+  { id: 'n64-paper-mario', title: '纸片马里奥', subtitle: 'Paper Mario', romPath: '/roms/n64/paper_mario.z64', category: 'n64', core: 'mupen64plus_next' },
+  { id: 'n64-dk64', title: '大金刚64', subtitle: 'Donkey Kong 64', romPath: '/roms/n64/donkey_kong_64.z64', category: 'n64', core: 'mupen64plus_next' },
+  { id: 'n64-f-zero', title: 'F-Zero X', subtitle: 'F-Zero X', romPath: '/roms/n64/f_zero_x.z64', category: 'n64', core: 'mupen64plus_next' },
+
   // ---- Web/HTML5 游戏 ----
   { id: 'link-game', title: '连连看', subtitle: '经典的连连看消消乐', category: 'web', iframeUrl: '/link-game' },
   { id: 'spider-solitaire', title: '蜘蛛纸牌', subtitle: '经典Windows蜘蛛纸牌', category: 'web', iframeUrl: '/spider-solitaire' },
@@ -83,6 +143,11 @@ const GAME_LIBRARY: GameConfig[] = [
 
 const CATEGORIES = [
   { key: 'nes' as const, label: 'FC/NES', icon: '🎮' },
+  { key: 'snes' as const, label: 'SFC/SNES', icon: '🎮' },
+  { key: 'md' as const, label: 'MD/Genesis', icon: '🕹️' },
+  { key: 'gba' as const, label: 'GBA', icon: '🎮' },
+  { key: 'gbc' as const, label: 'GBC', icon: '🎮' },
+  { key: 'n64' as const, label: 'N64', icon: '🕹️' },
   { key: 'arcade' as const, label: '街机', icon: '🕹️' },
   { key: 'arcade-variant' as const, label: '变体版', icon: '📦' },
   { key: 'web' as const, label: 'HTML5', icon: '🌐' },
@@ -430,7 +495,14 @@ const GameHub: React.FC = () => {
                   className="relative select-none overflow-hidden bg-black"
                   style={{
                     width: '100%',
-                    aspectRatio: selectedGame.category === 'nes' ? '256/240' : '4/3'
+                    aspectRatio: (() => {
+                      switch (selectedGame.category) {
+                        case 'nes': return '256/240'
+                        case 'gba': return '3/2'
+                        case 'gbc': return '10/9'
+                        case 'snes': case 'md': case 'n64': default: return '4/3'
+                      }
+                    })()
                   }}
                 >
                 <EmulatorJS {...({
