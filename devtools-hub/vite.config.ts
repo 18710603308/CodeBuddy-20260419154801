@@ -11,6 +11,35 @@ export default defineConfig({
     port: 5173,
     host: '0.0.0.0',
     proxy: {
+      // Poker WebSocket (必须在 generic /api 之前)
+      '/socket.io': {
+        target: 'http://localhost:3001',
+        changeOrigin: true,
+        ws: true,
+      },
+      // Poker API 专用路由
+      '/api/auth': {
+        target: 'http://localhost:3001',
+        changeOrigin: true,
+      },
+      '/api/user': {
+        target: 'http://localhost:3001',
+        changeOrigin: true,
+      },
+      '/api/health': {
+        target: 'http://localhost:3001',
+        changeOrigin: true,
+      },
+      '/uploads': {
+        target: 'http://localhost:3001',
+        changeOrigin: true,
+      },
+      // Poker Next.js 前端
+      '/poker': {
+        target: 'http://localhost:3000',
+        changeOrigin: true,
+      },
+      // 通用 API（Docker API 等）
       '/api': {
         target: 'http://localhost:3000',
         changeOrigin: true,

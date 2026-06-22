@@ -1,36 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { Link } from 'react-router-dom'
 import { Home, Sparkles, Sun, Moon, Sword, Shield, Zap, Heart, Coins, ChevronRight, Skull, Package, User, LogOut } from 'lucide-react'
-
-// 主题 Hook
-function useTheme() {
-  const [isDark, setIsDark] = useState(() => {
-    const saved = localStorage.getItem('devtools-theme')
-    return saved ? saved === 'dark' : true
-  })
-
-  useEffect(() => {
-    const theme = isDark ? 'dark' : 'light'
-    document.documentElement.setAttribute('data-theme', theme)
-    localStorage.setItem('devtools-theme', theme)
-  }, [isDark])
-
-  useEffect(() => {
-    const handleStorageChange = (e: StorageEvent) => {
-      if (e.key === 'devtools-theme') {
-        const newTheme = e.newValue
-        if (newTheme) {
-          document.documentElement.setAttribute('data-theme', newTheme)
-          setIsDark(newTheme === 'dark')
-        }
-      }
-    }
-    window.addEventListener('storage', handleStorageChange)
-    return () => window.removeEventListener('storage', handleStorageChange)
-  }, [])
-
-  return { isDark, toggleTheme: () => setIsDark(!isDark) }
-}
+import { useTheme } from '@/hooks/useTheme'
 
 // 职业类型
 type ClassType = 'warrior' | 'mage' | 'taoist'

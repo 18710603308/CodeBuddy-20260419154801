@@ -15,10 +15,9 @@ interface GameConfig {
   title: string
   subtitle?: string
   romPath?: string
-  category: 'nes' | 'arcade' | 'arcade-variant' | 'gba' | 'gbc' | 'snes' | 'md' | 'n64' | 'web'
+  category: 'nes' | 'arcade' | 'gba' | 'gbc' | 'snes' | 'md' | 'n64' | 'web'
   core?: 'nes' | 'fbneo' | 'mame2003' | 'mame2003_plus' | 'mgba' | 'gambatte' | 'snes9x' | 'genesis_plus_gx' | 'mupen64plus_next'
   biosPath?: string
-  parentGame?: string
   iframeUrl?: string  // Web/HTML5 游戏用 iframe 嵌入
   broken?: string     // 游戏不可用原因说明
   noSandbox?: boolean // 全栈联机游戏需要，不启用 sandbox
@@ -42,6 +41,19 @@ const GAME_LIBRARY: GameConfig[] = [
   { id: 'sanmo', title: '三目童子', subtitle: 'Mitsume ga Tooru', romPath: '/roms/Sanmo.nes', category: 'nes', core: 'nes' },
   { id: 'fumoji', title: '伏魔记', subtitle: '封神榜之伏魔三太子', romPath: '/roms/Fumojì.nes', category: 'nes', core: 'nes' },
   { id: 'gunnac', title: '加纳战机', subtitle: 'Gun-Nac', romPath: '/roms/nes/gun_nac.nes', category: 'nes', core: 'nes' },
+  // 新增加经典 NES 游戏
+  { id: 'super-mario-2', title: '超级马里奥2', subtitle: 'Super Mario Bros 2', romPath: '/roms/nes/super_mario_2.nes', category: 'nes', core: 'nes' },
+  { id: 'super-mario-3', title: '超级马里奥3', subtitle: 'Super Mario Bros 3', romPath: '/roms/super_mario_3.nes', category: 'nes', core: 'nes' },
+  { id: 'nes-duck-tales', title: '唐老鸭', subtitle: 'DuckTales', romPath: '/roms/nes/duck_tales.nes', category: 'nes', core: 'nes' },
+  { id: 'nes-kirby-adventure', title: '星之卡比 梦之泉物语', subtitle: "Kirby's Adventure", romPath: '/roms/kirby_adventure.nes', category: 'nes', core: 'nes' },
+  { id: 'zelda', title: '塞尔达传说', subtitle: 'The Legend of Zelda', romPath: '/roms/nes/zelda.nes', category: 'nes', core: 'nes' },
+  { id: 'zelda-2', title: '塞尔达传说2', subtitle: 'Zelda II', romPath: '/roms/nes/zelda_2.nes', category: 'nes', core: 'nes' },
+  { id: 'double-dragon', title: '双截龙', subtitle: 'Double Dragon', romPath: '/roms/nes/double_dragon.nes', category: 'nes', core: 'nes' },
+  { id: 'castlevania', title: '恶魔城', subtitle: 'Castlevania', romPath: '/roms/castlevania.nes', category: 'nes', core: 'nes' },
+  { id: 'castlevania-2', title: '恶魔城2', subtitle: "Castlevania II", romPath: '/roms/castlevania_2.nes', category: 'nes', core: 'nes' },
+  { id: 'metroid-nes', title: '银河战士', subtitle: 'Metroid', romPath: '/roms/metroid.nes', category: 'nes', core: 'nes' },
+  { id: 'ninja-gaiden', title: '忍者龙剑传', subtitle: 'Ninja Gaiden', romPath: '/roms/ninja_gaiden.nes', category: 'nes', core: 'nes' },
+  { id: 'contra-nes', title: '魂斗罗(FC)', subtitle: 'Contra', romPath: '/roms/nes/contra.nes', category: 'nes', core: 'nes' },
 
   // ---- 街机 ----
   { id: 'snowbros', title: '雪人兄弟', subtitle: 'Snow Bros', romPath: '/roms/arcade/snowbros.zip', category: 'arcade', core: 'fbneo' },
@@ -51,22 +63,8 @@ const GAME_LIBRARY: GameConfig[] = [
   { id: 'punisher', title: '惩罚者', subtitle: 'The Punisher', romPath: '/roms/arcade/punisher.zip', category: 'arcade', core: 'fbneo', biosPath: '/roms/arcade/neogeo.zip' },
   { id: 'kof97', title: '拳皇97', subtitle: 'The King of Fighters 97', romPath: '/roms/arcade/kof97.zip', category: 'arcade', core: 'fbneo' },
   { id: 'kof2002', title: '拳皇2002', subtitle: 'The King of Fighters 2002', romPath: '/roms/arcade/kof2002.zip', category: 'arcade', core: 'fbneo' },
-  { id: 'orlegend', title: '西游释厄传', subtitle: 'Oriental Legend', romPath: '/roms/arcade/orlegend.zip', category: 'arcade', core: 'fbneo', biosPath: '/roms/arcade/pgm.zip', broken: 'ROM 版本与核心不兼容，需更新 ROM' },
-  { id: 'sangokushi', title: '三国战纪', subtitle: 'Knights of Valour', romPath: '/roms/arcade/kov.zip', category: 'arcade', core: 'fbneo', biosPath: '/roms/arcade/pgm.zip', broken: 'ROM 版本与核心不兼容，需更新 ROM' },
   { id: 'ldrun-arcade', title: '淘金者(街机)', subtitle: 'Lode Runner Arcade', romPath: '/roms/arcade/ldrun.zip', category: 'arcade', core: 'fbneo' },
   { id: 'ddragon', title: '双截龙', subtitle: 'Double Dragon', romPath: '/roms/arcade/ddragon.zip', category: 'arcade', core: 'mame2003_plus' },
-
-  // ---- 街机变体版 ----
-  { id: 'kovplus', title: '三国战纪 Plus', subtitle: 'KOV Plus', romPath: '/roms/arcade/kovplus.zip', category: 'arcade-variant', core: 'fbneo', biosPath: '/roms/arcade/pgm.zip', parentGame: 'sangokushi', broken: 'ROM 版本与核心不兼容，需更新 ROM' },
-  { id: 'kovsh', title: '三国战纪 超级英雄', subtitle: 'KOV Super Heroes', romPath: '/roms/arcade/kovsh.zip', category: 'arcade-variant', core: 'fbneo', biosPath: '/roms/arcade/pgm.zip', parentGame: 'sangokushi', broken: 'ROM 版本与核心不兼容，需更新 ROM' },
-  { id: 'kovqhsgs', title: '三国战纪 群雄争霸', subtitle: 'KOV Qunxiong', romPath: '/roms/arcade/kovqhsgs.zip', category: 'arcade-variant', core: 'fbneo', biosPath: '/roms/arcade/pgm.zip', parentGame: 'sangokushi', broken: 'ROM 版本与核心不兼容，需更新 ROM' },
-  { id: 'orlegendc', title: '西游释厄传 中国版', subtitle: 'Oriental Legend CN v112', romPath: '/roms/arcade/orlegendc.zip', category: 'arcade-variant', core: 'fbneo', biosPath: '/roms/arcade/pgm.zip', parentGame: 'orlegend', broken: 'ROM 版本与核心不兼容，需更新 ROM' },
-  { id: 'orlegende', title: '西游释厄传 另一版', subtitle: 'Oriental Legend Alt', romPath: '/roms/arcade/orlegende.zip', category: 'arcade-variant', core: 'fbneo', biosPath: '/roms/arcade/pgm.zip', parentGame: 'orlegend', broken: 'ROM 版本与核心不兼容，需更新 ROM' },
-  { id: 'kof97pls', title: '拳皇97 Plus', subtitle: 'KOF 97 Plus', romPath: '/roms/arcade/kof97pls.zip', category: 'arcade-variant', core: 'fbneo', parentGame: 'kof97' },
-  { id: 'kof2002b', title: '拳皇2002 第二版', subtitle: 'KOF 2002 Version B', romPath: '/roms/arcade/kof2002b.zip', category: 'arcade-variant', core: 'fbneo', parentGame: 'kof2002' },
-  { id: 'ddragonu', title: '双截龙 美版', subtitle: 'Double Dragon US', romPath: '/roms/arcade/ddragonu.zip', category: 'arcade-variant', core: 'fbneo', parentGame: 'ddragon' },
-  { id: 'ddragonb', title: '双截龙 Bootleg', subtitle: 'Double Dragon Bootleg', romPath: '/roms/arcade/ddragonb.zip', category: 'arcade-variant', core: 'fbneo', parentGame: 'ddragon' },
-  { id: 'kovplusa', title: '三国战纪 Plus 另一版', subtitle: 'KOV Plus Alt', romPath: '/roms/arcade/kovplusa.zip', category: 'arcade-variant', core: 'fbneo', biosPath: '/roms/arcade/pgm.zip', parentGame: 'sangokushi', broken: 'ROM 版本与核心不兼容，需更新 ROM' },
 
   // ---- GBA ----
   { id: 'gba-koudai-hong', title: '口袋妖怪 红宝石', subtitle: 'Pokémon Ruby', romPath: '/roms/gba/pokemon_ruby.gba', category: 'gba', core: 'mgba' },
@@ -81,6 +79,13 @@ const GAME_LIBRARY: GameConfig[] = [
   { id: 'gba-fire-emblem', title: '火焰纹章 封印之剑', subtitle: 'Fire Emblem: Binding Blade', romPath: '/roms/gba/fire_emblem.gba', category: 'gba', core: 'mgba' },
   { id: 'gba-advance-wars', title: '高级战争', subtitle: 'Advance Wars', romPath: '/roms/gba/advance_wars.gba', category: 'gba', core: 'mgba' },
   { id: 'gba-kirby', title: '星之卡比 梦之泉', subtitle: 'Kirby: Nightmare in Dream Land', romPath: '/roms/gba/kirby_nightmare.gba', category: 'gba', core: 'mgba' },
+  // 新加 GBA 经典
+  { id: 'gba-final-fantasy-6', title: '最终幻想6', subtitle: 'Final Fantasy VI Advance', romPath: '/roms/gba/gba_final_fantasy_6.gba', category: 'gba', core: 'mgba' },
+  { id: 'gba-final-fantasy-4', title: '最终幻想4', subtitle: 'Final Fantasy IV Advance', romPath: '/roms/gba/gba_final_fantasy_4.gba', category: 'gba', core: 'mgba' },
+  { id: 'gba-kingdom-hearts', title: '王国之心', subtitle: 'Kingdom Hearts: Chain of Memories', romPath: '/roms/gba/gba_kingdom_hearts.gba', category: 'gba', core: 'mgba' },
+  { id: 'gba-wario-ware', title: '瓦力欧制造', subtitle: 'WarioWare, Inc.', romPath: '/roms/gba/gba_wario_ware.gba', category: 'gba', core: 'mgba' },
+  { id: 'gba-sonic-advance', title: '索尼克Advance', subtitle: 'Sonic Advance', romPath: '/roms/gba/gba_sonic_advance.gba', category: 'gba', core: 'mgba' },
+  { id: 'gba-mario-golf', title: '马里奥高尔夫', subtitle: 'Mario Golf: Advance Tour', romPath: '/roms/gba/gba_mario_golf.gba', category: 'gba', core: 'mgba' },
 
   // ---- GBC ----
   { id: 'gbc-koudai-jin', title: '口袋妖怪 金', subtitle: 'Pokémon Gold', romPath: '/roms/gbc/pokemon_gold.gbc', category: 'gbc', core: 'gambatte' },
@@ -149,7 +154,6 @@ const CATEGORIES = [
   { key: 'gbc' as const, label: 'GBC', icon: '🎮' },
   { key: 'n64' as const, label: 'N64', icon: '🕹️' },
   { key: 'arcade' as const, label: '街机', icon: '🕹️' },
-  { key: 'arcade-variant' as const, label: '变体版', icon: '📦' },
   { key: 'web' as const, label: 'HTML5', icon: '🌐' },
 ]
 
@@ -361,7 +365,7 @@ const GameHub: React.FC = () => {
       )}
 
       {/* ====== 主内容区 ====== */}
-      <div className="flex-1 flex flex-col min-h-screen">
+      <div className="flex-1 flex flex-col h-screen overflow-y-auto">
         {/* 顶部栏 */}
         <header className={`border-b backdrop-blur-xl sticky top-0 z-30 ${isDark ? 'border-white/10 bg-slate-900/80' : 'border-gray-200 bg-white/80'}`}>
           <div className="px-4 py-3 flex items-center justify-between">
@@ -382,7 +386,7 @@ const GameHub: React.FC = () => {
               </div>
               <div className="flex items-center gap-2 ml-2">
                 <span className={`px-2 py-0.5 rounded text-xs ${isDark ? 'bg-white/10' : 'bg-gray-200'}`}>
-                  {selectedGame.category === 'nes' ? 'NES' : selectedGame.category === 'arcade-variant' ? '街机·变体' : selectedGame.category === 'web' ? 'HTML5' : '街机'}
+                  {selectedGame.category === 'nes' ? 'NES' : selectedGame.category === 'web' ? 'HTML5' : '街机'}
                 </span>
                 {selectedGame.core && (
                   <span className={`px-2 py-0.5 rounded text-xs ${isDark ? 'bg-blue-500/20 text-blue-300' : 'bg-blue-100 text-blue-700'}`}>
@@ -406,10 +410,10 @@ const GameHub: React.FC = () => {
         </header>
 
         {/* 游戏区域 */}
-        <main className="flex-1 flex flex-col items-center justify-center p-4">
+        <main className="flex-1 flex flex-col items-center p-4 overflow-y-auto pt-8">
           {/* 快速切换栏（非移动端） */}
           {!isMobile && (
-            <div className="mb-4 flex items-center gap-2 flex-wrap justify-center max-w-4xl">
+            <div className="mb-4 flex items-center gap-2 flex-wrap justify-center max-w-4xl shrink-0">
               {CATEGORIES.map(cat => (
                 <div key={cat.key} className="flex items-center gap-1">
                   <span className={`text-xs ${theme.textSubtle}`}>{cat.label}:</span>
@@ -432,7 +436,7 @@ const GameHub: React.FC = () => {
           )}
 
           {/* 播放器 */}
-          <div className={`rounded-2xl overflow-hidden border ${isDark ? 'border-white/10 bg-black' : 'border-gray-200 bg-gray-900'}`}
+          <div className={`rounded-2xl border ${isDark ? 'border-white/10 bg-black' : 'border-gray-200 bg-gray-900'}`}
             style={{ maxWidth: selectedGame.category === 'nes' ? '640px' : selectedGame.category === 'web' ? '100%' : '800px', width: '100%' }}
           >
             {/* Web 游戏用 iframe */}

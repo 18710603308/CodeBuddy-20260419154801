@@ -1,18 +1,9 @@
-import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import { Home, Sun, Moon, Gamepad2, ExternalLink } from 'lucide-react'
+import { useTheme } from '@/hooks/useTheme'
 
 export function RetroGames() {
-  const [isDark, setIsDark] = useState(() => {
-    const saved = localStorage.getItem('devtools-theme')
-    return saved ? saved === 'dark' : true
-  })
-
-  useEffect(() => {
-    const theme = isDark ? 'dark' : 'light'
-    document.documentElement.setAttribute('data-theme', theme)
-    localStorage.setItem('devtools-theme', theme)
-  }, [isDark])
+  const { isDark, toggleTheme } = useTheme()
 
   const openGameCenter = () => {
     window.open('https://www.yikm.net', '_blank', 'noopener,noreferrer')
@@ -38,7 +29,7 @@ export function RetroGames() {
               </div>
             </div>
             <button
-              onClick={() => setIsDark(!isDark)}
+              onClick={toggleTheme}
               className="flex items-center gap-2 px-3 py-2 rounded-lg bg-secondary hover:bg-accent transition-colors"
             >
               {isDark ? <Sun className="w-5 h-5 text-amber-400" /> : <Moon className="w-5 h-5 text-muted" />}
