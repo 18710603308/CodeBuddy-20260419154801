@@ -162,9 +162,6 @@ export function XmlTool() {
       {/* 左侧输入区域 */}
       <div className="flex-1 flex flex-col gap-3 min-w-0">
         <label className="text-sm text-muted">输入 XML</label>
-        <div className="flex-1">
-          <ContentTextarea value={input} onChange={setInput} placeholder="粘贴 XML 数据..." />
-        </div>
         <div className="flex gap-3 flex-wrap">
           <button onClick={formatXml} className="flex items-center gap-2 px-4 py-2 rounded-lg bg-emerald-500 hover:bg-emerald-600 text-white font-medium transition-colors">
             <AlignLeft className="w-4 h-4" /> 美化
@@ -176,12 +173,17 @@ export function XmlTool() {
             <ShieldCheck className="w-4 h-4" /> 校验
           </button>
         </div>
+        <div className="flex-1">
+          <ContentTextarea value={input} onChange={setInput} placeholder="粘贴 XML 数据..." />
+        </div>
         {error && <div className="p-3 rounded-lg bg-red-500/20 border border-red-500/30 text-red-400 text-sm">{error}</div>}
       </div>
 
       {/* 右侧输出区域 */}
       <div className="flex-1 flex flex-col gap-3 min-w-0">
         <label className="text-sm text-muted">输出结果（语法高亮）</label>
+        {/* 占位区域，与左侧按钮组同高，保持视觉对称 */}
+        <div className="h-[42px]" />
         <div className="flex-1">
           <XmlHighlightedOutput xml={output} />
         </div>
