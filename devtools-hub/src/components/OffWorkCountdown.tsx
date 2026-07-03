@@ -219,6 +219,9 @@ const OffWorkCountdown: React.FC = () => {
                         <div className="text-4xl font-mono font-bold tracking-wider my-3 text-amber-500">
                           {remaining !== null ? formatTime(remaining) : '--:--:--'}
                         </div>
+                        <div className={`text-xs font-mono mt-1 ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>
+                          剩余 {remaining !== null ? Math.floor(remaining / 1000) : '--'} 秒
+                        </div>
                         <div className="text-xs text-gray-400">
                           距离下班还有
                         </div>
@@ -264,7 +267,7 @@ const OffWorkCountdown: React.FC = () => {
           >
             <Clock className="w-5 h-5" />
             {savedTime && remaining !== null && !isAfterWork ? (
-              <span className="font-mono text-sm">{formatTime(remaining)}</span>
+              <span className="font-mono text-sm">{formatTime(remaining)} <span className="text-xs opacity-80">{Math.floor(remaining / 1000)}s</span></span>
             ) : isAfterWork ? (
               <span className="text-sm">已下班 🏠</span>
             ) : (
