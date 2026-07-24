@@ -18,6 +18,8 @@ import { RegistryViewer } from './components/registry-viewer'
 import NESGame from './components/NESGame'
 import ArcadeGame from './components/ArcadeGame'
 import GameHub from './components/GameHub'
+import PerlerBeadsCoop from './components/PerlerBeadsCoop'
+import MusicRoom from './components/MusicRoom'
 import { ErrorPage } from './components/ErrorPage'
 import { PageMeta } from './components/PageMeta'
 
@@ -55,6 +57,14 @@ const SEO = {
   GAME_HUB: {
     title: '游戏中心 - 街机/FC/休闲游戏合集 | DevTools Hub',
     description: '一页畅玩所有经典游戏：魂斗罗、拳皇97、蜘蛛纸牌、扫雷、2048、黄金矿工、连连看等。',
+  },
+  PERLER_COOP: {
+    title: '拼豆联机 - 多人在线拼豆创作 | DevTools Hub',
+    description: '纯网页多人联机拼豆游戏，WebRTC P2P 实时合作，20色调色板，创建房间分享码即可和好友一起拼豆创作，支持预设图案和导出PNG。',
+  },
+  MUSIC_ROOM: {
+    title: '共享听歌房 - 多人在线听歌聊天 | DevTools Hub',
+    description: '纯网页多人在线共享听歌房间，支持网易云/QQ音乐/酷狗搜索点歌，房间内实时聊天、表情互动、刷礼物、摇骰子/十五二十/小姐牌小游戏，P2P实时同步。',
   },
   LINK_GAME: {
     title: '连连看在线玩 - 经典休闲益智游戏 | DevTools Hub',
@@ -133,6 +143,8 @@ const router = createBrowserRouter([
       { path: '/retro-games', element: <RetroGames />, handle: { seo: SEO.RETRO_GAMES } },
       { path: '/game-collection', element: <GameCollection />, handle: { seo: SEO.GAME_COLLECTION } },
       { path: '/game-hub', element: <GameHub />, handle: { seo: SEO.GAME_HUB } },
+      { path: '/perler-coop', element: <PerlerBeadsCoop />, handle: { seo: SEO.PERLER_COOP } },
+      { path: '/music-room', element: <MusicRoom />, handle: { seo: SEO.MUSIC_ROOM } },
 
       // 休闲游戏
       { path: '/link-game', element: <LinkGame />, handle: { seo: SEO.LINK_GAME } },

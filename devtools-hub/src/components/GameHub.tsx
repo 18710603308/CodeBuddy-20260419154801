@@ -142,6 +142,7 @@ const GAME_LIBRARY: GameConfig[] = [
   { id: 'fumoji-bbk', title: '伏魔记 BBK', subtitle: '步步高电子词典原版网页移植', category: 'web', iframeUrl: '/fumojì-bbk' },
   { id: 'texas-holdem', title: '德州扑克（单机）', subtitle: '经典德州扑克人机对战', category: 'web', iframeUrl: '/games/texas-holdem/' },
   { id: 'texas-holdem-online', title: '德州扑克（联机）', subtitle: '6人实时联机', category: 'web', iframeUrl: '/poker/', noSandbox: true },
+  { id: 'perler-coop', title: '拼豆联机', subtitle: '多人在线拼豆创作', category: 'web', iframeUrl: '/perler-coop', noSandbox: true },
 ]
 
 // ==================== 分类定义 ====================

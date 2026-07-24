@@ -44,6 +44,22 @@ export default defineConfig({
         target: 'http://localhost:3000',
         changeOrigin: true,
       },
+      // 音乐 API 代理（解决 CORS）
+      '/music-api/netease': {
+        target: 'https://music.163.com',
+        changeOrigin: true,
+        rewrite: (path: string) => path.replace(/^\/music-api\/netease/, ''),
+      },
+      '/music-api/qq': {
+        target: 'https://c.y.qq.com',
+        changeOrigin: true,
+        rewrite: (path: string) => path.replace(/^\/music-api\/qq/, ''),
+      },
+      '/music-api/kugou': {
+        target: 'https://mobilecdn.kugou.com',
+        changeOrigin: true,
+        rewrite: (path: string) => path.replace(/^\/music-api\/kugou/, ''),
+      },
     },
   },
   resolve: {
