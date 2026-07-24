@@ -1,7 +1,11 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
-import { Clock, Settings, X, Play, Pause, RotateCcw, Coffee } from 'lucide-react'
+import { Clock, Settings, X, Coffee } from 'lucide-react'
 
 const STORAGE_KEY = 'offwork_time'
+const MODE_STORAGE_KEY = 'offwork_display_mode'
+type DisplayMode = 'hms' | 'sec' | 'ms'
+
+const MODE_LABELS: Record<DisplayMode, string> = { hms: '时分秒', sec: '秒', ms: '毫秒' }
 
 const OffWorkCountdown: React.FC = () => {
   const [open, setOpen] = useState(false)
@@ -12,6 +16,9 @@ const OffWorkCountdown: React.FC = () => {
   const [isAfterWork, setIsAfterWork] = useState(false)
   const [showCelebration, setShowCelebration] = useState(false)
   const [hasTriggeredToday, setHasTriggeredToday] = useState(false)
+  const [displayMode, setDisplayMode] = useState<DisplayMode>(() => {
+    return (localStorage.getItem(MODE_STORAGE_KEY) as DisplayMode) || 'hms'
+  })
   const audioRef = useRef<HTMLAudioElement | null>(null)
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
   const triggeredRef = useRef(false)
@@ -27,10 +34,8 @@ const OffWorkCountdown: React.FC = () => {
     const diff = target.getTime() - now.getTime()
 
     if (diff <= 0) {
-      // 已过下班时间
       setRemaining(0)
       setIsAfterWork(true)
-      // 只在第一次触发时弹窗+播音频
       if (!triggeredRef.current && !hasTriggeredToday) {
         triggeredRef.current = true
         setHasTriggeredToday(true)
@@ -46,14 +51,15 @@ const OffWorkCountdown: React.FC = () => {
     }
   }, [savedTime, hasTriggeredToday])
 
-  // 定时刷新
+  // 定时刷新 — 毫秒模式用更高频率
   useEffect(() => {
     tick()
-    intervalRef.current = setInterval(tick, 1000)
+    const interval = displayMode === 'ms' ? 50 : 1000
+    intervalRef.current = setInterval(tick, interval)
     return () => {
       if (intervalRef.current) clearInterval(intervalRef.current)
     }
-  }, [tick])
+  }, [tick, displayMode])
 
   // 每天重置触发状态
   useEffect(() => {
@@ -80,7 +86,6 @@ const OffWorkCountdown: React.FC = () => {
     triggeredRef.current = false
     setHasTriggeredToday(false)
 
-    // 检查是否已过下班时间
     const now = new Date()
     const target = new Date()
     target.setHours(h, m, 0, 0)
@@ -93,13 +98,40 @@ const OffWorkCountdown: React.FC = () => {
     }
   }
 
-  // 格式化剩余时间
-  const formatTime = (ms: number) => {
-    const totalSec = Math.floor(ms / 1000)
-    const hh = Math.floor(totalSec / 3600)
-    const mm = Math.floor((totalSec % 3600) / 60)
-    const ss = totalSec % 60
-    return `${String(hh).padStart(2, '0')}:${String(mm).padStart(2, '0')}:${String(ss).padStart(2, '0')}`
+  const switchMode = (mode: DisplayMode) => {
+    setDisplayMode(mode)
+    localStorage.setItem(MODE_STORAGE_KEY, mode)
+  }
+
+  const formatTime = (ms: number): string => {
+    switch (displayMode) {
+      case 'sec':
+        return `${Math.floor(ms / 1000)}`
+      case 'ms':
+        return `${ms}`
+      case 'hms':
+      default: {
+        const totalSec = Math.floor(ms / 1000)
+        const hh = Math.floor(totalSec / 3600)
+        const mm = Math.floor((totalSec % 3600) / 60)
+        const ss = totalSec % 60
+        return `${String(hh).padStart(2, '0')}:${String(mm).padStart(2, '0')}:${String(ss).padStart(2, '0')}`
+      }
+    }
+  }
+
+  const collapseText = (): string => {
+    if (!savedTime || remaining === null) return '下班倒计时'
+    if (isAfterWork) return '已下班 🏠'
+    switch (displayMode) {
+      case 'sec':
+        return `${formatTime(remaining)} 秒`
+      case 'ms':
+        return `${formatTime(remaining)} 毫秒`
+      case 'hms':
+      default:
+        return formatTime(remaining)
+    }
   }
 
   // 下班弹窗
@@ -111,15 +143,16 @@ const OffWorkCountdown: React.FC = () => {
     }
   }
 
-  const now = new Date()
   const isDark = document.documentElement.getAttribute('data-theme') !== 'light'
+
+  const btnBase = 'px-2 py-1 rounded text-xs font-medium transition-colors'
+  const btnActive = 'bg-amber-500 text-white'
+  const btnInactive = isDark ? 'text-gray-400 hover:bg-slate-600' : 'text-gray-500 hover:bg-gray-200'
 
   return (
     <>
-      {/* 隐藏音频 */}
       <audio ref={audioRef} src="/audio/lanlianhua.mp3" preload="auto" />
 
-      {/* 庆祝弹窗 */}
       {showCelebration && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/70 backdrop-blur-sm">
           <div className="bg-gradient-to-br from-yellow-500 via-orange-500 to-red-500 rounded-3xl p-8 shadow-2xl max-w-sm w-full mx-4 text-center animate-bounce">
@@ -140,12 +173,10 @@ const OffWorkCountdown: React.FC = () => {
         </div>
       )}
 
-      {/* 浮动按钮 + 面板 */}
       <div className="fixed bottom-6 right-6 z-50">
         {open ? (
           <div className={`rounded-2xl shadow-2xl border overflow-hidden transition-all w-72
             ${isDark ? 'bg-slate-800 border-slate-600 text-white' : 'bg-white border-gray-200 text-gray-900'}`}>
-            {/* Header */}
             <div className={`px-4 py-3 flex items-center justify-between border-b
               ${isDark ? 'bg-slate-700 border-slate-600' : 'bg-amber-50 border-amber-200'}`}>
               <div className="flex items-center gap-2">
@@ -157,9 +188,7 @@ const OffWorkCountdown: React.FC = () => {
               </button>
             </div>
 
-            {/* Body */}
             <div className="p-4 space-y-4">
-              {/* 设置下班时间 */}
               {!savedTime ? (
                 <div>
                   <label className="text-xs text-gray-400 mb-2 block">设置下班时间</label>
@@ -195,7 +224,6 @@ const OffWorkCountdown: React.FC = () => {
                 </div>
               ) : (
                 <>
-                  {/* 已设置 - 显示倒计时 */}
                   <div className="text-center">
                     <div className={`text-xs mb-1 ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>
                       下班时间 {savedTime}
@@ -205,6 +233,19 @@ const OffWorkCountdown: React.FC = () => {
                       >
                         <Settings className="w-3 h-3" /> 修改
                       </button>
+                    </div>
+
+                    {/* 显示模式切换 */}
+                    <div className={`flex items-center gap-1 justify-center mb-2 rounded-lg p-1 ${isDark ? 'bg-slate-700' : 'bg-gray-100'}`}>
+                      {(Object.keys(MODE_LABELS) as DisplayMode[]).map(mode => (
+                        <button
+                          key={mode}
+                          onClick={() => switchMode(mode)}
+                          className={`${btnBase} ${displayMode === mode ? btnActive : btnInactive}`}
+                        >
+                          {MODE_LABELS[mode]}
+                        </button>
+                      ))}
                     </div>
 
                     {isAfterWork ? (
@@ -219,19 +260,21 @@ const OffWorkCountdown: React.FC = () => {
                         <div className="text-4xl font-mono font-bold tracking-wider my-3 text-amber-500">
                           {remaining !== null ? formatTime(remaining) : '--:--:--'}
                         </div>
-                        <div className={`text-xs font-mono mt-1 ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>
-                          剩余 {remaining !== null ? Math.floor(remaining / 1000) : '--'} 秒
-                        </div>
+                        {/* 时分秒模式下显示剩余秒数 */}
+                        {displayMode !== 'sec' && displayMode !== 'ms' && (
+                          <div className={`text-xs font-mono mt-1 ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>
+                            剩余 {remaining !== null ? Math.floor(remaining / 1000) : '--'} 秒
+                          </div>
+                        )}
                         <div className="text-xs text-gray-400">
-                          距离下班还有
+                          {displayMode === 'sec' ? '秒' : displayMode === 'ms' ? '毫秒' : '距离下班还有'}
                         </div>
-                        {/* 进度条 */}
                         {savedTime && remaining !== null && remaining > 0 && (() => {
                           const [h, m] = savedTime.split(':').map(Number)
                           const target = new Date()
                           target.setHours(h, m, 0, 0)
                           const startOfDay = new Date()
-                          startOfDay.setHours(9, 0, 0, 0) // 假设9点上班
+                          startOfDay.setHours(9, 0, 0, 0)
                           const totalMs = target.getTime() - startOfDay.getTime()
                           const elapsed = totalMs - remaining
                           const pct = totalMs > 0 ? Math.min(100, Math.max(0, (elapsed / totalMs) * 100)) : 0
@@ -251,14 +294,12 @@ const OffWorkCountdown: React.FC = () => {
               )}
             </div>
 
-            {/* Footer */}
             <div className={`px-4 py-2 border-t text-center text-[10px]
               ${isDark ? 'bg-slate-700 border-slate-600 text-gray-500' : 'bg-amber-50 border-amber-200 text-gray-400'}`}>
               下班自动弹窗提醒 + 🎵 蓝莲花
             </div>
           </div>
         ) : (
-          /* 折叠按钮 */
           <button
             onClick={() => setOpen(true)}
             className="relative group flex items-center gap-2 px-4 py-3 rounded-2xl shadow-xl
@@ -266,13 +307,7 @@ const OffWorkCountdown: React.FC = () => {
               text-white font-bold transition-all hover:scale-105 active:scale-95"
           >
             <Clock className="w-5 h-5" />
-            {savedTime && remaining !== null && !isAfterWork ? (
-              <span className="font-mono text-sm">{formatTime(remaining)} <span className="text-xs opacity-80">{Math.floor(remaining / 1000)}s</span></span>
-            ) : isAfterWork ? (
-              <span className="text-sm">已下班 🏠</span>
-            ) : (
-              <span className="text-sm">下班倒计时</span>
-            )}
+            <span className="font-mono text-sm">{collapseText()}</span>
           </button>
         )}
       </div>
