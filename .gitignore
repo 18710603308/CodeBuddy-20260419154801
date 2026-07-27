@@ -26,6 +26,7 @@ dist-ssr
 # IDE / tool internal data
 .codebuddy/
 .trae/
+.workbuddy/
 
 # Large runtime dependencies (documented separately)
 devtools-hub/public/emulatorjs/data/

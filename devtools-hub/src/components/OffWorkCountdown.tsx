@@ -151,7 +151,7 @@ const OffWorkCountdown: React.FC = () => {
 
   return (
     <>
-      <audio ref={audioRef} src="/audio/lanlianhua.mp3" preload="auto" />
+      <audio ref={audioRef} src="/audio/bell.mp3" preload="auto" />
 
       {showCelebration && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/70 backdrop-blur-sm">
@@ -160,8 +160,8 @@ const OffWorkCountdown: React.FC = () => {
             <h2 className="text-3xl font-black text-white mb-2 drop-shadow-lg">
               大吉大利,今晚吃鸡!
             </h2>
-            <p className="text-white/80 mb-2 text-lg">🎵 没有什么能够阻挡</p>
-            <p className="text-white/80 mb-6 text-lg">我对自由的向往!</p>
+            <p className="text-white/80 mb-2 text-lg">🔔 叮~咚~叮~咚~</p>
+            <p className="text-white/80 mb-6 text-lg">放学啦!下班啦!</p>
             <button
               onClick={closeCelebration}
               className="px-8 py-3 bg-white/20 hover:bg-white/30 backdrop-blur rounded-xl text-white font-bold text-lg transition-all
@@ -296,7 +296,7 @@ const OffWorkCountdown: React.FC = () => {
 
             <div className={`px-4 py-2 border-t text-center text-[10px]
               ${isDark ? 'bg-slate-700 border-slate-600 text-gray-500' : 'bg-amber-50 border-amber-200 text-gray-400'}`}>
-              下班自动弹窗提醒 + 🎵 蓝莲花
+              下班自动弹窗提醒 + 🔔 日式下课铃(威斯敏斯特钟声)
             </div>
           </div>
         ) : (
