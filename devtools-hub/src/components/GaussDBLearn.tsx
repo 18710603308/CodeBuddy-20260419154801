@@ -245,25 +245,17 @@ export function GaussDBLearn() {
 
   /* ---------- 引擎模式：浏览器 PGlite / 服务器真库 ---------- */
   const [engineMode, setEngineMode] = useState<'browser' | 'server'>('browser')
+  const [switching, setSwitching] = useState(false)
+  // 通过 ref 读最新 engineMode，避免 initDb 闭包捕获旧值
+  const engineModeRef = useRef<'browser' | 'server'>('browser')
 
-  const switchEngine = useCallback((mode: 'browser' | 'server') => {
-    if (mode === engineMode) return
-    setEngineMode(mode)
-  }, [engineMode])
-
-  useEffect(() => {
-    // 切换引擎后清空已运行的结果，等待新引擎就绪
-    setExampleStates({})
-    setExerciseStates({})
-  }, [engineMode])
-
-  /* ---------- 数据库初始化 ---------- */
   const initDb = useCallback(async () => {
+    const mode = engineModeRef.current
     setDbLoading(true)
     setDbError('')
     setDbReady(false)
     try {
-      if (engineMode === 'server') {
+      if (mode === 'server') {
         // 服务器真库：健康检查 + 重置示例数据集
         const health = await fetch('/sql-api/health').then((r) => r.json())
         if (!health.ok) throw new Error(health.error || '服务器数据库连接失败')
@@ -281,12 +273,34 @@ export function GaussDBLearn() {
       setDbError((e as Error)?.message || String(e))
     } finally {
       setDbLoading(false)
+      setSwitching(false)
     }
-  }, [engineMode])
+  }, [])
 
+  const switchEngine = useCallback(async (mode: 'browser' | 'server') => {
+    if (mode === engineMode) return
+    setSwitching(true)
+    setDbError('')
+    setDbReady(false)
+    // 离开浏览器模式时关闭旧 PGlite 实例，释放 WASM 内存
+    if (engineModeRef.current === 'browser' && dbRef.current) {
+      const old = dbRef.current
+      dbRef.current = null
+      try { await old.close() } catch { /* ignore */ }
+    }
+    setExampleStates({})
+    setExerciseStates({})
+    engineModeRef.current = mode
+    setEngineMode(mode)
+    // 直接调 initDb，串行执行避免并发竞态
+    await initDb()
+  }, [engineMode, initDb])
+
+  // 仅在挂载时初始化一次；后续切换由 switchEngine 串行触发
   useEffect(() => {
     initDb()
-  }, [initDb])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   const resetDb = useCallback(async () => {
     if (engineMode === 'browser') {
@@ -593,19 +607,17 @@ export function GaussDBLearn() {
             <div className="hidden sm:flex items-center gap-0.5 rounded-lg border border-border bg-card p-0.5">
               <button
                 onClick={() => switchEngine('browser')}
-                disabled={dbLoading}
                 title="使用浏览器内置 PGlite（PostgreSQL WASM），无需服务器"
                 className={`flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-medium transition-colors ${engineMode === 'browser' ? 'bg-emerald-600 text-white' : 'text-muted-foreground hover:bg-accent'}`}
               >
-                <Globe className="w-3.5 h-3.5" /> 浏览器
+                {switching && engineMode !== 'browser' ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Globe className="w-3.5 h-3.5" />} 浏览器
               </button>
               <button
                 onClick={() => switchEngine('server')}
-                disabled={dbLoading}
                 title="使用服务器 PostgreSQL 18 真库，验证结果更真实"
                 className={`flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-medium transition-colors ${engineMode === 'server' ? 'bg-emerald-600 text-white' : 'text-muted-foreground hover:bg-accent'}`}
               >
-                <Server className="w-3.5 h-3.5" /> 服务器真库
+                {switching && engineMode !== 'server' ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Server className="w-3.5 h-3.5" />} 服务器真库
               </button>
             </div>
             <div className={`hidden md:flex items-center gap-1.5 px-3 py-1.5 rounded-lg border ${engineMode === 'server' ? 'bg-indigo-500/10 border-indigo-500/30' : 'bg-emerald-500/10 border-emerald-500/30'}`}>
