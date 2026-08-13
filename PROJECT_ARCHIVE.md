@@ -1,7 +1,7 @@
 # DevTools Hub — 项目归档文档
 
-> 归档日期：2026-05-23
-> Git Commit：7108910
+> 归档日期：2026-08-13
+> Git Commit：e1eb79a
 > 部署地址：https://110.42.247.238
 
 ---
@@ -21,12 +21,30 @@
 | 离线工具 | 40+ 开发工具，无需网络 |
 | DevOps 管理 | 可视化部署与运维管理平台 |
 | 镜像管理 | 私有 Docker Registry 可视化管理 |
+| GaussDB 学习 | 数据库在线学习 + 浏览器内 SQL 练习 |
 
 ---
 
-## 2. 最近更新 (2026-05-23)
+## 2. 最近更新
 
-### 游戏中心重构
+### GaussDB 数据库在线学习 (2026-08-13)
+
+- **新增 GaussDBLearn** — GaussDB 数据库在线学习与 SQL 练习平台，路由 `/gaussdb-learn`
+- **核心引擎 PGlite 0.5.4** — PostgreSQL WASM，浏览器内直接运行 SQL，无需后端服务器
+- **10 章课程**：数据库概述 → SQL 基础 → DDL → DML → SELECT → 聚合分组 → JOIN → 子查询 → 函数 → 视图事务
+- **20 道练习题**：CodeMirror SQL 编辑器（PostgreSQL 方言高亮 + 自动补全），支持运行/查看答案/自动比对（行数+内容）
+- **内置示例数据集**：departments / jobs / employees 三张表，贴近企业人事管理场景
+- **首页入口**：顶部导航"数据库学习"链接 + Hero 区 NEW 高亮提示条 + 工具卡片
+- **关键配置**：`vite.config.ts` 需 `assetsInclude: ['**/*.wasm', '**/*.data']` + `optimizeDeps.exclude: ['@electric-sql/pglite']`，否则 PGlite 运行时报 `Invalid FS bundle size`
+
+### 游戏中心重构 (2026-05-23)
+
+- **新增 ArcadeGame** — EmulatorJS 街机模拟器，支持三国战纪等 MAME/FBA ROM
+- **新增 NESGame** — FC/NES 模拟器组件
+- **新增 GameHub** — 统一游戏入口页面，集成方向键和投币/开始按钮
+- **新增 GoldMiner** — 黄金矿工休闲小游戏（内联 HTML, 1319行）
+- **新增 ErrorPage** — 404 页面
+- **删除 FlappyBird** — 已废弃
 
 - **新增 ArcadeGame** — EmulatorJS 街机模拟器，支持三国战纪等 MAME/FBA ROM
 - **新增 NESGame** — FC/NES 模拟器组件
@@ -57,6 +75,8 @@
 | `src/components/NESGame.tsx` | 181 | FC 模拟器 |
 | `src/arcadeControls.ts` | 48 | 街机按键定义 |
 | `src/nesControls.ts` | 35 | FC 按键定义 |
+| `src/components/GaussDBLearn.tsx` | 686 | GaussDB 在线学习页 |
+| `src/data/gaussdb-course.ts` | 768 | 课程 + 练习题数据 |
 
 ---
 
@@ -124,6 +144,11 @@
 ## 6. Git 提交记录
 
 ```
+e1eb79a feat: GaussDB 数据库在线学习与 SQL 练习平台
+  - 8 files changed, +1513 / -7
+  - 新增: GaussDBLearn, gaussdb-course (PGlite 0.5.4)
+  - 首页导航 + Hero 区 NEW 入口
+
 7108910 feat: 游戏中心重构 - 街机/FC模拟器集成 + 黄金矿工
   - 20 files changed, +3172 / -655
   - 新增: ArcadeGame, NESGame, GameHub, GoldMiner, ErrorPage
