@@ -37,6 +37,17 @@
 - **首页入口**：顶部导航"数据库学习"链接 + Hero 区 NEW 高亮提示条 + 工具卡片
 - **关键配置**：`vite.config.ts` 需 `assetsInclude: ['**/*.wasm', '**/*.data']` + `optimizeDeps.exclude: ['@electric-sql/pglite']`，否则 PGlite 运行时报 `Invalid FS bundle size`
 
+#### 服务器真库 SQL 验证引擎 (2026-08-13 追加)
+
+- **核心能力**：浏览器 PGlite 之外，新增 **服务器 PostgreSQL 18.4 真库**作为 SQL 验证引擎，前端可一键切换
+- **PostgreSQL 18 容器** (`gaussdb-pg`)：监听 `127.0.0.1:5432`（不暴露公网），数据卷 `/opt/pgdata:/var/lib/postgresql`（PG 18+ 约定路径，不能挂到 `data` 子目录）
+- **低权限角色** `gaussdb_app`：执行用户 SQL；超级用户 `postgres` 仅用于 `/reset` 重置示例数据集；密码分别存 `/opt/sql-api/.apppass` 与 `.pgpass`（600 权限）
+- **SQL API 服务** (`/opt/sql-api`，Express + pg，pm2 管理)：`POST /execute`（单语句 + statement_timeout=5s）、`POST /reset`（多语句脚本）、`GET /health`；多语句通过词法分析（忽略字符串/注释）拒绝非单条执行
+- **nginx**：`location /sql-api/ → http://127.0.0.1:3002/`（proxy_pass 带尾斜杠剥离前缀）
+- **前端**：Header 加 `Globe`/`Server` 图标的"浏览器 / 服务器真库"切换按钮组，状态徽章/侧边栏说明/footer 全部按引擎模式动态渲染
+- **vite dev**：`/sql-api` 代理到 `https://110.42.247.238`（`secure: false`），本地开发可联调服务器真库模式
+- **端到端验证**：页面 200、health `{"ok":true,"version":"18.4"}`、综合查询 `current_database()=gaussdb_learn`、`current_user=gaussdb_app`、耗时 1ms
+
 ### 游戏中心重构 (2026-05-23)
 
 - **新增 ArcadeGame** — EmulatorJS 街机模拟器，支持三国战纪等 MAME/FBA ROM
@@ -77,6 +88,10 @@
 | `src/nesControls.ts` | 35 | FC 按键定义 |
 | `src/components/GaussDBLearn.tsx` | 686 | GaussDB 在线学习页 |
 | `src/data/gaussdb-course.ts` | 768 | 课程 + 练习题数据 |
+| `sql-api/server.js` | 173 | SQL API 服务 (Express + pg) |
+| `sql-api/init.sql` | 64 | 服务端示例数据集重置脚本 |
+| `sql-api/setup-role.sh` | 24 | 创建 gaussdb_app 低权限角色 |
+| `sql-api/package.json` | 11 | express + pg 依赖 |
 
 ---
 
@@ -144,6 +159,11 @@
 ## 6. Git 提交记录
 
 ```
+0682ce0 feat: GaussDB 学习支持服务器真库验证引擎 (PostgreSQL 18)
+  - 7 files changed
+  - 新增: sql-api/ (server.js + init.sql + setup-role.sh + package.json)
+  - 修改: GaussDBLearn.tsx (双引擎模式)、vite.config.ts (dev proxy)、nginx.conf (/sql-api/)
+
 e1eb79a feat: GaussDB 数据库在线学习与 SQL 练习平台
   - 8 files changed, +1513 / -7
   - 新增: GaussDBLearn, gaussdb-course (PGlite 0.5.4)
