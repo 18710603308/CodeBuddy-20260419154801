@@ -15,6 +15,8 @@ import {
   Code2,
   FileText,
   Bot,
+  Database,
+  Sparkle,
 } from 'lucide-react'
 import './App.css'
 import { AINavigator } from '@/components/ai-navigator'
@@ -302,6 +304,13 @@ function App() {
                       </div>
                     )}
                   </div>
+                  <Link
+                    to="/gaussdb-learn"
+                    className="inline-flex items-center gap-1.5 text-sm font-semibold transition-colors text-teal-400 hover:text-teal-300"
+                  >
+                    <Database className="w-4 h-4" />
+                    数据库学习
+                  </Link>
                   <a href="#tools" className="text-sm font-medium transition-colors text-muted hover:text-primary">
                     工具列表
                   </a>
@@ -332,12 +341,19 @@ function App() {
             {mobileMenuOpen && (
               <div className="md:hidden px-4 pb-4 bg-secondary/95 backdrop-blur-xl rounded-b-2xl transition-theme">
                 <div className="flex flex-col gap-3 pt-2">
-                  <a href="#tools" className="px-4 py-2 rounded-lg text-sm font-medium text-secondary hover:bg-tertiary transition-colors">
-                    工具列表
-                  </a>
-                  <a href="#features" className="px-4 py-2 rounded-lg text-sm font-medium text-secondary hover:bg-tertiary transition-colors">
-                    功能特点
-                  </a>
+                                <Link
+                                  to="/gaussdb-learn"
+                                  className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-semibold text-teal-400 hover:bg-tertiary transition-colors"
+                                >
+                                  <Database className="w-4 h-4" />
+                                  数据库学习
+                                </Link>
+                                <a href="#tools" className="px-4 py-2 rounded-lg text-sm font-medium text-secondary hover:bg-tertiary transition-colors">
+                                  工具列表
+                                </a>
+                                <a href="#features" className="px-4 py-2 rounded-lg text-sm font-medium text-secondary hover:bg-tertiary transition-colors">
+                                  功能特点
+                                </a>
                   <button
                     onClick={() => setIsDark(!isDark)}
                     className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium text-secondary hover:bg-tertiary transition-colors"
@@ -384,6 +400,22 @@ function App() {
                 >
                   了解更多
                 </a>
+              </div>
+
+              {/* 新功能高亮提示条 */}
+              <div className="mt-10 flex items-center justify-center gap-3 flex-wrap">
+                <span className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-bold rounded-full bg-gradient-to-r from-teal-500 to-cyan-500 text-white shadow-md shadow-teal-500/30">
+                  <Sparkle className="w-3 h-3" />
+                  NEW
+                </span>
+                <Link
+                  to="/gaussdb-learn"
+                  className="inline-flex items-center gap-1.5 text-sm font-semibold text-teal-300 hover:text-teal-200 transition-colors group"
+                >
+                  <Database className="w-4 h-4" />
+                  GaussDB 在线学习 + SQL 练习
+                  <ChevronRight className="w-4 h-4 group-hover:translate-x-0.5 transition-transform" />
+                </Link>
               </div>
             </div>
           </section>

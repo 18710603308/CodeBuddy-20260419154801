@@ -7,6 +7,11 @@ import wasm from "vite-plugin-wasm"
 export default defineConfig({
   base: '/',
   plugins: [react(), wasm()],
+  // PGlite (PostgreSQL WASM) 依赖的 .wasm/.data 文件需按静态资源处理
+  assetsInclude: ['**/*.wasm', '**/*.data'],
+  optimizeDeps: {
+    exclude: ['@electric-sql/pglite'],
+  },
   server: {
     port: 5173,
     host: '0.0.0.0',

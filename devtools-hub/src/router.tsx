@@ -3,6 +3,7 @@ import App from './App'
 import { AINavigator } from './components/ai-navigator'
 import { CodingTheWorld } from './components/coding-the-world'
 import { OfflineTools } from './components/offline-tools'
+import { GaussDBLearn } from './components/GaussDBLearn'
 import { Game } from './components/game'
 import { RetroGames } from './components/retro-games'
 import { GameCollection } from './components/game-collection'
@@ -102,6 +103,10 @@ const SEO = {
     title: 'Docker Registry - 私有镜像仓库管理 | DevTools Hub',
     description: '可视化 Docker 私有镜像仓库管理工具，查看、搜索、删除镜像标签，管理容器镜像。',
   },
+  GAUSSDB_LEARN: {
+    title: 'GaussDB在线学习 - SQL数据库练习平台 | DevTools Hub',
+    description: '华为GaussDB数据库在线学习平台，内置浏览器SQL练习环境。学习DDL、DML、SELECT、JOIN、聚合、子查询、事务等数据库知识，边学边练，免费在线运行SQL。',
+  },
 }
 
 // Helper: SEO for NES games
@@ -139,6 +144,7 @@ const router = createBrowserRouter([
       { path: '/ai', element: <AINavigator />, handle: { seo: SEO.AI } },
       { path: '/coding-the-world', element: <CodingTheWorld />, handle: { seo: SEO.CODING_WORLD } },
       { path: '/offline-tools', element: <OfflineTools />, handle: { seo: SEO.OFFLINE_TOOLS } },
+      { path: '/gaussdb-learn', element: <GaussDBLearn />, handle: { seo: SEO.GAUSSDB_LEARN } },
       { path: '/game', element: <Game />, handle: { seo: SEO.GAME } },
       { path: '/retro-games', element: <RetroGames />, handle: { seo: SEO.RETRO_GAMES } },
       { path: '/game-collection', element: <GameCollection />, handle: { seo: SEO.GAME_COLLECTION } },
