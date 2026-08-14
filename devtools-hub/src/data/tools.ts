@@ -1,5 +1,5 @@
 import type { ComponentType } from 'react'
-import { Binary, Bomb as BombIcon, Bot, Braces, Clipboard, Clock, Code2, Coffee, Cog, Database, FileCode, FileJson, FileText, Gamepad2, GitCompare, Globe, Grid3x3, Hash, Hash as HashIcon, Headphones, Joystick, Key, Link as LinkIcon, Lock, Music, Puzzle, QrCode, Search, ShieldCheck, Shuffle, Table2, Terminal, TextCursorInput, Type, Wand2, WifiOff } from 'lucide-react'
+import { Binary, Bomb as BombIcon, Bot, Braces, Clipboard, Clock, Code2, Coffee, Cog, Database, FileCode, FileJson, FileText, Gamepad2, Gift, GitCompare, Globe, Grid3x3, Hash, Hash as HashIcon, Headphones, Joystick, Key, Link as LinkIcon, Lock, Music, Puzzle, QrCode, Search, ShieldCheck, Shuffle, Table2, Terminal, TextCursorInput, Type, Wand2, WifiOff } from 'lucide-react'
 
 /**
  * 工具元数据接口
@@ -45,6 +45,7 @@ export const tools: ToolMeta[] = [
   nav('ai-nav', Bot, 'AI 导航黄页', '收录全网优质 AI 工具，支持分类浏览和搜索', 'from-emerald-400 to-green-600', 'bg-emerald-500/10', 'border-emerald-500/30', '/ai'),
   nav('coding-world', Globe, 'Coding The World', '探索优质开源项目', 'from-blue-500 to-purple-600', 'bg-blue-500/10', 'border-blue-500/30', '/coding-the-world'),
   nav('gaussdb-learn', Database, 'GaussDB 数据库学习', 'GaussDB 在线学习与 SQL 练习平台，内置数据库引擎边学边练', 'from-teal-500 to-cyan-600', 'bg-teal-500/10', 'border-teal-500/30', '/gaussdb-learn'),
+  nav('invitation', Gift, '电子请柬', '婚礼/生日/乔迁电子请柬在线制作，实时预览一键生成分享链接', 'from-rose-500 to-pink-600', 'bg-rose-500/10', 'border-rose-500/30', '/invitation'),
 
   // 游戏 - 第三方平台
   game('game-collection', Gamepad2, '欲买桂花同载酒', '第三方游戏平台合集，FC、街机、GBA 等经典游戏', 'from-amber-500 to-orange-600', 'bg-amber-500/10', 'border-amber-500/30', '/game-collection'),

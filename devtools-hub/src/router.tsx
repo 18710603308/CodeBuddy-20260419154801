@@ -21,6 +21,7 @@ import ArcadeGame from './components/ArcadeGame'
 import GameHub from './components/GameHub'
 import PerlerBeadsCoop from './components/PerlerBeadsCoop'
 import MusicRoom from './components/MusicRoom'
+import Invitation from './components/Invitation'
 import { ErrorPage } from './components/ErrorPage'
 import { PageMeta } from './components/PageMeta'
 
@@ -107,6 +108,10 @@ const SEO = {
     title: 'GaussDB在线学习 - SQL数据库练习平台 | DevTools Hub',
     description: '华为GaussDB数据库在线学习平台，内置浏览器SQL练习环境。学习DDL、DML、SELECT、JOIN、聚合、子查询、事务等数据库知识，边学边练，免费在线运行SQL。',
   },
+  INVITATION: {
+    title: '电子请柬 - 婚礼/生日/乔迁邀请函在线制作 | DevTools Hub',
+    description: '免费在线制作电子请柬：婚礼、生日、满月、乔迁、派对等多种场景模板，填写信息实时预览，一键生成分享链接，支持倒计时、背景音乐、祝福留言墙。',
+  },
 }
 
 // Helper: SEO for NES games
@@ -145,6 +150,7 @@ const router = createBrowserRouter([
       { path: '/coding-the-world', element: <CodingTheWorld />, handle: { seo: SEO.CODING_WORLD } },
       { path: '/offline-tools', element: <OfflineTools />, handle: { seo: SEO.OFFLINE_TOOLS } },
       { path: '/gaussdb-learn', element: <GaussDBLearn />, handle: { seo: SEO.GAUSSDB_LEARN } },
+      { path: '/invitation', element: <Invitation />, handle: { seo: SEO.INVITATION } },
       { path: '/game', element: <Game />, handle: { seo: SEO.GAME } },
       { path: '/retro-games', element: <RetroGames />, handle: { seo: SEO.RETRO_GAMES } },
       { path: '/game-collection', element: <GameCollection />, handle: { seo: SEO.GAME_COLLECTION } },
