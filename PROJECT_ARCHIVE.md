@@ -1,7 +1,7 @@
 # DevTools Hub — 项目归档文档
 
 > 归档日期：2026-08-13
-> Git Commit：e1eb79a
+> Git Commit：6d6d4f3（含待提交工作区变更，见 §6）
 > 部署地址：https://110.42.247.238
 
 ---
@@ -21,11 +21,21 @@
 | 离线工具 | 40+ 开发工具，无需网络 |
 | DevOps 管理 | 可视化部署与运维管理平台 |
 | 镜像管理 | 私有 Docker Registry 可视化管理 |
-| GaussDB 学习 | 数据库在线学习 + 浏览器内 SQL 练习 |
+| GaussDB 学习 | 数据库在线学习 + 浏览器内 SQL 练习（仅 PGlite 本地引擎） |
+| 电子请柬 | 婚礼/生日/满月/乔迁/派对邀请函在线制作 |
 
 ---
 
 ## 2. 最近更新
+
+### 电子请柬 (2026-08-13)
+
+- **新增 Invitation** — 电子请柬在线制作工具，路由 `/invitation`，首页导航 + Hero 区入口
+- **纯前端实现**：请柬数据 base64url 编码进 URL query（`?d=`），分享链接即请柬本体，无需后端存储
+- **5 种场景**：婚礼 / 生日 / 满月 / 乔迁 / 派对
+- **6 套主题**：中国红 / 香槟金 / 浪漫粉 / 清新绿 / 星空紫 / 海盐蓝
+- **功能**：表单编辑实时预览、倒计时、背景音乐（4 首内置 mp3）、高德地图跳转、分享链接一键复制
+- **关键文件**：`src/components/Invitation.tsx`、`src/data/invitation.ts`、`public/audio/invitation/`（4 首 mp3）
 
 ### GaussDB 数据库在线学习 (2026-08-13)
 
@@ -36,17 +46,28 @@
 - **内置示例数据集**：departments / jobs / employees 三张表，贴近企业人事管理场景
 - **首页入口**：顶部导航"数据库学习"链接 + Hero 区 NEW 高亮提示条 + 工具卡片
 - **关键配置**：`vite.config.ts` 需 `assetsInclude: ['**/*.wasm', '**/*.data']` + `optimizeDeps.exclude: ['@electric-sql/pglite']`，否则 PGlite 运行时报 `Invalid FS bundle size`
+- **2026-08-13 变更**：服务器真库模式已下线，前端仅保留 PGlite 本地模式（详见下文）
 
-#### 服务器真库 SQL 验证引擎 (2026-08-13 追加)
+#### 服务器真库 SQL 验证引擎 (2026-08-13 追加，2026-08-13 已下线)
 
-- **核心能力**：浏览器 PGlite 之外，新增 **服务器 PostgreSQL 18.4 真库**作为 SQL 验证引擎，前端可一键切换
-- **PostgreSQL 18 容器** (`gaussdb-pg`)：监听 `127.0.0.1:5432`（不暴露公网），数据卷 `/opt/pgdata:/var/lib/postgresql`（PG 18+ 约定路径，不能挂到 `data` 子目录）
-- **低权限角色** `gaussdb_app`：执行用户 SQL；超级用户 `postgres` 仅用于 `/reset` 重置示例数据集；密码分别存 `/opt/sql-api/.apppass` 与 `.pgpass`（600 权限）
-- **SQL API 服务** (`/opt/sql-api`，Express + pg，pm2 管理)：`POST /execute`（单语句 + statement_timeout=5s）、`POST /reset`（多语句脚本）、`GET /health`；多语句通过词法分析（忽略字符串/注释）拒绝非单条执行
-- **nginx**：`location /sql-api/ → http://127.0.0.1:3002/`（proxy_pass 带尾斜杠剥离前缀）
-- **前端**：Header 加 `Globe`/`Server` 图标的"浏览器 / 服务器真库"切换按钮组，状态徽章/侧边栏说明/footer 全部按引擎模式动态渲染
-- **vite dev**：`/sql-api` 代理到 `https://110.42.247.238`（`secure: false`），本地开发可联调服务器真库模式
-- **端到端验证**：页面 200、health `{"ok":true,"version":"18.4"}`、综合查询 `current_database()=gaussdb_learn`、`current_user=gaussdb_app`、耗时 1ms
+> **已下线**：前端仅保留 PGlite 本地模式；`sql-api/` 目录已从仓库删除（server.js / init.sql / setup-role.sh / package.json），`vite.config.ts` 的 `/sql-api` dev proxy 与 `nginx.conf` 的 `/sql-api/` location 均已移除，项目代码中已无数据库账号密码明文（仅存于服务器文件系统）。
+
+- ~~**核心能力**：浏览器 PGlite 之外，新增 **服务器 PostgreSQL 18.4 真库**作为 SQL 验证引擎，前端可一键切换~~
+- ~~**PostgreSQL 18 容器** (`gaussdb-pg`)：监听 `127.0.0.1:5432`（不暴露公网），数据卷 `/opt/pgdata:/var/lib/postgresql`（PG 18+ 约定路径，不能挂到 `data` 子目录）~~
+- ~~**低权限角色** `gaussdb_app`：执行用户 SQL；超级用户 `postgres` 仅用于 `/reset` 重置示例数据集；密码分别存 `/opt/sql-api/.apppass` 与 `.pgpass`（600 权限）~~
+- ~~**SQL API 服务** (`/opt/sql-api`，Express + pg，pm2 管理)：`POST /execute`（单语句 + statement_timeout=5s）、`POST /reset`（多语句脚本）、`GET /health`；多语句通过词法分析（忽略字符串/注释）拒绝非单条执行~~
+- ~~**nginx**：`location /sql-api/ → http://127.0.0.1:3002/`（proxy_pass 带尾斜杠剥离前缀）~~
+- ~~**前端**：Header 加 `Globe`/`Server` 图标的"浏览器 / 服务器真库"切换按钮组，状态徽章/侧边栏说明/footer 全部按引擎模式动态渲染~~
+- ~~**vite dev**：`/sql-api` 代理到 `https://110.42.247.238`（`secure: false`），本地开发可联调服务器真库模式~~
+- ~~**端到端验证**：页面 200、health `{"ok":true,"version":"18.4"}`、综合查询 `current_database()=gaussdb_learn`、`current_user=gaussdb_app`、耗时 1ms~~
+
+#### 数据库公网直连 (2026-08-13)
+
+- **容器重建**：`gaussdb-pg`（postgres:18）端口绑定由 `127.0.0.1:5432` 改为 `0.0.0.0:5432`（公网可直连），数据卷 `/opt/pgdata`、环境变量、`restart=always` 全部保留，数据未丢失；旧容器备份为 `gaussdb-pg-old` 后已删除
+- **连接信息**：主机 `110.42.247.238:5432`，数据库 `gaussdb_learn`，超级用户 `postgres`（仅运维用），低权限角色 `gaussdb_app`（执行 SQL 用）
+- **pg_hba.conf**：已允许任意来源 `host all all all scram-sha-256`
+- ⚠️ **风险提示**：服务器 UFW 未启用，公网 5432 端口对全网可见，存在被扫描爆破风险；验证完若不需要常开，建议恢复 127.0.0.1 绑定或加防火墙限制
+- **遗留事项**：服务器 `/opt/sql-api/` 目录（含 `.apppass` / `.pgpass` 密码文件）与 pm2 `sql-api` 服务仍在服务器上，尚未删除（前端已不再使用，属可清理项）
 
 ### 游戏中心重构 (2026-05-23)
 
@@ -86,12 +107,10 @@
 | `src/components/NESGame.tsx` | 181 | FC 模拟器 |
 | `src/arcadeControls.ts` | 48 | 街机按键定义 |
 | `src/nesControls.ts` | 35 | FC 按键定义 |
-| `src/components/GaussDBLearn.tsx` | 686 | GaussDB 在线学习页 |
+| `src/components/GaussDBLearn.tsx` | ~690 | GaussDB 在线学习页（仅 PGlite 本地引擎） |
 | `src/data/gaussdb-course.ts` | 768 | 课程 + 练习题数据 |
-| `sql-api/server.js` | 173 | SQL API 服务 (Express + pg) |
-| `sql-api/init.sql` | 64 | 服务端示例数据集重置脚本 |
-| `sql-api/setup-role.sh` | 24 | 创建 gaussdb_app 低权限角色 |
-| `sql-api/package.json` | 11 | express + pg 依赖 |
+| `src/components/Invitation.tsx` | 768 | 电子请柬（编辑 + 浏览双模式） |
+| `src/data/invitation.ts` | 195 | 请柬数据模型 + 主题 + base64url 编解码 |
 
 ---
 
@@ -107,7 +126,8 @@
 │   ├── public/
 │   │   ├── emulatorjs/data/       # EmulatorJS 运行时 (78MB, gitignore)
 │   │   ├── roms/                  # ROM 文件 (278MB, gitignore)
-│   │   └── games/                 # 内联小游戏资源
+│   │   ├── games/                 # 内联小游戏资源
+│   │   └── audio/invitation/      # 电子请柬背景音乐 (4 mp3)
 │   └── package.json
 ├── docker-api/                    # Docker API 后端 (Express)
 ├── jenkins/                       # Jenkins CI/CD 配置
@@ -129,6 +149,7 @@
 | 前端路径 | /usr/share/nginx/html |
 | Registry | 110.42.247.238:5000 |
 | SSH Key | ~/.ssh/devtools_key |
+| PostgreSQL | 110.42.247.238:5432 (gaussdb_learn, postgres/gaussdb_app) |
 
 ### 部署方式
 
@@ -159,10 +180,17 @@
 ## 6. Git 提交记录
 
 ```
+6d6d4f3 fix(gaussdb): 修复引擎切换按钮卡死问题
+  - 引擎切换按钮移除 disabled，引入 switching 中间态 + engineModeRef
+  - 离开浏览器模式时主动 close() PGlite 实例释放 WASM 内存
+
+c360b98 docs: 归档 GaussDB 服务器真库 SQL 验证引擎 (0682ce0)
+
 0682ce0 feat: GaussDB 学习支持服务器真库验证引擎 (PostgreSQL 18)
   - 7 files changed
   - 新增: sql-api/ (server.js + init.sql + setup-role.sh + package.json)
   - 修改: GaussDBLearn.tsx (双引擎模式)、vite.config.ts (dev proxy)、nginx.conf (/sql-api/)
+  - (注：本功能已于 2026-08-13 下线，见归档正文)
 
 e1eb79a feat: GaussDB 数据库在线学习与 SQL 练习平台
   - 8 files changed, +1513 / -7
@@ -174,4 +202,14 @@ e1eb79a feat: GaussDB 数据库在线学习与 SQL 练习平台
   - 新增: ArcadeGame, NESGame, GameHub, GoldMiner, ErrorPage
   - 删除: FlappyBird
   - .gitignore 更新
+```
+
+### 待提交变更 (2026-08-13，归档时工作区状态)
+
+```
+feat(invitation): 电子请柬 + feat(gaussdb): 下线服务器真库，仅保留 PGlite
+  - 新增: Invitation.tsx, data/invitation.ts, public/audio/invitation/ (4 mp3)
+  - 修改: App.tsx / tools.ts / router.tsx (电子请柬入口 + SEO)
+  - 修改: GaussDBLearn.tsx (删除 server 模式，仅 PGlite)、vite.config.ts、nginx.conf
+  - 删除: sql-api/ (server.js / init.sql / setup-role.sh / package.json)
 ```
