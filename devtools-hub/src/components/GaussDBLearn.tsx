@@ -3,7 +3,6 @@ import { Link } from 'react-router-dom'
 import {
   Home, Sun, Moon, Database, Play, RotateCcw, Eye, CheckCircle2, XCircle,
   Loader2, ChevronRight, BookOpen, Table2, Sparkles, Lightbulb, Terminal, AlertTriangle,
-  Server, Globe,
 } from 'lucide-react'
 import {
   COURSE_CHAPTERS, INIT_SQL, type Chapter, type ContentBlock, type Exercise,
@@ -243,103 +242,45 @@ export function GaussDBLearn() {
     window.scrollTo(0, 0)
   }, [activeChapterId])
 
-  /* ---------- 引擎模式：浏览器 PGlite / 服务器真库 ---------- */
-  const [engineMode, setEngineMode] = useState<'browser' | 'server'>('browser')
-  const [switching, setSwitching] = useState(false)
-  // 通过 ref 读最新 engineMode，避免 initDb 闭包捕获旧值
-  const engineModeRef = useRef<'browser' | 'server'>('browser')
-
+  /* ---------- 数据库引擎：浏览器 PGlite ---------- */
   const initDb = useCallback(async () => {
-    const mode = engineModeRef.current
     setDbLoading(true)
     setDbError('')
     setDbReady(false)
     try {
-      if (mode === 'server') {
-        // 服务器真库：健康检查 + 重置示例数据集
-        const health = await fetch('/sql-api/health').then((r) => r.json())
-        if (!health.ok) throw new Error(health.error || '服务器数据库连接失败')
-        const reset = await fetch('/sql-api/reset', { method: 'POST' }).then((r) => r.json())
-        if (!reset.success) throw new Error(reset.error || '服务器示例数据集重置失败')
-      } else {
-        const { PGlite } = await import('@electric-sql/pglite')
-        const db = new PGlite()
-        await db.waitReady
-        await db.exec(INIT_SQL)
-        dbRef.current = db
-      }
+      const { PGlite } = await import('@electric-sql/pglite')
+      const db = new PGlite()
+      await db.waitReady
+      await db.exec(INIT_SQL)
+      dbRef.current = db
       setDbReady(true)
     } catch (e) {
       setDbError((e as Error)?.message || String(e))
     } finally {
       setDbLoading(false)
-      setSwitching(false)
     }
   }, [])
 
-  const switchEngine = useCallback(async (mode: 'browser' | 'server') => {
-    if (mode === engineMode) return
-    setSwitching(true)
-    setDbError('')
-    setDbReady(false)
-    // 离开浏览器模式时关闭旧 PGlite 实例，释放 WASM 内存
-    if (engineModeRef.current === 'browser' && dbRef.current) {
-      const old = dbRef.current
-      dbRef.current = null
-      try { await old.close() } catch { /* ignore */ }
-    }
-    setExampleStates({})
-    setExerciseStates({})
-    engineModeRef.current = mode
-    setEngineMode(mode)
-    // 直接调 initDb，串行执行避免并发竞态
-    await initDb()
-  }, [engineMode, initDb])
-
-  // 仅在挂载时初始化一次；后续切换由 switchEngine 串行触发
+  // 仅在挂载时初始化一次
   useEffect(() => {
     initDb()
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   const resetDb = useCallback(async () => {
-    if (engineMode === 'browser') {
-      const old = dbRef.current
-      dbRef.current = null
-      if (old) {
-        try { await old.close() } catch { /* ignore */ }
-      }
+    const old = dbRef.current
+    dbRef.current = null
+    if (old) {
+      try { await old.close() } catch { /* ignore */ }
     }
     setDbReady(false)
     setExampleStates({})
     setExerciseStates({})
     await initDb()
-  }, [initDb, engineMode])
+  }, [initDb])
 
   /* ---------- SQL 执行 ---------- */
   const runSql = useCallback(async (sql: string): Promise<RunOutput> => {
-    if (engineMode === 'server') {
-      try {
-        const res = await fetch('/sql-api/execute', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ sql }),
-        })
-        const data = await res.json()
-        if (!res.ok || data.error) {
-          return { results: [], error: data.error || `请求失败 (HTTP ${res.status})` }
-        }
-        return {
-          results: [{
-            columns: data.columns ?? [],
-            rows: (data.rows ?? []) as Record<string, unknown>[],
-            affectedRows: data.affectedRows ?? null,
-          }],
-        }
-      } catch (e) {
-        return { results: [], error: (e as Error)?.message || String(e) }
-      }
-    }
     const db = dbRef.current
     if (!db) return { results: [], error: '数据库尚未就绪，请稍候…' }
     try {
@@ -354,7 +295,7 @@ export function GaussDBLearn() {
     } catch (e) {
       return { results: [], error: (e as Error)?.message || String(e) }
     }
-  }, [engineMode])
+  }, [])
 
   /* ---------- 示例运行 ---------- */
   const runExample = useCallback(async (chapterId: string, index: number, sql: string) => {
@@ -603,29 +544,10 @@ export function GaussDBLearn() {
             </div>
           </div>
           <div className="flex items-center gap-2">
-            {/* 引擎模式切换 */}
-            <div className="hidden sm:flex items-center gap-0.5 rounded-lg border border-border bg-card p-0.5">
-              <button
-                onClick={() => switchEngine('browser')}
-                title="使用浏览器内置 PGlite（PostgreSQL WASM），无需服务器"
-                className={`flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-medium transition-colors ${engineMode === 'browser' ? 'bg-emerald-600 text-white' : 'text-muted-foreground hover:bg-accent'}`}
-              >
-                {switching && engineMode !== 'browser' ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Globe className="w-3.5 h-3.5" />} 浏览器
-              </button>
-              <button
-                onClick={() => switchEngine('server')}
-                title="使用服务器 PostgreSQL 18 真库，验证结果更真实"
-                className={`flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-medium transition-colors ${engineMode === 'server' ? 'bg-emerald-600 text-white' : 'text-muted-foreground hover:bg-accent'}`}
-              >
-                {switching && engineMode !== 'server' ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Server className="w-3.5 h-3.5" />} 服务器真库
-              </button>
-            </div>
-            <div className={`hidden md:flex items-center gap-1.5 px-3 py-1.5 rounded-lg border ${engineMode === 'server' ? 'bg-indigo-500/10 border-indigo-500/30' : 'bg-emerald-500/10 border-emerald-500/30'}`}>
-              <Sparkles className={`w-3.5 h-3.5 ${engineMode === 'server' ? 'text-indigo-500' : 'text-emerald-500'}`} />
-              <span className={`text-xs font-medium ${engineMode === 'server' ? 'text-indigo-500' : 'text-emerald-500'}`}>
-                {dbReady
-                  ? engineMode === 'server' ? '服务器真库已连接' : '数据库引擎已就绪'
-                  : dbError ? '引擎加载失败' : engineMode === 'server' ? '连接服务器中…' : '数据库引擎加载中…'}
+            <div className="hidden md:flex items-center gap-1.5 px-3 py-1.5 rounded-lg border bg-emerald-500/10 border-emerald-500/30">
+              <Sparkles className="w-3.5 h-3.5 text-emerald-500" />
+              <span className="text-xs font-medium text-emerald-500">
+                {dbReady ? '数据库引擎已就绪' : dbError ? '引擎加载失败' : '数据库引擎加载中…'}
               </span>
             </div>
             {dbReady && (
@@ -718,8 +640,7 @@ export function GaussDBLearn() {
                   </div>
                 </div>
                 <p className="mt-3 text-[11px] text-muted-foreground leading-relaxed">
-                  默认在浏览器本地运行（数据不上传）；切换到「服务器真库」时，SQL 通过
-                  /sql-api 提交到服务器 PostgreSQL 18 执行，验证结果更真实。可随时「重置数据」恢复初始状态。
+                  数据库在浏览器本地运行（PGlite / PostgreSQL WASM），数据不上传，可随时「重置数据」恢复初始状态。
                 </p>
               </div>
             </div>
@@ -749,7 +670,7 @@ export function GaussDBLearn() {
                 <Sparkles className="w-5 h-5 text-amber-500" />
                 <h3 className="text-lg font-bold text-foreground">动手练习</h3>
               </div>
-              <p className="text-sm text-muted-foreground mb-5">在当前引擎（{engineMode === 'server' ? '服务器 PostgreSQL 18 真库' : '浏览器内置 GaussDB 兼容数据库'}）中编写 SQL，点击「运行」查看结果；不确定时可用「查看答案」对照参考答案并自动比对。</p>
+              <p className="text-sm text-muted-foreground mb-5">在浏览器内置 GaussDB 兼容数据库中编写 SQL，点击「运行」查看结果；不确定时可用「查看答案」对照参考答案并自动比对。</p>
               <div className="space-y-4">
                 {activeChapter.exercises.map((ex, i) => renderExercise(ex, i))}
               </div>
@@ -760,9 +681,7 @@ export function GaussDBLearn() {
 
       <footer className="border-t border-border py-6 mt-8">
         <p className="text-center text-xs text-muted-foreground">
-          {engineMode === 'server'
-            ? '当前使用服务器 PostgreSQL 18 真库执行 SQL · 语法与 GaussDB 兼容 · 实时验证'
-            : '当前使用 PGlite (PostgreSQL WASM) 在浏览器本地执行 · 数据不上传 · 语法兼容 GaussDB'}
+          当前使用 PGlite (PostgreSQL WASM) 在浏览器本地执行 · 数据不上传 · 语法兼容 GaussDB
         </p>
       </footer>
     </div>

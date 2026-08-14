@@ -44,12 +44,7 @@ export default defineConfig({
         target: 'http://localhost:3000',
         changeOrigin: true,
       },
-      // GaussDB 学习 - SQL 验证 API（生产走 nginx /sql-api/，本地开发代理到服务器）
-      '/sql-api': {
-        target: 'https://110.42.247.238',
-        changeOrigin: true,
-        secure: false,
-      },
+      // GaussDB 学习 - SQL 验证 API（已下线：前端仅保留 PGlite 本地模式）
       // 通用 API（Docker API 等）
       '/api': {
         target: 'http://localhost:3000',
