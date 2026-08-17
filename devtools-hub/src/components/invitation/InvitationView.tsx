@@ -233,6 +233,38 @@ export function InvitationView({
     }
   }, [trackIndex, syncPlaying])
 
+  // 组件挂载后立即尝试自动播放（多数浏览器会拒绝，需用户手势，但 Safari/iOS 在某些场景可成功）
+  useEffect(() => {
+    if (musicOff) return
+    const a = audioRef.current
+    if (!a) return
+    a.play().catch(() => {
+      /* 浏览器策略拒绝时静默忽略，等用户首次交互兜底 */
+    })
+  }, [musicOff])
+
+  // 全局首次用户交互（点击/键盘/触摸）兜底播放，覆盖 iOS Safari 等必须手势的场景
+  useEffect(() => {
+    if (musicOff) return
+    const tryAutoPlay = () => {
+      const a = audioRef.current
+      if (a && a.paused) {
+        a.play()
+          .then(() => syncPlaying(true))
+          .catch(() => syncPlaying(false))
+      }
+    }
+    const opts: AddEventListenerOptions = { once: true, passive: true, capture: true }
+    document.addEventListener('pointerdown', tryAutoPlay, opts)
+    document.addEventListener('keydown', tryAutoPlay, opts)
+    document.addEventListener('touchstart', tryAutoPlay, opts)
+    return () => {
+      document.removeEventListener('pointerdown', tryAutoPlay, true)
+      document.removeEventListener('keydown', tryAutoPlay, true)
+      document.removeEventListener('touchstart', tryAutoPlay, true)
+    }
+  }, [musicOff, syncPlaying])
+
   const submitWish = () => {
     if (!wishName.trim() || !wishText.trim()) return
     setWishes((w) => [...w, { name: wishName.trim(), text: wishText.trim(), time: Date.now() }])

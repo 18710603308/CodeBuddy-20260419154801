@@ -260,10 +260,6 @@ export function HeartPhotoWall({
             }
           }}
         >
-          <div className="absolute top-5 left-1/2 -translate-x-1/2 rounded-full bg-white/10 px-4 py-1.5 text-sm text-white backdrop-blur">
-            {openIndex + 1} / {display.length}
-          </div>
-
           <button
             onClick={(e) => {
               e.stopPropagation()
