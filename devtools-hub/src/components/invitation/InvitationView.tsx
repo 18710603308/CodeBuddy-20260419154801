@@ -373,7 +373,7 @@ export function InvitationView({
               {data.photos.map((src, i) => (
                 <Reveal key={i} delay={Math.min(i * 60, 300)}>
                   <div className="relative w-full overflow-hidden" style={{ background: '#0c0c14' }}>
-                    {src.startsWith('data:') || src.startsWith('http') ? (
+                    {src ? (
                       <img
                         src={src}
                         alt={`照片 ${i + 1}`}
