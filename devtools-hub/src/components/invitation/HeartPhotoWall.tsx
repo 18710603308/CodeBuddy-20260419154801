@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { ChevronLeft, ChevronRight, X } from 'lucide-react'
+import { createPortal } from 'react-dom'
+import { ChevronLeft, ChevronRight, Image as ImageIcon, X } from 'lucide-react'
 
 type Pt = { x: number; y: number }
 
@@ -100,34 +101,59 @@ const HEART_PATH = (() => {
   )
 })()
 
-/** 缩略图尺寸：照片越多越小，带 vw 兜底适配小屏 */
-function thumbSizeCss(n: number): string {
-  const base =
-    n <= 8 ? 96 : n <= 12 ? 84 : n <= 18 ? 70 : n <= 26 ? 58 : 48
-  const vw = Math.max(12, Math.round(base / 4))
-  return `min(${base}px, ${vw}vw)`
-}
-
 interface HeartPhotoWallProps {
   photos: string[]
   accent: string
   fallbackEmoji?: string
+  /** 每张照片简介（与 photos 下标对齐），Lightbox 中展示 */
+  captions?: string[]
+  /**
+   * 心形墙精选展示的照片下标（最多 6 张）；未提供或为空时自动取前 6 张。
+   * 心形内只展示精选照片（固定 96px 互不重叠、保证可点击），
+   * 其余照片在下方以平铺缩略图展示，同样可点开大图查看详情。
+   */
+  featuredIndexes?: number[]
 }
 
 export function HeartPhotoWall({
   photos,
   accent,
   fallbackEmoji = '💐',
+  captions,
+  featuredIndexes,
 }: HeartPhotoWallProps) {
-  const MAX = 40
+  const FEATURED_MAX = 6 // 心形精选上限
+  const MAX = 40 // 平铺展示上限
+
+  // 心形精选下标（最多 6 张）
+  const featured = useMemo(() => {
+    const arr = Array.isArray(featuredIndexes)
+      ? featuredIndexes.filter((i) => i >= 0 && i < photos.length)
+      : []
+    return (arr.length > 0 ? arr : photos.slice(0, FEATURED_MAX).map((_, i) => i))
+      .slice(0, FEATURED_MAX)
+  }, [featuredIndexes, photos.length])
+
+  // 全部展示的照片（用于 Lightbox 浏览 + 平铺），原下标即 photos 下标
   const display = photos.slice(0, MAX)
-  const hidden = photos.length - display.length
-  const positions = useMemo(() => heartPositions(display.length), [display.length])
+
+  // 心形位置数 = 精选照片数
+  const positions = useMemo(() => heartPositions(featured.length), [featured.length])
+
+  // 其余照片（未进心形的，下标为 display 内的下标）
+  const rest = display
+    .map((_, i) => i)
+    .filter((i) => !featured.includes(i))
 
   const [openIndex, setOpenIndex] = useState<number | null>(null)
   const [broken, setBroken] = useState<Set<number>>(new Set())
   const [lightboxError, setLightboxError] = useState(false)
   const touchX = useRef<number | null>(null)
+
+  // 当前打开照片的 caption（按 photos 原下标取）
+  const openOrigIndex = openIndex === null ? -1 : openIndex
+  const openCaption =
+    openOrigIndex >= 0 && captions ? (captions[openOrigIndex] || '').trim() : ''
 
   const close = useCallback(() => {
     setOpenIndex(null)
@@ -167,84 +193,147 @@ export function HeartPhotoWall({
 
   if (display.length === 0) return null
 
+  const thumbCls = (i: number) => (
+    <span
+      className="block overflow-hidden rounded-xl transition-transform duration-300 hover:scale-105 active:scale-95"
+      style={{
+        width: '100%',
+        aspectRatio: '3 / 4',
+        boxShadow: '0 4px 14px rgba(0,0,0,0.28)',
+      }}
+    >
+      {!broken.has(i) && display[i] ? (
+        <img
+          src={display[i]}
+          alt={`照片 ${i + 1}`}
+          className="block h-full w-full object-cover"
+          loading="lazy"
+          draggable={false}
+          onError={() => setBroken((s) => new Set(s).add(i))}
+        />
+      ) : (
+        <span
+          className="flex h-full w-full items-center justify-center text-2xl"
+          style={{ background: `linear-gradient(145deg, ${accent}66, ${accent}22)` }}
+        >
+          {fallbackEmoji}
+        </span>
+      )}
+    </span>
+  )
+
   return (
     <div className="w-full max-w-md mx-auto">
-      <div
-        className="relative w-full"
-        style={{ aspectRatio: `${VIEW_W} / ${VIEW_H}` }}
-      >
-        {/* 爱心轮廓底纹 */}
-        <svg
-          className="pointer-events-none absolute inset-0 h-full w-full"
-          viewBox={`0 0 ${VIEW_W} ${VIEW_H}`}
-          fill="none"
-          preserveAspectRatio="none"
+      {/* ============ 心形精选墙（互不重叠，固定 96px） ============ */}
+      {featured.length > 0 && (
+        <div
+          className="relative w-full"
+          style={{ aspectRatio: `${VIEW_W} / ${VIEW_H}` }}
         >
-          <path d={HEART_PATH} fill={`${accent}0d`} />
-          <path
-            d={HEART_PATH}
-            stroke={`${accent}45`}
-            strokeWidth={0.45}
-            strokeLinejoin="round"
-          />
-        </svg>
-
-        {positions.map((p, i) => (
-          <button
-            key={i}
-            onClick={() => setOpenIndex(i)}
-            aria-label={`查看照片 ${i + 1}`}
-            className="absolute cursor-pointer"
-            style={{
-              left: `calc(10% + ${p.x * 80}%)`,
-              top: `calc(14% + ${p.y * 72}%)`,
-              transform: 'translate(-50%, -50%)',
-            }}
+          {/* 爱心轮廓底纹 */}
+          <svg
+            className="pointer-events-none absolute inset-0 h-full w-full"
+            viewBox={`0 0 ${VIEW_W} ${VIEW_H}`}
+            fill="none"
+            preserveAspectRatio="none"
           >
-            <span
-              className="block overflow-hidden rounded-2xl transition-transform duration-300 hover:scale-110 active:scale-95"
-              style={{
-                width: thumbSizeCss(display.length),
-                aspectRatio: '1 / 1',
-                boxShadow:
-                  '0 6px 18px rgba(0,0,0,0.35), 0 0 0 2px rgba(255,255,255,0.28)',
-              }}
-            >
-              {!broken.has(i) && display[i] ? (
-                <img
-                  src={display[i]}
-                  alt={`照片 ${i + 1}`}
-                  className="block h-full w-full object-cover"
-                  loading="lazy"
-                  draggable={false}
-                  onError={() => setBroken((s) => new Set(s).add(i))}
-                />
-              ) : (
+            <path d={HEART_PATH} fill={`${accent}0d`} />
+            <path
+              d={HEART_PATH}
+              stroke={`${accent}45`}
+              strokeWidth={0.45}
+              strokeLinejoin="round"
+            />
+          </svg>
+
+          {positions.map((p, i) => {
+            const origIdx = featured[i]
+            return (
+              <button
+                key={origIdx}
+                onClick={() => setOpenIndex(origIdx)}
+                aria-label={`查看照片 ${origIdx + 1}`}
+                className="absolute cursor-pointer"
+                style={{
+                  left: `calc(10% + ${p.x * 80}%)`,
+                  top: `calc(14% + ${p.y * 72}%)`,
+                  transform: 'translate(-50%, -50%)',
+                }}
+              >
                 <span
-                  className="flex h-full w-full items-center justify-center text-2xl"
+                  className="block overflow-hidden rounded-2xl transition-transform duration-300 hover:scale-110 active:scale-95"
                   style={{
-                    background: `linear-gradient(145deg, ${accent}66, ${accent}22)`,
+                    // 精选模式最多 6 张，固定 96px，互不重叠、保证可点击
+                    width: 'min(96px, 24vw)',
+                    aspectRatio: '1 / 1',
+                    boxShadow:
+                      '0 6px 18px rgba(0,0,0,0.35), 0 0 0 2px rgba(255,255,255,0.28)',
                   }}
                 >
-                  {fallbackEmoji}
+                  {!broken.has(origIdx) && display[origIdx] ? (
+                    <img
+                      src={display[origIdx]}
+                      alt={`照片 ${origIdx + 1}`}
+                      className="block h-full w-full object-cover"
+                      loading="lazy"
+                      draggable={false}
+                      onError={() => setBroken((s) => new Set(s).add(origIdx))}
+                    />
+                  ) : (
+                    <span
+                      className="flex h-full w-full items-center justify-center text-2xl"
+                      style={{
+                        background: `linear-gradient(145deg, ${accent}66, ${accent}22)`,
+                      }}
+                    >
+                      {fallbackEmoji}
+                    </span>
+                  )}
                 </span>
-              )}
+              </button>
+            )
+          })}
+        </div>
+      )}
+
+      {/* ============ 其余照片平铺（全部可点开大图详情） ============ */}
+      {rest.length > 0 && (
+        <div className="mt-4">
+          <div className="mb-2 flex items-center gap-2 px-1">
+            <ImageIcon className="h-4 w-4" style={{ color: accent }} />
+            <span
+              className="text-xs font-medium tracking-wide"
+              style={{ color: accent }}
+            >
+              更多照片 · 共 {rest.length} 张
             </span>
-          </button>
-        ))}
+          </div>
+          <div className="grid grid-cols-3 gap-2">
+            {rest.map((i) => (
+              <button
+                key={i}
+                onClick={() => setOpenIndex(i)}
+                className="cursor-pointer"
+                aria-label={`查看照片 ${i + 1}`}
+              >
+                {thumbCls(i)}
+                {openCaption && captions?.[i] ? (
+                  <span
+                    className="mt-1 block truncate text-center text-[10px]"
+                    style={{ color: '#8a6a3a' }}
+                  >
+                    {captions[i]}
+                  </span>
+                ) : null}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
 
-        {hidden > 0 && (
-          <span
-            className="absolute -bottom-1 left-1/2 -translate-x-1/2 whitespace-nowrap rounded-full px-3 py-1 text-xs font-medium text-white shadow-md"
-            style={{ background: `${accent}cc` }}
-          >
-            还有 {hidden} 张
-          </span>
-        )}
-      </div>
-
-      {/* 点击查看原图 Lightbox */}
-      {openIndex !== null && (
+      {/* ============ 点击查看原图 Lightbox（含简介卡片） ============ */}
+      {openIndex !== null &&
+        createPortal(
         <div
           className="fixed inset-0 z-[80] flex items-center justify-center"
           style={{ background: 'rgba(0,0,0,0.92)' }}
@@ -297,14 +386,19 @@ export function HeartPhotoWall({
           )}
 
           {!lightboxError && display[openIndex] ? (
-            <img
-              key={openIndex}
-              src={display[openIndex]}
-              alt={`照片 ${openIndex + 1}`}
-              className="max-h-[86vh] max-w-[92vw] rounded-lg object-contain shadow-2xl"
+            <div
+              className="relative flex h-full w-full items-center justify-center px-2"
               onClick={(e) => e.stopPropagation()}
-              onError={() => setLightboxError(true)}
-            />
+            >
+              <img
+                key={openIndex}
+                src={display[openIndex]}
+                alt={`照片 ${openIndex + 1}`}
+                className="rounded-xl object-contain shadow-2xl"
+                style={{ maxHeight: '70vh', maxWidth: '88vw' }}
+                onError={() => setLightboxError(true)}
+              />
+            </div>
           ) : (
             <div
               className="flex flex-col items-center gap-3 text-white/80"
@@ -314,8 +408,31 @@ export function HeartPhotoWall({
               <span className="text-sm">这张照片暂时无法显示</span>
             </div>
           )}
-        </div>
-      )}
+          {openCaption && (
+            <div
+              className="absolute left-1/2 z-10 -translate-x-1/2 rounded-2xl px-5 py-3 text-center"
+              style={{
+                bottom: 'max(28px, env(safe-area-inset-bottom, 0px))',
+                background:
+                  'linear-gradient(180deg, rgba(255,251,240,0.98), rgba(255,247,230,0.98))',
+                color: '#8a6a3a',
+                boxShadow: '0 8px 30px rgba(0,0,0,0.35)',
+                maxWidth: 'min(92vw, 540px)',
+                backdropFilter: 'blur(4px)',
+              }}
+              onClick={(e) => e.stopPropagation()}
+            >
+              <span
+                className="block text-sm leading-relaxed sm:text-base"
+                style={{ fontFamily: "'Noto Serif SC', 'Songti SC', serif" }}
+              >
+                {openCaption}
+              </span>
+            </div>
+          )}
+        </div>,
+        document.body
+        )}
     </div>
   )
 }

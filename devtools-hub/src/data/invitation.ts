@@ -41,6 +41,17 @@ export interface InvitationData {
   showCountdown: boolean
   /** 照片墙（图片直链数组，可空则显示主题插画） */
   photos: string[]
+  /**
+   * 每张照片的简介文案（与 photos 下标对齐，可空）
+   * 浏览端 Lightbox 大图下方会以卡片形式展示该文案
+   */
+  photoCaptions?: string[]
+  /**
+   * 心形墙精选展示的照片下标（最多 6 张；空数组则按 photos 前 6 张填充）
+   * 心形墙只展示精选照片，互不重叠、保证可点击
+   * 其余照片在浏览页另以平铺方式展示
+   */
+  featuredIndexes?: number[]
   /** 我们的故事（一段文字） */
   story: string
   /** 宴会/活动流程时间线 */
@@ -202,6 +213,12 @@ export const DEFAULT_INVITATION: InvitationData = {
     'https://picsum.photos/seed/inv-photo-2/800/1066',
     'https://picsum.photos/seed/inv-photo-3/800/1066',
   ],
+  photoCaptions: [
+    '初见时的心动，定格在这一秒',
+    '一起走过的街角，是最好的时光',
+    '从此以后，朝夕都是你',
+  ],
+  featuredIndexes: [0, 1, 2],
   story:
     '2019 年的春天，我们在朋友的聚会上初次相遇。一句简单的问候，开启了我们之间的故事。\n\n一起看过清晨的海，一起走过深夜的街，从相知到相守，每一个平凡的日子都因为有彼此而变得闪闪发光。\n\n如今，我们决定携手步入人生新的旅程，期待与您分享这份喜悦。',
   timeline: [

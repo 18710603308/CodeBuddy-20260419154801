@@ -115,9 +115,32 @@ function InvitationEditor() {
 
   const setPhoto = (i: number, url: string) =>
     setData((d) => ({ ...d, photos: d.photos.map((p, idx) => (idx === i ? url : p)) }))
-  const addPhoto = () => setData((d) => ({ ...d, photos: [...d.photos, ''] }))
+  const addPhoto = () =>
+    setData((d) => ({ ...d, photos: [...d.photos, ''] }))
   const removePhoto = (i: number) =>
-    setData((d) => ({ ...d, photos: d.photos.filter((_, idx) => idx !== i) }))
+    setData((d) => ({
+      ...d,
+      photos: d.photos.filter((_, idx) => idx !== i),
+      photoCaptions: d.photoCaptions ? d.photoCaptions.filter((_, idx) => idx !== i) : undefined,
+      featuredIndexes: d.featuredIndexes
+        ? d.featuredIndexes.filter((x) => x !== i).map((x) => (x > i ? x - 1 : x))
+        : undefined,
+    }))
+  const setPhotoCaption = (i: number, caption: string) =>
+    setData((d) => {
+      const caps = Array.isArray(d.photoCaptions) ? [...d.photoCaptions] : []
+      while (caps.length < d.photos.length) caps.push('')
+      caps[i] = caption
+      return { ...d, photoCaptions: caps }
+    })
+  /** 心形精选开关：最多选 6 张 */
+  const toggleFeatured = (i: number) =>
+    setData((d) => {
+      const cur = Array.isArray(d.featuredIndexes) ? [...d.featuredIndexes] : []
+      if (cur.includes(i)) return { ...d, featuredIndexes: cur.filter((x) => x !== i) }
+      if (cur.length >= 6) return d // 已达上限
+      return { ...d, featuredIndexes: [...cur, i].sort((a, b) => a - b) }
+    })
 
   // —— 本地上传照片：canvas 压缩为 base64 后嵌入数据（随链接分享）——
   const fileInputRef = useRef<HTMLInputElement>(null)
@@ -339,11 +362,12 @@ function InvitationEditor() {
 
             {/* 照片墙 */}
             <section className="bg-secondary rounded-2xl border border-primary p-5 sm:p-6">
-              <SectionTitle icon={ImagePlus} text="轮播照片（可选）" />
+              <SectionTitle icon={ImagePlus} text="照片墙（可选）" />
               <p className="text-xs text-muted mb-3 leading-relaxed">
-                宾客将以<b className="text-primary">自动轮播图</b>形式查看（可滑动 / 点选 / 触摸切换）。支持<b
-                  className="text-primary"
-                >本地上传</b>（自动压缩嵌入链接，建议 ≤6 张）或粘贴图床直链。
+                宾客将以<b className="text-primary">心形精选墙 + 平铺</b>形式查看：心形内展示你勾选的
+                <b className="text-primary">精选照片（最多 6 张，互不重叠）</b>，其余照片在下方平铺；
+                点击任意照片可查看大图与<b className="text-primary">照片简介</b>。支持
+                <b className="text-primary">本地上传</b>（自动压缩嵌入链接，建议 ≤6 张）或粘贴图床直链。
               </p>
 
               {/* 上传按钮组 */}
@@ -373,39 +397,70 @@ function InvitationEditor() {
                 {uploadErr && <span className="text-xs text-rose-400">{uploadErr}</span>}
               </div>
 
+              {/* 心形精选提示条 */}
+              <div className="mb-3 flex items-center justify-between rounded-lg bg-tertiary/40 px-3 py-2">
+                <span className="text-xs text-muted">
+                  💖 已选 <b className="text-primary">{data.featuredIndexes?.length ?? 0}/6</b> 张心形精选
+                  {data.featuredIndexes && data.featuredIndexes.length >= 6 ? '（已达上限）' : ''}
+                </span>
+                <span className="text-[11px] text-muted/80">未勾选的照片将在心形下方平铺</span>
+              </div>
+
               <div className="space-y-2.5">
-                {data.photos.map((url, i) => (
-                  <div key={i} className="flex gap-2">
-                    <div className="relative flex-1">
-                      {url && (
-                        <img
-                          src={url}
-                          alt=""
-                          className="absolute left-3 top-1/2 -translate-y-1/2 w-8 h-8 rounded-md object-cover border border-primary"
-                          onError={(e) => ((e.target as HTMLImageElement).style.display = 'none')}
-                        />
-                      )}
+                {data.photos.map((url, i) => {
+                  const isFeatured = data.featuredIndexes?.includes(i) ?? false
+                  return (
+                    <div key={i} className="rounded-xl border border-primary/40 bg-tertiary/30 p-2.5">
+                      <div className="flex gap-2">
+                        <div className="relative flex-1">
+                          {url && (
+                            <img
+                              src={url}
+                              alt=""
+                              className="absolute left-3 top-1/2 -translate-y-1/2 w-8 h-8 rounded-md object-cover border border-primary"
+                              onError={(e) => ((e.target as HTMLImageElement).style.display = 'none')}
+                            />
+                          )}
+                          <input
+                            className={`${inputCls} ${url ? 'pl-14' : ''} ${url.startsWith('data:') ? 'pr-24' : ''}`}
+                            value={url.startsWith('data:') ? '（已上传图片）' : url}
+                            onChange={(e) => setPhoto(i, e.target.value)}
+                            placeholder={`照片 ${i + 1} 的图片直链`}
+                          />
+                          {url.startsWith('data:') && (
+                            <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] font-medium text-emerald-400 bg-emerald-500/10 px-1.5 py-0.5 rounded">
+                              {dataUrlSizeKb(url)}KB
+                            </span>
+                          )}
+                        </div>
+                        <button
+                          onClick={() => toggleFeatured(i)}
+                          className={`shrink-0 px-3 rounded-lg border text-xs font-medium transition-colors ${
+                            isFeatured
+                              ? 'bg-rose-500/15 text-rose-400 border-rose-400/40'
+                              : 'bg-tertiary text-muted border-primary/30 hover:text-rose-400'
+                          }`}
+                          title={isFeatured ? '取消心形精选' : '设为心形精选'}
+                        >
+                          {isFeatured ? '❤ 精选' : '♡ 心形'}
+                        </button>
+                        <button
+                          onClick={() => removePhoto(i)}
+                          className="shrink-0 px-3 rounded-lg bg-tertiary text-muted hover:text-rose-400 hover:bg-rose-500/10 transition-colors"
+                          title="删除此照片"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
                       <input
-                        className={`${inputCls} ${url ? 'pl-14' : ''} ${url.startsWith('data:') ? 'pr-24' : ''}`}
-                        value={url.startsWith('data:') ? '（已上传图片）' : url}
-                        onChange={(e) => setPhoto(i, e.target.value)}
-                        placeholder={`照片 ${i + 1} 的图片直链`}
+                        className={`${inputCls} mt-2 !py-2 text-xs`}
+                        value={(data.photoCaptions?.[i] as string) ?? ''}
+                        onChange={(e) => setPhotoCaption(i, e.target.value)}
+                        placeholder={`照片 ${i + 1} 的简介（点开大图时显示，可留空）`}
                       />
-                      {url.startsWith('data:') && (
-                        <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] font-medium text-emerald-400 bg-emerald-500/10 px-1.5 py-0.5 rounded">
-                          {dataUrlSizeKb(url)}KB
-                        </span>
-                      )}
                     </div>
-                    <button
-                      onClick={() => removePhoto(i)}
-                      className="shrink-0 px-3 rounded-lg bg-tertiary text-muted hover:text-rose-400 hover:bg-rose-500/10 transition-colors"
-                      title="删除此照片"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </button>
-                  </div>
-                ))}
+                  )
+                })}
               </div>
               <button
                 onClick={addPhoto}

@@ -534,13 +534,18 @@ export function InvitationView({
               <Ornament color={theme.primary} />
             </div>
 
-            {/* 爱心照片墙：缩略图拼成爱心，点击查看原图 */}
+            {/* 爱心照片墙：精选照片拼成爱心（互不重叠），其余照片平铺；点击查看大图+简介 */}
             <Reveal>
-              <HeartPhotoWall photos={data.photos} accent={theme.primary} />
+              <HeartPhotoWall
+                photos={data.photos}
+                accent={theme.primary}
+                captions={data.photoCaptions}
+                featuredIndexes={data.featuredIndexes}
+              />
             </Reveal>
 
             <p className="text-center text-xs mt-5 pb-10 animate-float-y" style={{ color: theme.cardSub }}>
-              💖 点击爱心中的照片可查看原图，继续下滑查看故事与更多 ✨
+              💖 点击照片可查看大图与简介，继续下滑查看故事与更多 ✨
             </p>
           </section>
         ) : (
