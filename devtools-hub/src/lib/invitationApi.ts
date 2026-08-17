@@ -23,13 +23,19 @@ export async function saveInvitation(data: InvitationData): Promise<string> {
   return json.id
 }
 
-/** 通过短 ID 读取请柬数据（自动补齐缺省字段） */
-export async function loadInvitation(id: string): Promise<InvitationData> {
+/** 读取结果：请柬数据 + 浏览量 */
+export interface InvitationDetail {
+  data: InvitationData
+  views: number
+}
+
+/** 通过短 ID 读取请柬数据（自动补齐缺省字段，附带浏览量） */
+export async function loadInvitation(id: string): Promise<InvitationDetail> {
   const res = await fetch(`${API_BASE}/invitation/${encodeURIComponent(id)}`)
   if (!res.ok) {
     if (res.status === 404) throw new Error('请柬不存在或已删除')
     throw new Error(`加载失败 (${res.status})`)
   }
-  const json = (await res.json()) as { data: Partial<InvitationData> }
-  return { ...DEFAULT_INVITATION, ...json.data }
+  const json = (await res.json()) as { data: Partial<InvitationData>; views?: number }
+  return { data: { ...DEFAULT_INVITATION, ...json.data }, views: json.views || 0 }
 }

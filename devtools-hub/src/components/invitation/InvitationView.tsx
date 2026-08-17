@@ -75,7 +75,15 @@ function Ornament({ color = '#b45309' }: { color?: string }) {
 }
 
 // ==================== 浏览页主组件 ====================
-export function InvitationView({ data, onBack }: { data: InvitationData; onBack: () => void }) {
+export function InvitationView({
+  data,
+  onBack,
+  views,
+}: {
+  data: InvitationData
+  onBack: () => void
+  views?: number
+}) {
   const [opened, setOpened] = useState(false)
   const [copied, setCopied] = useState(false)
   const [musicPlaying, setMusicPlaying] = useState(false)
@@ -267,6 +275,12 @@ export function InvitationView({ data, onBack }: { data: InvitationData; onBack:
           </button>
 
           <p className="mt-8 text-xs text-white/70 tracking-widest">一 封 来 自 我 们 的 邀 请 一</p>
+
+          {typeof views === 'number' && views >= 0 && (
+            <p className="mt-3 text-[11px] text-white/60 tracking-widest animate-rise-in" style={{ animationDelay: '1s' }}>
+              💌 已有 {views} 人看过这份请柬
+            </p>
+          )}
         </div>
       </div>
     )

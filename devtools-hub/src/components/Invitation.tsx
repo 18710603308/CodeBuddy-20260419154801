@@ -48,6 +48,7 @@ export function Invitation() {
 function RemoteInvitation({ id, onBack }: { id: string; onBack: () => void }) {
   const [state, setState] = useState<'loading' | 'ok' | 'error'>('loading')
   const [data, setData] = useState<InvitationData | null>(null)
+  const [views, setViews] = useState(0)
 
   useEffect(() => {
     let alive = true
@@ -55,7 +56,8 @@ function RemoteInvitation({ id, onBack }: { id: string; onBack: () => void }) {
     loadInvitation(id)
       .then((d) => {
         if (!alive) return
-        setData(d)
+        setData(d.data)
+        setViews(d.views)
         setState('ok')
       })
       .catch(() => {
@@ -76,7 +78,7 @@ function RemoteInvitation({ id, onBack }: { id: string; onBack: () => void }) {
     )
   }
   if (state === 'error' || !data) return <InvalidLink />
-  return <InvitationView data={data} onBack={onBack} />
+  return <InvitationView data={data} onBack={onBack} views={views} />
 }
 
 // ==================== 链接无效提示 ====================
