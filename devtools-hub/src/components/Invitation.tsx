@@ -133,12 +133,11 @@ function InvitationEditor() {
       caps[i] = caption
       return { ...d, photoCaptions: caps }
     })
-  /** 心形精选开关：最多选 6 张 */
+  /** 心形精选开关：不设硬上限（缩略图会按数量自适应缩小） */
   const toggleFeatured = (i: number) =>
     setData((d) => {
       const cur = Array.isArray(d.featuredIndexes) ? [...d.featuredIndexes] : []
       if (cur.includes(i)) return { ...d, featuredIndexes: cur.filter((x) => x !== i) }
-      if (cur.length >= 6) return d // 已达上限
       return { ...d, featuredIndexes: [...cur, i].sort((a, b) => a - b) }
     })
 
@@ -365,7 +364,7 @@ function InvitationEditor() {
               <SectionTitle icon={ImagePlus} text="照片墙（可选）" />
               <p className="text-xs text-muted mb-3 leading-relaxed">
                 宾客将以<b className="text-primary">心形精选墙 + 平铺</b>形式查看：心形内展示你勾选的
-                <b className="text-primary">精选照片（最多 6 张，互不重叠）</b>，其余照片在下方平铺；
+                <b className="text-primary">精选照片（不限数量，缩略图按数量自适应）</b>，其余照片在下方平铺；
                 点击任意照片可查看大图与<b className="text-primary">照片简介</b>。支持
                 <b className="text-primary">本地上传</b>（自动压缩嵌入链接，建议 ≤6 张）或粘贴图床直链。
               </p>
@@ -400,8 +399,10 @@ function InvitationEditor() {
               {/* 心形精选提示条 */}
               <div className="mb-3 flex items-center justify-between rounded-lg bg-tertiary/40 px-3 py-2">
                 <span className="text-xs text-muted">
-                  💖 已选 <b className="text-primary">{data.featuredIndexes?.length ?? 0}/6</b> 张心形精选
-                  {data.featuredIndexes && data.featuredIndexes.length >= 6 ? '（已达上限）' : ''}
+                  💖 已选 <b className="text-primary">{data.featuredIndexes?.length ?? 0}</b> / 共 {data.photos.length} 张心形精选
+                  {data.featuredIndexes && data.featuredIndexes.length > 0
+                    ? '（缩略图会按数量自适应）'
+                    : '（默认全部进心形铺满）'}
                 </span>
                 <span className="text-[11px] text-muted/80">未勾选的照片将在心形下方平铺</span>
               </div>

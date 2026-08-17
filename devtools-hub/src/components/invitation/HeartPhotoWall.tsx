@@ -6,6 +6,7 @@ type Pt = { x: number; y: number }
 
 const VIEW_W = 32
 const VIEW_H = 28.92 // 心形参数方程真实高度：y ∈ [-17, 11.92]
+const CONTAINER_W = 448 // 心形容器最大宽度（max-w-md），用于估算缩略图归一化尺寸
 
 /** 心形参数方程轮廓点（x∈[-16,16]，y∈[-17,11.92]） */
 function heartOutline(steps = 320): Pt[] {
@@ -38,46 +39,45 @@ function pointInPolygon(x: number, y: number, poly: Pt[]): boolean {
   return inside
 }
 
-const dist2 = (a: Pt, b: Pt) => (a.x - b.x) ** 2 + (a.y - b.y) ** 2
+const dist = (a: Pt, b: Pt) => Math.hypot(a.x - b.x, a.y - b.y)
 
-/** 贪心最大-最小距离选点，保证均匀分散 */
-function greedyPick(pool: Pt[], count: number, start: Pt): Pt[] {
-  const chosen: Pt[] = [start]
-  while (chosen.length < count) {
-    let best: Pt | null = null
-    let bestD = -1
-    for (const p of pool) {
-      let minD = Infinity
-      for (const c of chosen) minD = Math.min(minD, dist2(p, c))
-      if (minD > bestD) {
-        bestD = minD
-        best = p
-      }
-    }
-    if (!best) break
-    chosen.push(best)
-  }
-  return chosen
+/** 按照片数量自适应缩略图尺寸（正方形 1:1，单位 px） */
+function getThumbSize(n: number): number {
+  if (n <= 6) return 88
+  if (n <= 10) return 68
+  if (n <= 16) return 54
+  if (n <= 24) return 44
+  if (n <= 40) return 36
+  return 30
 }
 
-/** 按照片数量生成爱心点位：轮廓优先，内部填充 */
-function heartPositions(n: number): Pt[] {
+/**
+ * 在心形内部生成 N 个互不重叠的位置。
+ * 思路：高密度网格 + 轮廓合并成候选池，从顶部中心出发贪心选点，
+ * 每次选"距离已选集合最近距离最大"的点，并把离新点 < minDist 的候选剔出池子，
+ * 保证最终已选点两两间距 >= minDist（缩略图不会重叠）。
+ */
+function heartPositions(n: number, thumbSize: number): Pt[] {
   if (n <= 0) return []
-  if (n === 1) return [{ x: 0.5, y: 0.44 }]
+  if (n === 1) return [{ x: 0.5, y: 0.45 }]
 
-  const outline = heartOutline(320).map(norm)
-  // 起始点：最靠近顶部中心
+  // 缩略图在归一化坐标的"半径"（X 方向按宽归一化、Y 方向按高归一化）
+  // 容器宽 = CONTAINER_W（448px），高 = CONTAINER_W * VIEW_H/VIEW_W ≈ 405px
+  const rx = thumbSize / CONTAINER_W
+  const ry = thumbSize / (CONTAINER_W * (VIEW_H / VIEW_W))
+  // 中心距 >= 缩略图最长边（保证不重叠，留 0.003 缓冲）
+  const minDist = Math.max(rx, ry) + 0.003
+
+  const raw = heartOutline(320)
+  const outline = raw.map(norm)
+
+  // 起始点：顶部中心（y 最小）
   let top = outline[0]
   for (const p of outline) if (p.y < top.y) top = p
 
-  const RIM = Math.min(n, 14) // 轮廓上最多放 14 张
-  const rim = greedyPick(outline, RIM, top)
-  if (n <= RIM) return rim
-
-  // 内部填充候选点（网格采样 + 心形内部判定）
-  const raw = heartOutline(320)
+  // 内部候选点（高密度网格）
   const inside: Pt[] = []
-  const GRID = 56
+  const GRID = Math.max(96, Math.ceil(Math.sqrt(n * 18)))
   for (let i = 0; i < GRID; i++) {
     for (let j = 0; j < GRID; j++) {
       const x = -16 + (VIEW_W * (i + 0.5)) / GRID
@@ -85,8 +85,32 @@ function heartPositions(n: number): Pt[] {
       if (pointInPolygon(x, y, raw)) inside.push(norm({ x, y }))
     }
   }
-  const rest = greedyPick(inside, n - RIM, rim[rim.length - 1])
-  return [...rim, ...rest]
+  const pool: Pt[] = [...outline, ...inside]
+
+  // 贪心：每次选"距离已选集合最近距离最大"的点，并把离新点 < minDist 的候选剔出
+  const chosen: Pt[] = [top]
+  let working = pool.filter((p) => dist(p, top) >= minDist)
+
+  while (chosen.length < n && working.length > 0) {
+    let best: Pt | null = null
+    let bestD = -1
+    for (const p of working) {
+      let minD = Infinity
+      for (const c of chosen) {
+        const d = dist(p, c)
+        if (d < minD) minD = d
+      }
+      if (minD > bestD) {
+        bestD = minD
+        best = p
+      }
+    }
+    if (!best) break
+    chosen.push(best)
+    working = working.filter((p) => dist(p, best) >= minDist)
+  }
+
+  return chosen
 }
 
 /** 爱心轮廓 SVG path（用于淡色底纹） */
@@ -108,9 +132,10 @@ interface HeartPhotoWallProps {
   /** 每张照片简介（与 photos 下标对齐），Lightbox 中展示 */
   captions?: string[]
   /**
-   * 心形墙精选展示的照片下标（最多 6 张）；未提供或为空时自动取前 6 张。
-   * 心形内只展示精选照片（固定 96px 互不重叠、保证可点击），
-   * 其余照片在下方以平铺缩略图展示，同样可点开大图查看详情。
+   * 心形墙精选展示的照片下标（不限数量，按下标顺序展示）。
+   * - 未传或空数组 → 默认所有 photos 都进心形铺满
+   * - 显式传入时按数组下标展示
+   * 缩略图尺寸会按精选数量自适应，保证互不重叠、可点击。
    */
   featuredIndexes?: number[]
 }
@@ -122,28 +147,33 @@ export function HeartPhotoWall({
   captions,
   featuredIndexes,
 }: HeartPhotoWallProps) {
-  const FEATURED_MAX = 6 // 心形精选上限
-  const MAX = 40 // 平铺展示上限
+  const MAX = 60 // 心形 + 平铺总展示上限
 
-  // 心形精选下标（最多 6 张）
+  // 心形展示下标：featuredIndexes 为空时默认全选（铺满心形）
   const featured = useMemo(() => {
     const arr = Array.isArray(featuredIndexes)
       ? featuredIndexes.filter((i) => i >= 0 && i < photos.length)
       : []
-    return (arr.length > 0 ? arr : photos.slice(0, FEATURED_MAX).map((_, i) => i))
-      .slice(0, FEATURED_MAX)
+    return arr.length > 0 ? arr : photos.map((_, i) => i).slice(0, MAX)
   }, [featuredIndexes, photos.length])
 
-  // 全部展示的照片（用于 Lightbox 浏览 + 平铺），原下标即 photos 下标
+  // 全部展示的照片（用于 Lightbox 浏览 + 下方平铺）
   const display = photos.slice(0, MAX)
 
-  // 心形位置数 = 精选照片数
-  const positions = useMemo(() => heartPositions(featured.length), [featured.length])
+  // 心形缩略图尺寸 = 自适应
+  const thumbSize = getThumbSize(featured.length)
 
-  // 其余照片（未进心形的，下标为 display 内的下标）
-  const rest = display
-    .map((_, i) => i)
-    .filter((i) => !featured.includes(i))
+  // 心形位置数 = 精选照片数
+  const positions = useMemo(
+    () => heartPositions(featured.length, thumbSize),
+    [featured.length, thumbSize]
+  )
+
+  // 其余未进心形的（featured 未覆盖到的）
+  const rest = useMemo(
+    () => display.map((_, i) => i).filter((i) => !featured.includes(i)),
+    [display, featured]
+  )
 
   const [openIndex, setOpenIndex] = useState<number | null>(null)
   const [broken, setBroken] = useState<Set<number>>(new Set())
@@ -154,6 +184,15 @@ export function HeartPhotoWall({
   const openOrigIndex = openIndex === null ? -1 : openIndex
   const openCaption =
     openOrigIndex >= 0 && captions ? (captions[openOrigIndex] || '').trim() : ''
+
+  // 把简介按中文标点 / 换行拆成多行（每行一句，诗意排版）
+  const captionLines = useMemo(() => {
+    if (!openCaption) return [] as string[]
+    return openCaption
+      .split(/[，。！？；\n]+/)
+      .map((s) => s.trim())
+      .filter(Boolean)
+  }, [openCaption])
 
   const close = useCallback(() => {
     setOpenIndex(null)
@@ -193,23 +232,23 @@ export function HeartPhotoWall({
 
   if (display.length === 0) return null
 
-  const thumbCls = (i: number) => (
+  const renderThumb = (origIdx: number, sizePx: number, radius = 'rounded-xl') => (
     <span
-      className="block overflow-hidden rounded-xl transition-transform duration-300 hover:scale-105 active:scale-95"
+      className={`block overflow-hidden ${radius} transition-transform duration-300 hover:scale-105 active:scale-95`}
       style={{
-        width: '100%',
-        aspectRatio: '3 / 4',
+        width: sizePx,
+        height: sizePx,
         boxShadow: '0 4px 14px rgba(0,0,0,0.28)',
       }}
     >
-      {!broken.has(i) && display[i] ? (
+      {!broken.has(origIdx) && display[origIdx] ? (
         <img
-          src={display[i]}
-          alt={`照片 ${i + 1}`}
+          src={display[origIdx]}
+          alt={`照片 ${origIdx + 1}`}
           className="block h-full w-full object-cover"
           loading="lazy"
           draggable={false}
-          onError={() => setBroken((s) => new Set(s).add(i))}
+          onError={() => setBroken((s) => new Set(s).add(origIdx))}
         />
       ) : (
         <span
@@ -224,8 +263,8 @@ export function HeartPhotoWall({
 
   return (
     <div className="w-full max-w-md mx-auto">
-      {/* ============ 心形精选墙（互不重叠，固定 96px） ============ */}
-      {featured.length > 0 && (
+      {/* ============ 心形墙（所有精选照片铺满、互不重叠） ============ */}
+      {featured.length > 0 && positions.length > 0 && (
         <div
           className="relative w-full"
           style={{ aspectRatio: `${VIEW_W} / ${VIEW_H}` }}
@@ -237,10 +276,10 @@ export function HeartPhotoWall({
             fill="none"
             preserveAspectRatio="none"
           >
-            <path d={HEART_PATH} fill={`${accent}0d`} />
+            <path d={HEART_PATH} fill={`${accent}10`} />
             <path
               d={HEART_PATH}
-              stroke={`${accent}45`}
+              stroke={`${accent}50`}
               strokeWidth={0.45}
               strokeLinejoin="round"
             />
@@ -248,6 +287,7 @@ export function HeartPhotoWall({
 
           {positions.map((p, i) => {
             const origIdx = featured[i]
+            if (origIdx === undefined) return null
             return (
               <button
                 key={origIdx}
@@ -260,43 +300,14 @@ export function HeartPhotoWall({
                   transform: 'translate(-50%, -50%)',
                 }}
               >
-                <span
-                  className="block overflow-hidden rounded-2xl transition-transform duration-300 hover:scale-110 active:scale-95"
-                  style={{
-                    // 精选模式最多 6 张，固定 96px，互不重叠、保证可点击
-                    width: 'min(96px, 24vw)',
-                    aspectRatio: '1 / 1',
-                    boxShadow:
-                      '0 6px 18px rgba(0,0,0,0.35), 0 0 0 2px rgba(255,255,255,0.28)',
-                  }}
-                >
-                  {!broken.has(origIdx) && display[origIdx] ? (
-                    <img
-                      src={display[origIdx]}
-                      alt={`照片 ${origIdx + 1}`}
-                      className="block h-full w-full object-cover"
-                      loading="lazy"
-                      draggable={false}
-                      onError={() => setBroken((s) => new Set(s).add(origIdx))}
-                    />
-                  ) : (
-                    <span
-                      className="flex h-full w-full items-center justify-center text-2xl"
-                      style={{
-                        background: `linear-gradient(145deg, ${accent}66, ${accent}22)`,
-                      }}
-                    >
-                      {fallbackEmoji}
-                    </span>
-                  )}
-                </span>
+                {renderThumb(origIdx, thumbSize, 'rounded-2xl')}
               </button>
             )
           })}
         </div>
       )}
 
-      {/* ============ 其余照片平铺（全部可点开大图详情） ============ */}
+      {/* ============ 其余照片平铺（精选未覆盖到的，也都可点开大图） ============ */}
       {rest.length > 0 && (
         <div className="mt-4">
           <div className="mb-2 flex items-center gap-2 px-1">
@@ -316,8 +327,8 @@ export function HeartPhotoWall({
                 className="cursor-pointer"
                 aria-label={`查看照片 ${i + 1}`}
               >
-                {thumbCls(i)}
-                {openCaption && captions?.[i] ? (
+                {renderThumb(i, Math.min(thumbSize, 110))}
+                {captions?.[i] ? (
                   <span
                     className="mt-1 block truncate text-center text-[10px]"
                     style={{ color: '#8a6a3a' }}
@@ -331,107 +342,165 @@ export function HeartPhotoWall({
         </div>
       )}
 
-      {/* ============ 点击查看原图 Lightbox（含简介卡片） ============ */}
+      {/* ============ Lightbox：左大图 + 右侧"爱的旁白"（复刻商业版详情页） ============ */}
       {openIndex !== null &&
         createPortal(
-        <div
-          className="fixed inset-0 z-[80] flex items-center justify-center"
-          style={{ background: 'rgba(0,0,0,0.92)' }}
-          onClick={close}
-          onTouchStart={(e) => {
-            touchX.current = e.touches[0].clientX
-          }}
-          onTouchEnd={(e) => {
-            if (touchX.current !== null) {
-              const dx = e.changedTouches[0].clientX - touchX.current
-              if (Math.abs(dx) > 40) step(dx < 0 ? 1 : -1)
-              touchX.current = null
-            }
-          }}
-        >
-          <button
-            onClick={(e) => {
-              e.stopPropagation()
-              close()
+          <div
+            className="fixed inset-0 z-[80] flex items-center justify-center px-3 sm:px-6 py-6"
+            style={{
+              background:
+                'radial-gradient(ellipse at center, rgba(255,240,235,0.97) 0%, rgba(252,222,210,0.97) 100%)',
+              backdropFilter: 'blur(6px)',
             }}
-            className="absolute top-5 right-5 z-10 flex h-10 w-10 items-center justify-center rounded-full bg-white/10 text-white backdrop-blur transition-colors hover:bg-white/20"
-            aria-label="关闭大图"
+            onClick={close}
+            onTouchStart={(e) => {
+              touchX.current = e.touches[0].clientX
+            }}
+            onTouchEnd={(e) => {
+              if (touchX.current !== null) {
+                const dx = e.changedTouches[0].clientX - touchX.current
+                if (Math.abs(dx) > 40) step(dx < 0 ? 1 : -1)
+                touchX.current = null
+              }
+            }}
           >
-            <X className="h-5 w-5" />
-          </button>
-
-          {display.length > 1 && (
-            <>
-              <button
-                onClick={(e) => {
-                  e.stopPropagation()
-                  step(-1)
-                }}
-                className="absolute left-3 sm:left-6 top-1/2 z-10 flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full bg-white/10 text-white backdrop-blur transition-colors hover:bg-white/20"
-                aria-label="上一张"
-              >
-                <ChevronLeft className="h-6 w-6" />
-              </button>
-              <button
-                onClick={(e) => {
-                  e.stopPropagation()
-                  step(1)
-                }}
-                className="absolute right-3 sm:right-6 top-1/2 z-10 flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full bg-white/10 text-white backdrop-blur transition-colors hover:bg-white/20"
-                aria-label="下一张"
-              >
-                <ChevronRight className="h-6 w-6" />
-              </button>
-            </>
-          )}
-
-          {!lightboxError && display[openIndex] ? (
-            <div
-              className="relative flex h-full w-full items-center justify-center px-2"
-              onClick={(e) => e.stopPropagation()}
-            >
-              <img
-                key={openIndex}
-                src={display[openIndex]}
-                alt={`照片 ${openIndex + 1}`}
-                className="rounded-xl object-contain shadow-2xl"
-                style={{ maxHeight: '70vh', maxWidth: '88vw' }}
-                onError={() => setLightboxError(true)}
-              />
-            </div>
-          ) : (
-            <div
-              className="flex flex-col items-center gap-3 text-white/80"
-              onClick={(e) => e.stopPropagation()}
-            >
-              <span className="text-5xl">{fallbackEmoji}</span>
-              <span className="text-sm">这张照片暂时无法显示</span>
-            </div>
-          )}
-          {openCaption && (
-            <div
-              className="absolute left-1/2 z-10 -translate-x-1/2 rounded-2xl px-5 py-3 text-center"
-              style={{
-                bottom: 'max(28px, env(safe-area-inset-bottom, 0px))',
-                background:
-                  'linear-gradient(180deg, rgba(255,251,240,0.98), rgba(255,247,230,0.98))',
-                color: '#8a6a3a',
-                boxShadow: '0 8px 30px rgba(0,0,0,0.35)',
-                maxWidth: 'min(92vw, 540px)',
-                backdropFilter: 'blur(4px)',
+            {/* 关闭按钮 */}
+            <button
+              onClick={(e) => {
+                e.stopPropagation()
+                close()
               }}
+              className="absolute top-4 right-4 sm:top-5 sm:right-5 z-20 flex h-10 w-10 items-center justify-center rounded-full bg-white/70 text-stone-700 backdrop-blur transition-colors hover:bg-white"
+              aria-label="关闭大图"
+            >
+              <X className="h-5 w-5" />
+            </button>
+
+            {/* 上下张切换 */}
+            {display.length > 1 && (
+              <>
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    step(-1)
+                  }}
+                  className="absolute left-2 sm:left-5 top-1/2 z-20 flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full bg-white/70 text-stone-700 backdrop-blur transition-colors hover:bg-white"
+                  aria-label="上一张"
+                >
+                  <ChevronLeft className="h-6 w-6" />
+                </button>
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    step(1)
+                  }}
+                  className="absolute right-2 sm:right-5 top-1/2 z-20 flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full bg-white/70 text-stone-700 backdrop-blur transition-colors hover:bg-white"
+                  aria-label="下一张"
+                >
+                  <ChevronRight className="h-6 w-6" />
+                </button>
+              </>
+            )}
+
+            {/* 主体：左大图 + 右侧文案（PC）；移动端上下 */}
+            <div
+              className="relative w-full max-w-5xl flex flex-col md:flex-row items-center md:items-center justify-center gap-4 md:gap-8"
               onClick={(e) => e.stopPropagation()}
             >
-              <span
-                className="block text-sm leading-relaxed sm:text-base"
-                style={{ fontFamily: "'Noto Serif SC', 'Songti SC', serif" }}
-              >
-                {openCaption}
-              </span>
+              {/* 左侧大图 */}
+              <div className="flex-shrink-0 flex items-center justify-center w-full md:w-auto">
+                {!lightboxError && display[openIndex] ? (
+                  <img
+                    key={openIndex}
+                    src={display[openIndex]}
+                    alt={`照片 ${openIndex + 1}`}
+                    className="rounded-2xl object-contain shadow-2xl"
+                    style={{
+                      maxHeight: 'min(70vh, 620px)',
+                      maxWidth: 'min(92vw, 480px)',
+                      border: '6px solid #fffbf5',
+                      boxShadow: '0 18px 50px rgba(120,60,40,0.35)',
+                    }}
+                    onError={() => setLightboxError(true)}
+                  />
+                ) : (
+                  <div
+                    className="flex flex-col items-center gap-3 rounded-2xl px-12 py-16"
+                    style={{
+                      background: '#fffbf5',
+                      boxShadow: '0 18px 50px rgba(120,60,40,0.35)',
+                    }}
+                  >
+                    <span className="text-5xl">{fallbackEmoji}</span>
+                    <span className="text-sm text-stone-500">这张照片暂时无法显示</span>
+                  </div>
+                )}
+              </div>
+
+              {/* 右侧文案（爱的旁白，仅 PC 显示） */}
+              {captionLines.length > 0 && (
+                <div
+                  className="hidden md:flex flex-col items-center justify-center text-center max-w-[320px] flex-1"
+                  style={{ color: '#7a4f2b' }}
+                >
+                  <div
+                    className="text-[11px] tracking-[0.4em] mb-3 font-medium"
+                    style={{ color: '#c08560' }}
+                  >
+                    LOVE · WHISPER
+                  </div>
+                  <div
+                    className="text-2xl mb-4"
+                    style={{ color: '#c4765a' }}
+                  >
+                    ❤
+                  </div>
+                  <div
+                    className="text-[15px] leading-[2.1] tracking-wide"
+                    style={{ fontFamily: "'Noto Serif SC', 'Songti SC', serif" }}
+                  >
+                    {captionLines.map((line, i) => (
+                      <p key={i} className="my-0.5">
+                        {line}
+                      </p>
+                    ))}
+                  </div>
+                  <div
+                    className="text-[11px] tracking-[0.3em] mt-4 opacity-70"
+                    style={{ color: '#a07654' }}
+                  >
+                    · {openOrigIndex + 1} / {display.length} ·
+                  </div>
+                </div>
+              )}
+
+              {/* 移动端：简介放在大图下方（多行诗意） */}
+              {captionLines.length > 0 && (
+                <div
+                  className="md:hidden mt-1 w-full max-w-[92vw] rounded-2xl px-5 py-3 text-center"
+                  style={{
+                    background:
+                      'linear-gradient(180deg, rgba(255,251,240,0.96), rgba(255,247,230,0.96))',
+                    color: '#7a4f2b',
+                    boxShadow: '0 6px 18px rgba(120,60,40,0.18)',
+                  }}
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  <div
+                    className="text-sm leading-relaxed"
+                    style={{ fontFamily: "'Noto Serif SC', 'Songti SC', serif" }}
+                  >
+                    {captionLines.map((line, i) => (
+                      <p key={i} className="my-0.5">
+                        {line}
+                      </p>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
-          )}
-        </div>,
-        document.body
+          </div>,
+          document.body
         )}
     </div>
   )
