@@ -36,7 +36,7 @@ export function PetalRain({
   const shapeKey = shapes.join(',')
   const particles = useMemo<Particle[]>(
     () => {
-      const pool = shapes.length ? shapes : ['petal']
+      const pool: ParticleShape[] = shapes.length ? shapes : ['petal']
       return Array.from({ length: count }, () => {
         const shape = pool[Math.floor(Math.random() * pool.length)]
         const emojiPool = shape === 'petal' ? [] : EMOJI[shape]

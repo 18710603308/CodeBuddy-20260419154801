@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import type { ReactNode } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 import {
@@ -17,6 +17,7 @@ import {
   getTheme,
 } from '../data/invitation'
 import type { InvitationData, InvitationTimelineItem, InvitationType } from '../data/invitation'
+import { loadInvitation, saveInvitation } from '../lib/invitationApi'
 import { InvitationView } from './invitation/InvitationView'
 
 const inputCls =
@@ -26,16 +27,56 @@ const inputCls =
 export function Invitation() {
   const [searchParams, setSearchParams] = useSearchParams()
   const encoded = searchParams.get('d')
+  const id = searchParams.get('id')
   const data = encoded ? decodeInvitation(encoded) : null
 
-  // 有有效 d 参数 → 请柬浏览模式；否则进入编辑器
+  // 有有效 d 参数 → 旧版长链接请柬浏览模式
   if (encoded && data) {
     return <InvitationView data={data} onBack={() => setSearchParams({})} />
   }
   if (encoded && !data) {
     return <InvalidLink />
   }
+  // 有短 id → 从数据库加载请柬浏览
+  if (id) {
+    return <RemoteInvitation key={id} id={id} onBack={() => setSearchParams({})} />
+  }
   return <InvitationEditor />
+}
+
+// ==================== 短链接请柬：从数据库异步加载 ====================
+function RemoteInvitation({ id, onBack }: { id: string; onBack: () => void }) {
+  const [state, setState] = useState<'loading' | 'ok' | 'error'>('loading')
+  const [data, setData] = useState<InvitationData | null>(null)
+
+  useEffect(() => {
+    let alive = true
+    setState('loading')
+    loadInvitation(id)
+      .then((d) => {
+        if (!alive) return
+        setData(d)
+        setState('ok')
+      })
+      .catch(() => {
+        if (alive) setState('error')
+      })
+    return () => {
+      alive = false
+    }
+  }, [id])
+
+  if (state === 'loading') {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center gap-4 px-6 text-center bg-primary">
+        <div className="text-6xl animate-float-y">💌</div>
+        <h1 className="text-xl font-bold text-primary">请柬加载中…</h1>
+        <p className="text-sm text-muted">正在从云端获取您的邀请函</p>
+      </div>
+    )
+  }
+  if (state === 'error' || !data) return <InvalidLink />
+  return <InvitationView data={data} onBack={onBack} />
 }
 
 // ==================== 链接无效提示 ====================
@@ -115,7 +156,17 @@ function InvitationEditor() {
   const removeTimelineItem = (i: number) =>
     setData((d) => ({ ...d, timeline: d.timeline.filter((_, idx) => idx !== i) }))
 
-  const shareUrl = useMemo(() => buildShareUrl(data, window.location.origin), [data])
+  // 已保存到数据库的短 ID（未保存时回退旧的长链接方案）
+  const [savedId, setSavedId] = useState<string | null>(null)
+  const [saving, setSaving] = useState(false)
+
+  const shareUrl = useMemo(
+    () =>
+      savedId
+        ? `${window.location.origin}/invitation?id=${savedId}`
+        : buildShareUrl(data, window.location.origin),
+    [data, savedId]
+  )
 
   const copyLink = async () => {
     try {
@@ -127,8 +178,19 @@ function InvitationEditor() {
     }
   }
 
-  const goShare = () => {
-    setSearchParams({ d: encodeInvitation(data) })
+  // 生成分享链接：优先上传数据库换取 8 位短 ID；后端不可用时回退旧的长链接
+  const goShare = async () => {
+    if (saving) return
+    setSaving(true)
+    try {
+      const id = await saveInvitation(data)
+      setSavedId(id)
+      setSearchParams({ id })
+    } catch {
+      setSearchParams({ d: encodeInvitation(data) })
+    } finally {
+      setSaving(false)
+    }
   }
 
   const reset = () => setData(DEFAULT_INVITATION)
@@ -160,10 +222,11 @@ function InvitationEditor() {
             </button>
             <button
               onClick={goShare}
-              className="inline-flex items-center gap-1.5 px-4 sm:px-5 py-2 rounded-xl text-sm font-semibold bg-gradient-to-r from-emerald-500 to-green-600 text-white hover:scale-105 transition-all"
+              disabled={saving}
+              className="inline-flex items-center gap-1.5 px-4 sm:px-5 py-2 rounded-xl text-sm font-semibold bg-gradient-to-r from-emerald-500 to-green-600 text-white hover:scale-105 transition-all disabled:opacity-60 disabled:hover:scale-100"
             >
-              <Sparkles className="w-4 h-4" />
-              生成并查看请柬
+              {saving ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
+              {saving ? '保存中…' : '生成并查看请柬'}
             </button>
           </div>
         </div>
@@ -488,10 +551,11 @@ function InvitationEditor() {
             <div className="flex flex-col sm:flex-row gap-3 pb-8">
               <button
                 onClick={goShare}
-                className="flex-1 inline-flex items-center justify-center gap-2 px-6 py-3.5 rounded-xl bg-gradient-to-r from-emerald-500 to-green-600 text-white font-semibold hover:scale-[1.02] transition-all"
+                disabled={saving}
+                className="flex-1 inline-flex items-center justify-center gap-2 px-6 py-3.5 rounded-xl bg-gradient-to-r from-emerald-500 to-green-600 text-white font-semibold hover:scale-[1.02] transition-all disabled:opacity-60 disabled:hover:scale-100"
               >
-                <Sparkles className="w-5 h-5" />
-                生成分享链接
+                {saving ? <RefreshCw className="w-5 h-5 animate-spin" /> : <Sparkles className="w-5 h-5" />}
+                {saving ? '保存中…' : '生成分享链接'}
               </button>
               <button
                 onClick={copyLink}

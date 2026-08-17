@@ -28,6 +28,19 @@
 
 ## 2. 最近更新
 
+### 电子请柬：短链接 + 数据库存储 (2026-08-17)
+
+- **动机**：此前请柬数据（含 base64 图片）全部 base64url 编码进 URL `?d=`，链接超长难分享
+- **后端**：新增 `invitation-api/`（零依赖 Node 内置 http，端口 3002）——`POST /invitation` 存请柬数据返回 8 位短 ID；`GET /invitation/:id` 读数据；`GET /health` 健康检查；body 上限 25MB（照片 base64）；优先 `better-sqlite3`（SQLite），未安装则回退 JSON 文件存储（本地开发即用此模式）
+- **nginx.conf**：新增 `location /inv-api/` → `127.0.0.1:3002`（`proxy_pass` 尾斜杠去前缀），`client_max_body_size 25m`
+- **vite.config.ts**：dev 代理 `/inv-api` → `localhost:3002` + `rewrite` 去前缀
+- **前端**：
+  - `src/lib/invitationApi.ts`：`saveInvitation(data)` → 短 ID；`loadInvitation(id)` → 数据（自动补齐缺省字段）
+  - `Invitation.tsx`：主组件新增 `?id=` 分支（`RemoteInvitation` 异步加载 + 加载中转场 + 失败显示无效链接）；编辑器 `goShare` 改为先 POST 数据库拿短 ID → 跳 `/invitation?id=xxx`，**后端不可用时自动回退旧 `?d=` 长链接**；复制链接在有 `savedId` 时用短链；生成按钮带"保存中…"状态
+- **分享链接形态**：`/invitation?id=xxxxxxxx`（8 位 base62）vs 旧版 `/invitation?d=<超长base64>`
+- **构建踩坑**：`npx vite build` 被工具误判为 watch 命令，需后台 nohup + 日志文件确认
+- **部署**：服务器上传 `invitation-api/` → `npm i better-sqlite3`（可选）→ `pm2 start server.js --name invitation-api` → nginx 加 `/inv-api/` 代理 + reload → 前端重新 build 上传
+
 ### 电子请柬：上传编辑增强 + 青春动效 (2026-08-17)
 
 - **照片上传编辑**：编辑器新增"上传照片"按钮（`accept="image/*" multiple` 批量选择），图片经 `compressImage.ts`（canvas 压缩至 900px / q0.74）转 base64 嵌入请柬链接；base64 输入框显示"（已上传图片）"与 KB 体积徽标，总嵌入体积 >900KB 时提示改用图床直链

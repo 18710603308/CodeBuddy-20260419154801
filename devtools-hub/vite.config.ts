@@ -45,6 +45,12 @@ export default defineConfig({
         changeOrigin: true,
       },
       // GaussDB 学习 - SQL 验证 API（已下线：前端仅保留 PGlite 本地模式）
+      // 电子请柬短链接 API
+      '/inv-api': {
+        target: 'http://localhost:3002',
+        changeOrigin: true,
+        rewrite: (path: string) => path.replace(/^\/inv-api/, ''),
+      },
       // 通用 API（Docker API 等）
       '/api': {
         target: 'http://localhost:3000',
