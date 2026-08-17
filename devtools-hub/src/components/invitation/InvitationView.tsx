@@ -90,6 +90,8 @@ export function InvitationView({
   const [copied, setCopied] = useState(false)
   const [musicPlaying, setMusicPlaying] = useState(false)
   const playingRef = useRef(false)
+  /** 用户手动暂停标记：防止全局交互兜底在用户主动暂停后又自动播放 */
+  const userPausedRef = useRef(false)
   const [musicOff, setMusicOff] = useState<boolean>(() => {
     try {
       return localStorage.getItem('inv-music-off') === '1'
@@ -177,6 +179,7 @@ export function InvitationView({
   }, [])
 
   const playMusic = useCallback(() => {
+    userPausedRef.current = false
     const a = audioRef.current
     if (!a) return
     a.play()
@@ -185,6 +188,7 @@ export function InvitationView({
   }, [syncPlaying])
 
   const pauseMusic = useCallback(() => {
+    userPausedRef.current = true
     const a = audioRef.current
     if (a) a.pause()
     syncPlaying(false)
@@ -243,18 +247,20 @@ export function InvitationView({
     })
   }, [musicOff])
 
-  // 全局首次用户交互（点击/键盘/触摸）兜底播放，覆盖 iOS Safari 等必须手势的场景
+  // 全局用户交互（点击/键盘/触摸）兜底播放，覆盖 iOS Safari 等必须手势的场景；
+  // 音乐元素始终挂载（封面页也在），首次"轻触开启"点击即在手势内完成播放。
+  // 用户手动暂停过（userPausedRef）则不再自动播放，尊重用户意愿。
   useEffect(() => {
     if (musicOff) return
     const tryAutoPlay = () => {
       const a = audioRef.current
-      if (a && a.paused) {
+      if (a && a.paused && !userPausedRef.current) {
         a.play()
           .then(() => syncPlaying(true))
           .catch(() => syncPlaying(false))
       }
     }
-    const opts: AddEventListenerOptions = { once: true, passive: true, capture: true }
+    const opts: AddEventListenerOptions = { passive: true, capture: true }
     document.addEventListener('pointerdown', tryAutoPlay, opts)
     document.addEventListener('keydown', tryAutoPlay, opts)
     document.addEventListener('touchstart', tryAutoPlay, opts)
@@ -302,12 +308,11 @@ export function InvitationView({
   const pages = 6 // 相册 / 故事 / 信息 / 流程 / 留言 / 致谢
 
   // ==================== 封面 ====================
-  if (!opened) {
-    return (
-      <div
-        className="fixed inset-0 z-50 flex flex-col items-center justify-center text-center overflow-hidden"
-        style={{ background: theme.gradient, color: '#fff' }}
-      >
+  const coverJsx = (
+    <div
+      className="fixed inset-0 z-50 flex flex-col items-center justify-center text-center overflow-hidden"
+      style={{ background: theme.gradient, color: '#fff' }}
+    >
         {/* 渐变流动叠层 */}
         <div
           className="absolute inset-0 animate-gradient-flow opacity-70"
@@ -386,28 +391,15 @@ export function InvitationView({
             </p>
           )}
         </div>
-      </div>
-    )
-  }
+    </div>
+  )
 
   // ==================== 正文（多屏滑动） ====================
   const photoCount = data.photos.length
   const mapUrl = buildMapUrl(data.venue, data.address)
 
-  return (
+  const bodyJsx = (
     <div className="fixed inset-0 z-50" style={{ background: theme.cardBg }}>
-      {/* 背景音乐：内置歌单轮播 + 切换/关闭 */}
-      <audio
-        key={trackIndex}
-        ref={audioRef}
-        src={current.src}
-        preload="auto"
-        className="hidden"
-        onEnded={() => changeTrack(1)}
-        onPlaying={() => syncPlaying(true)}
-        onPause={() => syncPlaying(false)}
-        onError={() => syncPlaying(false)}
-      />
       {musicOff ? (
         <button
           onClick={turnOnMusic}
@@ -480,7 +472,7 @@ export function InvitationView({
       >
         <button onClick={onBack} className="inline-flex items-center gap-1.5 hover:opacity-80 transition-opacity">
           <ArrowLeft className="w-4 h-4" />
-          <span className="hidden sm:inline">返回编辑</span>
+          <span className="hidden sm:inline">编辑请柬</span>
         </button>
         <button
           onClick={share}
@@ -951,6 +943,24 @@ export function InvitationView({
         </section>
       </div>
     </div>
+  )
+
+  // 统一出口：audio 始终挂载（封面页也在），封面/正文共用同一元素，播放不因切换而中断
+  return (
+    <>
+      <audio
+        key={trackIndex}
+        ref={audioRef}
+        src={current.src}
+        preload="auto"
+        className="hidden"
+        onEnded={() => changeTrack(1)}
+        onPlaying={() => syncPlaying(true)}
+        onPause={() => syncPlaying(false)}
+        onError={() => syncPlaying(false)}
+      />
+      {opened ? bodyJsx : coverJsx}
+    </>
   )
 }
 

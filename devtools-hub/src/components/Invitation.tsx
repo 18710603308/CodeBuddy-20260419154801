@@ -6,7 +6,7 @@ import {
   Gift, Heart, ImagePlus, MapPin, MessageCircleHeart, Music2,
   Plus, RefreshCw, Sparkles, Trash2, Upload, Users, Wand2,
 } from 'lucide-react'
-import { compressImage, dataUrlSizeKb } from './invitation/compressImage'
+import { dataUrlSizeKb } from './invitation/compressImage'
 import {
   DEFAULT_INVITATION,
   INVITATION_THEMES,
@@ -17,7 +17,7 @@ import {
   getTheme,
 } from '../data/invitation'
 import type { InvitationData, InvitationTimelineItem, InvitationType } from '../data/invitation'
-import { loadInvitation, saveInvitation } from '../lib/invitationApi'
+import { loadInvitation, saveInvitation, updateInvitation } from '../lib/invitationApi'
 import { InvitationView } from './invitation/InvitationView'
 
 const inputCls =
@@ -28,18 +28,46 @@ export function Invitation() {
   const [searchParams, setSearchParams] = useSearchParams()
   const encoded = searchParams.get('d')
   const id = searchParams.get('id')
+  const edit = searchParams.get('edit') === '1'
   const data = encoded ? decodeInvitation(encoded) : null
+
+  // 编辑模式：修改已生成的请柬（保留原短 ID 或回到长链接）
+  if (edit) {
+    if (id) {
+      return (
+        <InvitationEditor
+          key={`edit-${id}`}
+          editId={id}
+          onBackToView={() => setSearchParams({ id })}
+        />
+      )
+    }
+    if (encoded && data) {
+      return (
+        <InvitationEditor
+          key="edit-long"
+          initialData={data}
+          onBackToView={() => setSearchParams({ d: encoded })}
+        />
+      )
+    }
+    return <InvitationEditor />
+  }
 
   // 有有效 d 参数 → 旧版长链接请柬浏览模式
   if (encoded && data) {
-    return <InvitationView data={data} onBack={() => setSearchParams({})} />
+    return (
+      <InvitationView data={data} onBack={() => setSearchParams({ d: encoded, edit: '1' })} />
+    )
   }
   if (encoded && !data) {
     return <InvalidLink />
   }
   // 有短 id → 从数据库加载请柬浏览
   if (id) {
-    return <RemoteInvitation key={id} id={id} onBack={() => setSearchParams({})} />
+    return (
+      <RemoteInvitation key={id} id={id} onBack={() => setSearchParams({ id, edit: '1' })} />
+    )
   }
   return <InvitationEditor />
 }
@@ -102,13 +130,40 @@ function InvalidLink() {
   )
 }
 
-// ==================== 编辑器（制作请柬） ====================
-function InvitationEditor() {
+// ==================== 编辑器（制作请柬 / 编辑已生成的请柬） ====================
+function InvitationEditor({
+  initialData,
+  editId,
+  onBackToView,
+}: {
+  /** 长链接模式：直接传入解码后的数据作为初始值 */
+  initialData?: InvitationData
+  /** 短链接模式：已生成的请柬短 ID，保存时更新原 ID 而非新建 */
+  editId?: string
+  /** 返回已生成的请柬浏览页 */
+  onBackToView?: () => void
+}) {
   const [searchParams, setSearchParams] = useSearchParams()
-  const [data, setData] = useState<InvitationData>(DEFAULT_INVITATION)
+  const [data, setData] = useState<InvitationData>(initialData ?? DEFAULT_INVITATION)
   const [copied, setCopied] = useState(false)
   const theme = getTheme(data.themeId)
   const typeInfo = INVITATION_TYPES[data.type]
+
+  // 编辑模式（短 ID）：从数据库加载已生成的请柬数据作为初始值
+  useEffect(() => {
+    if (!editId) return
+    let alive = true
+    loadInvitation(editId)
+      .then(({ data: d }) => {
+        if (alive) setData(d)
+      })
+      .catch(() => {
+        /* 加载失败保持默认数据，仍可另存为新请柬 */
+      })
+    return () => {
+      alive = false
+    }
+  }, [editId])
 
   const set = <K extends keyof InvitationData>(key: K, value: InvitationData[K]) =>
     setData((d) => ({ ...d, [key]: value }))
@@ -153,10 +208,17 @@ function InvitationEditor() {
   /** 兼容老数据：保留 toggleFeatured 接口但 noop（"心形精选"功能已废弃） */
   const toggleFeatured = (_i: number) => setData((d) => d)
 
-  // —— 本地上传照片：canvas 压缩为 base64 后嵌入数据（随链接分享）——
+  // —— 本地上传照片：原图 base64 直读（不压缩、不失真）——
   const fileInputRef = useRef<HTMLInputElement>(null)
   const [uploading, setUploading] = useState(false)
   const [uploadErr, setUploadErr] = useState('')
+  const readFileAsDataURL = (file: File) =>
+    new Promise<string>((resolve, reject) => {
+      const fr = new FileReader()
+      fr.onload = () => resolve(fr.result as string)
+      fr.onerror = () => reject(fr.error || new Error('read failed'))
+      fr.readAsDataURL(file)
+    })
   const handleUpload = async (files: FileList | null) => {
     if (!files || files.length === 0) return
     setUploading(true)
@@ -165,7 +227,7 @@ function InvitationEditor() {
       const added: string[] = []
       for (const file of Array.from(files)) {
         if (!file.type.startsWith('image/')) continue
-        added.push(await compressImage(file))
+        added.push(await readFileAsDataURL(file))
       }
       if (added.length === 0) {
         setUploadErr('未识别到有效图片文件')
@@ -173,7 +235,7 @@ function InvitationEditor() {
       }
       setData((d) => ({ ...d, photos: [...d.photos.filter(Boolean), ...added] }))
     } catch {
-      setUploadErr('图片处理失败，请换一张试试')
+      setUploadErr('图片读取失败，请换一张试试')
     } finally {
       setUploading(false)
       if (fileInputRef.current) fileInputRef.current.value = ''
@@ -197,11 +259,13 @@ function InvitationEditor() {
   const [saving, setSaving] = useState(false)
 
   const shareUrl = useMemo(
-    () =>
-      savedId
-        ? `${window.location.origin}/invitation?id=${savedId}`
-        : buildShareUrl(data, window.location.origin),
-    [data, savedId]
+    () => {
+      const finalId = savedId ?? editId
+      return finalId
+        ? `${window.location.origin}/invitation?id=${finalId}`
+        : buildShareUrl(data, window.location.origin)
+    },
+    [data, savedId, editId]
   )
 
   const copyLink = async () => {
@@ -214,14 +278,20 @@ function InvitationEditor() {
     }
   }
 
-  // 生成分享链接：优先上传数据库换取 8 位短 ID；后端不可用时回退旧的长链接
+  // 生成分享链接：编辑模式更新原短 ID；新建模式优先上传数据库换取 8 位短 ID；后端不可用时回退旧的长链接
   const goShare = async () => {
     if (saving) return
     setSaving(true)
     try {
-      const id = await saveInvitation(data)
-      setSavedId(id)
-      setSearchParams({ id })
+      if (editId) {
+        await updateInvitation(editId, data)
+        setSavedId(editId)
+        setSearchParams({ id: editId })
+      } else {
+        const id = await saveInvitation(data)
+        setSavedId(id)
+        setSearchParams({ id })
+      }
     } catch {
       setSearchParams({ d: encodeInvitation(data) })
     } finally {
@@ -243,12 +313,23 @@ function InvitationEditor() {
             <div className="min-w-0">
               <h1 className="text-lg font-bold text-primary flex items-center gap-2 truncate">
                 <Gift className="w-5 h-5 text-rose-500" />
-                电子请柬制作
+                {editId || initialData ? '编辑请柬' : '电子请柬制作'}
               </h1>
-              <p className="text-xs text-muted hidden sm:block">填写信息 · 实时预览 · 一键生成分享链接</p>
+              <p className="text-xs text-muted hidden sm:block">
+                {editId || initialData ? '修改内容与照片，保存后原链接同步更新' : '填写信息 · 实时预览 · 一键生成分享链接'}
+              </p>
             </div>
           </div>
           <div className="flex items-center gap-2 shrink-0">
+            {onBackToView && (
+              <button
+                onClick={onBackToView}
+                className="inline-flex items-center gap-1.5 px-3 sm:px-4 py-2 rounded-xl text-sm font-semibold bg-secondary border border-primary text-primary hover:bg-tertiary transition-colors"
+              >
+                <Eye className="w-4 h-4" />
+                <span className="hidden sm:inline">查看请柬</span>
+              </button>
+            )}
             <button
               onClick={copyLink}
               className="inline-flex items-center gap-1.5 px-3 sm:px-4 py-2 rounded-xl text-sm font-semibold bg-secondary border border-primary text-primary hover:bg-tertiary transition-colors"
@@ -262,7 +343,7 @@ function InvitationEditor() {
               className="inline-flex items-center gap-1.5 px-4 sm:px-5 py-2 rounded-xl text-sm font-semibold bg-gradient-to-r from-emerald-500 to-green-600 text-white hover:scale-105 transition-all disabled:opacity-60 disabled:hover:scale-100"
             >
               {saving ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
-              {saving ? '保存中…' : '生成并查看请柬'}
+              {saving ? '保存中…' : editId || initialData ? '保存修改' : '生成并查看请柬'}
             </button>
           </div>
         </div>
@@ -396,12 +477,12 @@ function InvitationEditor() {
                   className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl text-sm font-semibold text-white bg-gradient-to-r from-emerald-500 to-green-600 hover:scale-105 hover:shadow-lg transition-all disabled:opacity-60"
                 >
                   <Upload className="w-4 h-4" />
-                  {uploading ? '正在处理…' : '上传照片'}
+                  {uploading ? '正在读取…' : '上传照片（原图不压缩）'}
                 </button>
                 {embeddedKb > 0 && (
                   <span className="text-xs text-amber-400/90">
                     已嵌入图片共约 {embeddedKb} KB
-                    {embeddedKb > 900 ? '（链接会很长，建议用图床直链）' : ''}
+                    {embeddedKb > 900 ? '（原图体积较大，生成链接时会自动上传服务器换短链）' : ''}
                   </span>
                 )}
                 {uploadErr && <span className="text-xs text-rose-400">{uploadErr}</span>}
@@ -641,7 +722,7 @@ function InvitationEditor() {
                 className="flex-1 inline-flex items-center justify-center gap-2 px-6 py-3.5 rounded-xl bg-gradient-to-r from-emerald-500 to-green-600 text-white font-semibold hover:scale-[1.02] transition-all disabled:opacity-60 disabled:hover:scale-100"
               >
                 {saving ? <RefreshCw className="w-5 h-5 animate-spin" /> : <Sparkles className="w-5 h-5" />}
-                {saving ? '保存中…' : '生成分享链接'}
+                {saving ? '保存中…' : editId || initialData ? '保存修改' : '生成分享链接'}
               </button>
               <button
                 onClick={copyLink}

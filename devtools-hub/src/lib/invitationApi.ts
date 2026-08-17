@@ -23,6 +23,19 @@ export async function saveInvitation(data: InvitationData): Promise<string> {
   return json.id
 }
 
+/** 更新已生成的请柬（编辑模式），保持原短 ID 不变 */
+export async function updateInvitation(id: string, data: InvitationData): Promise<void> {
+  const res = await fetch(`${API_BASE}/invitation/${encodeURIComponent(id)}`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ data }),
+  })
+  if (!res.ok) {
+    const err = (await res.json().catch(() => ({}))) as { error?: string }
+    throw new Error(err.error || `保存失败 (${res.status})`)
+  }
+}
+
 /** 读取结果：请柬数据 + 浏览量 */
 export interface InvitationDetail {
   data: InvitationData

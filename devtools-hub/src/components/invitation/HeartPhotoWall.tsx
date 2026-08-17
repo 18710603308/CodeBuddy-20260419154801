@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
-import { ChevronLeft, ChevronRight, Image as ImageIcon, X } from 'lucide-react'
+import { ChevronLeft, ChevronRight, Download, Image as ImageIcon, X } from 'lucide-react'
 import { ART_WORDS_DEFAULT, BLESSINGS_DEFAULT } from '../../data/invitation'
 
 type Pt = { x: number; y: number }
@@ -228,6 +228,40 @@ export function HeartPhotoWall({
     setOpenIndex(null)
     setLightboxError(false)
   }, [])
+
+  /** 下载当前照片原图（base64 直链 / URL 均取原始字节，不经过任何压缩） */
+  const downloadPhoto = useCallback(async () => {
+    if (openIndex === null) return
+    const src = display[openIndex]
+    if (!src) return
+    const filename = `photo-${openOrigIndex + 1}`
+    const toAbs = (s: string) => (s.startsWith('/') ? `${window.location.origin}${s}` : s)
+    try {
+      if (src.startsWith('data:')) {
+        const a = document.createElement('a')
+        a.href = src
+        a.download = filename
+        document.body.appendChild(a)
+        a.click()
+        a.remove()
+        return
+      }
+      const res = await fetch(toAbs(src))
+      const blob = await res.blob()
+      const ext = (blob.type.split('/')[1] || 'jpg').replace('jpeg', 'jpg')
+      const url = URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = `${filename}.${ext}`
+      document.body.appendChild(a)
+      a.click()
+      a.remove()
+      URL.revokeObjectURL(url)
+    } catch {
+      // 跨域等失败时兜底：新窗口打开原图，用户可长按/另存
+      window.open(toAbs(src), '_blank')
+    }
+  }, [openIndex, openOrigIndex, display])
   const step = useCallback(
     (d: number) => {
       setOpenIndex((i) =>
@@ -394,6 +428,19 @@ export function HeartPhotoWall({
               }
             }}
           >
+            {/* 下载原图（未压缩） */}
+            <button
+              onClick={(e) => {
+                e.stopPropagation()
+                downloadPhoto()
+              }}
+              className="absolute top-4 right-16 sm:top-5 sm:right-[4.7rem] z-20 flex h-10 w-10 items-center justify-center rounded-full bg-white/70 text-stone-700 backdrop-blur transition-colors hover:bg-white"
+              aria-label="下载原图"
+              title="下载原图（未压缩）"
+            >
+              <Download className="h-5 w-5" />
+            </button>
+
             {/* 关闭按钮 */}
             <button
               onClick={(e) => {

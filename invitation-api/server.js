@@ -57,6 +57,7 @@ try {
   const insert = db.prepare('INSERT INTO invitations (id, data, views, created_at) VALUES (?, ?, 0, ?)')
   const getStmt = db.prepare('SELECT data, views FROM invitations WHERE id = ?')
   const bumpStmt = db.prepare('UPDATE invitations SET views = views + 1 WHERE id = ?')
+  const updateStmt = db.prepare('UPDATE invitations SET data = ? WHERE id = ?')
   store = {
     kind: 'sqlite',
     set: (id, data) => insert.run(id, data, Date.now()),
@@ -64,6 +65,7 @@ try {
       const row = getStmt.get(id)
       return row ? { data: row.data, views: row.views || 0 } : null
     },
+    update: (id, data) => updateStmt.run(data, id).changes > 0,
     bump: (id) => {
       const row = getStmt.get(id)
       if (!row) return null
@@ -91,6 +93,12 @@ try {
       persist()
     },
     get: (id) => (map[id] ? { data: map[id].data, views: map[id].views || 0 } : null),
+    update: (id, data) => {
+      if (!map[id]) return false
+      map[id].data = data
+      persist()
+      return true
+    },
     bump: (id) => {
       if (!map[id]) return null
       map[id].views = (map[id].views || 0) + 1
@@ -116,7 +124,7 @@ function send(res, status, obj) {
     'Content-Type': 'application/json; charset=utf-8',
     'Content-Length': Buffer.byteLength(body),
     'Access-Control-Allow-Origin': '*',
-    'Access-Control-Allow-Methods': 'GET,POST,OPTIONS',
+    'Access-Control-Allow-Methods': 'GET,POST,PUT,OPTIONS',
     'Access-Control-Allow-Headers': 'Content-Type',
   })
   res.end(body)
@@ -196,7 +204,7 @@ const server = http.createServer(async (req, res) => {
   if (req.method === 'OPTIONS') {
     res.writeHead(204, {
       'Access-Control-Allow-Origin': '*',
-      'Access-Control-Allow-Methods': 'GET,POST,OPTIONS',
+      'Access-Control-Allow-Methods': 'GET,POST,PUT,OPTIONS',
       'Access-Control-Allow-Headers': 'Content-Type',
     })
     res.end()
@@ -237,6 +245,37 @@ const server = http.createServer(async (req, res) => {
       extractPhotos(data, id)
       store.set(id, JSON.stringify(data))
       return send(res, 200, { id })
+    }
+
+    // 更新请柬（编辑已生成的请柬）→ { ok, id }
+    if (req.method === 'PUT' && url.pathname.startsWith('/invitation/')) {
+      const id = decodeURIComponent(url.pathname.slice('/invitation/'.length))
+      if (!/^[A-Za-z0-9_-]{4,32}$/.test(id)) {
+        return send(res, 400, { error: 'invalid id' })
+      }
+      if (!store.get(id)) return send(res, 404, { error: 'not found' })
+      const raw = await readBody(req)
+      let data
+      try {
+        data = JSON.parse(raw).data
+      } catch {
+        return send(res, 400, { error: 'invalid JSON body' })
+      }
+      if (!data || typeof data !== 'object' || !data.date) {
+        return send(res, 400, { error: 'invalid invitation data' })
+      }
+      // 清理该 id 旧照片文件后重新落盘（避免删除/重排照片后残留旧文件）
+      try {
+        const prefix = `${id}-p`
+        for (const f of fs.readdirSync(UPLOAD_DIR)) {
+          if (f.startsWith(prefix)) fs.unlinkSync(path.join(UPLOAD_DIR, f))
+        }
+      } catch {
+        /* ignore */
+      }
+      extractPhotos(data, id)
+      store.update(id, JSON.stringify(data))
+      return send(res, 200, { ok: true, id })
     }
 
     // 读取请柬 → { data, views }（自动累计浏览量）
