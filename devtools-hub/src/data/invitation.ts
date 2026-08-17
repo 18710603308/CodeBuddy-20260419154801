@@ -5,6 +5,15 @@
 
 export type InvitationType = 'wedding' | 'birthday' | 'baby' | 'moving' | 'party'
 
+export interface InvitationTimelineItem {
+  /** 时间，如 18:00 */
+  time: string
+  /** 环节标题，如 婚礼仪式 */
+  title: string
+  /** 环节说明 */
+  desc: string
+}
+
 export interface InvitationData {
   /** 请柬类型 */
   type: InvitationType
@@ -30,6 +39,12 @@ export interface InvitationData {
   music: string
   /** 是否显示倒计时 */
   showCountdown: boolean
+  /** 照片墙（图片直链数组，可空则显示主题插画） */
+  photos: string[]
+  /** 我们的故事（一段文字） */
+  story: string
+  /** 宴会/活动流程时间线 */
+  timeline: InvitationTimelineItem[]
 }
 
 export interface InvitationTheme {
@@ -67,78 +82,104 @@ export const INVITATION_THEMES: InvitationTheme[] = [
     name: '中国红',
     desc: '喜庆中式婚礼',
     emoji: '🏮',
-    primary: '#b91c1c',
-    primaryDark: '#7f1d1d',
-    gradient: 'linear-gradient(165deg,#7f1d1d 0%,#991b1b 45%,#b91c1c 100%)',
+    primary: '#e11d48',
+    primaryDark: '#be123c',
+    gradient: 'linear-gradient(165deg,#fda4af 0%,#f43f5e 48%,#be123c 100%)',
     cardBg: '#fffaf0',
-    cardText: '#7f1d1d',
-    cardSub: '#a16207',
-    softBg: 'rgba(185,28,28,0.08)',
+    cardText: '#be123c',
+    cardSub: '#fb7185',
+    softBg: 'rgba(244,63,94,0.1)',
   },
   {
     id: 'gold',
     name: '香槟金',
     desc: '西式浪漫婚礼',
     emoji: '🥂',
-    primary: '#b45309',
-    primaryDark: '#78350f',
-    gradient: 'linear-gradient(165deg,#78350f 0%,#92400e 45%,#d97706 100%)',
+    primary: '#d97706',
+    primaryDark: '#b45309',
+    gradient: 'linear-gradient(165deg,#fde68a 0%,#f59e0b 48%,#b45309 100%)',
     cardBg: '#fffbeb',
-    cardText: '#78350f',
-    cardSub: '#a16207',
-    softBg: 'rgba(217,119,6,0.1)',
+    cardText: '#92400e',
+    cardSub: '#d97706',
+    softBg: 'rgba(245,158,11,0.12)',
   },
   {
     id: 'rose',
     name: '浪漫粉',
     desc: '甜蜜求婚宴会',
     emoji: '🌹',
-    primary: '#db2777',
-    primaryDark: '#9d174d',
-    gradient: 'linear-gradient(165deg,#831843 0%,#be185d 50%,#db2777 100%)',
+    primary: '#ec4899',
+    primaryDark: '#db2777',
+    gradient: 'linear-gradient(165deg,#fbcfe8 0%,#f472b6 48%,#db2777 100%)',
     cardBg: '#fdf2f8',
-    cardText: '#9d174d',
-    cardSub: '#db2777',
-    softBg: 'rgba(219,39,119,0.08)',
+    cardText: '#be185d',
+    cardSub: '#ec4899',
+    softBg: 'rgba(236,72,153,0.1)',
   },
   {
     id: 'emerald',
     name: '清新绿',
     desc: '自然户外婚礼',
     emoji: '🌿',
-    primary: '#059669',
-    primaryDark: '#065f46',
-    gradient: 'linear-gradient(165deg,#064e3b 0%,#047857 50%,#059669 100%)',
+    primary: '#10b981',
+    primaryDark: '#059669',
+    gradient: 'linear-gradient(165deg,#a7f3d0 0%,#34d399 48%,#059669 100%)',
     cardBg: '#ecfdf5',
-    cardText: '#065f46',
-    cardSub: '#059669',
-    softBg: 'rgba(5,150,105,0.08)',
+    cardText: '#047857',
+    cardSub: '#10b981',
+    softBg: 'rgba(16,185,129,0.1)',
   },
   {
     id: 'violet',
     name: '星空紫',
     desc: '时尚潮酷派对',
     emoji: '✨',
-    primary: '#7c3aed',
-    primaryDark: '#5b21b6',
-    gradient: 'linear-gradient(165deg,#312e81 0%,#5b21b6 50%,#8b5cf6 100%)',
+    primary: '#8b5cf6',
+    primaryDark: '#7c3aed',
+    gradient: 'linear-gradient(165deg,#ddd6fe 0%,#a78bfa 48%,#7c3aed 100%)',
     cardBg: '#f5f3ff',
-    cardText: '#4c1d95',
-    cardSub: '#7c3aed',
-    softBg: 'rgba(124,58,237,0.08)',
+    cardText: '#6d28d9',
+    cardSub: '#8b5cf6',
+    softBg: 'rgba(139,92,246,0.1)',
   },
   {
     id: 'ocean',
     name: '海盐蓝',
     desc: '清爽简约宴席',
     emoji: '🌊',
-    primary: '#0284c7',
-    primaryDark: '#0c4a6e',
-    gradient: 'linear-gradient(165deg,#082f49 0%,#0369a1 50%,#0ea5e9 100%)',
+    primary: '#0ea5e9',
+    primaryDark: '#0284c7',
+    gradient: 'linear-gradient(165deg,#bae6fd 0%,#38bdf8 48%,#0284c7 100%)',
     cardBg: '#f0f9ff',
-    cardText: '#0c4a6e',
-    cardSub: '#0369a1',
-    softBg: 'rgba(2,132,199,0.08)',
+    cardText: '#075985',
+    cardSub: '#0ea5e9',
+    softBg: 'rgba(14,165,233,0.1)',
+  },
+  {
+    id: 'candy',
+    name: '糖果粉',
+    desc: '多巴胺元气派对',
+    emoji: '🍭',
+    primary: '#f43f5e',
+    primaryDark: '#e11d48',
+    gradient: 'linear-gradient(165deg,#fecdd3 0%,#fb7185 48%,#e11d48 100%)',
+    cardBg: '#fff7ed',
+    cardText: '#be123c',
+    cardSub: '#fb7185',
+    softBg: 'rgba(244,63,94,0.1)',
+  },
+  {
+    id: 'sky',
+    name: '晴空蓝',
+    desc: '奶油轻盈活力',
+    emoji: '🧁',
+    primary: '#0ea5e9',
+    primaryDark: '#0284c7',
+    gradient: 'linear-gradient(165deg,#e0f2fe 0%,#7dd3fc 48%,#0284c7 100%)',
+    cardBg: '#f0f9ff',
+    cardText: '#075985',
+    cardSub: '#38bdf8',
+    softBg: 'rgba(14,165,233,0.1)',
   },
 ]
 
@@ -156,6 +197,24 @@ export const DEFAULT_INVITATION: InvitationData = {
   themeId: 'classic-red',
   music: '',
   showCountdown: true,
+  photos: [
+    'https://picsum.photos/seed/inv-photo-1/800/1066',
+    'https://picsum.photos/seed/inv-photo-2/800/1066',
+    'https://picsum.photos/seed/inv-photo-3/800/1066',
+  ],
+  story:
+    '2019 年的春天，我们在朋友的聚会上初次相遇。一句简单的问候，开启了我们之间的故事。\n\n一起看过清晨的海，一起走过深夜的街，从相知到相守，每一个平凡的日子都因为有彼此而变得闪闪发光。\n\n如今，我们决定携手步入人生新的旅程，期待与您分享这份喜悦。',
+  timeline: [
+    { time: '16:30', title: '宾客签到', desc: '签到留影，品尝迎宾甜点' },
+    { time: '17:08', title: '婚礼仪式', desc: '交换戒指，宣读誓言' },
+    { time: '18:00', title: '婚宴开席', desc: '举杯共庆，共享喜宴' },
+    { time: '20:00', title: '答谢欢送', desc: '合影留念，感谢光临' },
+  ],
+}
+
+/** 默认值补齐（兼容旧版链接缺少新字段） */
+export function fillDefaults(d: Partial<InvitationData> | InvitationData): InvitationData {
+  return { ...DEFAULT_INVITATION, ...d }
 }
 
 /** 把请柬数据编码成 base64url（用于 URL query） */
@@ -173,7 +232,7 @@ export function decodeInvitation(s: string): InvitationData | null {
     const json = decodeURIComponent(escape(atob(padded)))
     const parsed = JSON.parse(json) as InvitationData
     if (!parsed || typeof parsed !== 'object' || !parsed.date) return null
-    return parsed
+    return fillDefaults(parsed)
   } catch {
     return null
   }

@@ -148,3 +148,276 @@
     text-wrap: balance;
   }
 }
+
+/* ===== 电子请柬动画（婚礼纪风格） ===== */
+/* 花瓣飘落 */
+.petal {
+  position: absolute;
+  top: -48px;
+  border-radius: 100% 0 100% 0;
+  transform: rotate(45deg);
+  animation-name: petal-fall;
+  animation-timing-function: linear;
+  animation-iteration-count: infinite;
+  will-change: transform;
+}
+@keyframes petal-fall {
+  0% {
+    transform: translate3d(0, 0, 0) rotate(0deg);
+  }
+  25% {
+    transform: translate3d(calc(var(--sway, 40px) * 0.5), 26vh, 0) rotate(160deg);
+  }
+  50% {
+    transform: translate3d(calc(var(--sway, 40px) * -0.3), 52vh, 0) rotate(320deg);
+  }
+  75% {
+    transform: translate3d(var(--sway, 40px), 78vh, 0) rotate(480deg);
+  }
+  100% {
+    transform: translate3d(calc(var(--sway, 40px) * 0.3), 108vh, 0) rotate(640deg);
+  }
+}
+
+/* 柔和光斑呼吸 */
+@keyframes soft-breathe {
+  0%,
+  100% {
+    opacity: 0.35;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.6;
+    transform: scale(1.12);
+  }
+}
+
+/* 上浮提示（封面“上滑”箭头） */
+@keyframes float-bounce {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(8px);
+  }
+}
+
+/* 封面点击开启的心跳 */
+@keyframes heart-beat {
+  0%,
+  100% {
+    transform: scale(1);
+  }
+  10% {
+    transform: scale(1.15);
+  }
+  20% {
+    transform: scale(1);
+  }
+}
+
+/* ===== 青春朝气动效 ===== */
+
+/* 渐变背景流动 */
+@keyframes gradient-flow {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
+}
+.animate-gradient-flow {
+  background-size: 220% 220%;
+  animation: gradient-flow 14s ease-in-out infinite;
+}
+
+/* 弹性弹入（标题/卡片） */
+@keyframes pop-in {
+  0% {
+    opacity: 0;
+    transform: translateY(26px) scale(0.92);
+  }
+  60% {
+    opacity: 1;
+    transform: translateY(-4px) scale(1.03);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+.animate-pop-in {
+  animation: pop-in 0.65s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+/* 上升渐显 */
+@keyframes rise-in {
+  from {
+    opacity: 0;
+    transform: translateY(22px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+.animate-rise-in {
+  animation: rise-in 0.7s ease-out both;
+}
+
+/* 柔和漂浮（装饰元素） */
+@keyframes float-y {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
+}
+.animate-float-y {
+  animation: float-y 3.2s ease-in-out infinite;
+}
+
+/* 图标轻摇 */
+@keyframes wiggle {
+  0%,
+  100% {
+    transform: rotate(-8deg);
+  }
+  50% {
+    transform: rotate(8deg);
+  }
+}
+.animate-wiggle {
+  animation: wiggle 1.6s ease-in-out infinite;
+}
+
+/* 倒计时数字跳动 */
+@keyframes tick-pop {
+  0% {
+    transform: scale(1);
+  }
+  30% {
+    transform: scale(1.25);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+.animate-tick {
+  animation: tick-pop 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+}
+
+/* 星星闪烁 */
+@keyframes sparkle-blink {
+  0%,
+  100% {
+    opacity: 0.3;
+    transform: scale(0.8) rotate(0deg);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.2) rotate(18deg);
+  }
+}
+.animate-sparkle {
+  animation: sparkle-blink 1.8s ease-in-out infinite;
+}
+
+/* 爱心上浮 */
+@keyframes heart-rise {
+  0% {
+    opacity: 0;
+    transform: translateY(24px) scale(0.6);
+  }
+  20% {
+    opacity: 0.9;
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(-72px) scale(1.15);
+  }
+}
+
+/* 柔和弹跳（提示按钮） */
+@keyframes bounce-soft {
+  0%,
+  100% {
+    transform: translateY(0) scale(1);
+  }
+  50% {
+    transform: translateY(-5px) scale(1.04);
+  }
+}
+.animate-bounce-soft {
+  animation: bounce-soft 2s ease-in-out infinite;
+}
+
+/* 轮播图切换滑动淡入 */
+@keyframes slide-fade {
+  from {
+    opacity: 0;
+    transform: translateX(26px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0) scale(1);
+  }
+}
+.animate-slide-fade {
+  animation: slide-fade 0.5s ease-out both;
+}
+
+/* 光斑环旋转 */
+@keyframes ring-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+.animate-ring-spin {
+  animation: ring-spin 26s linear infinite;
+}
+
+/* 轮播图图片加载失败的兜底插画 */
+.fallback-photo {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 3.5rem;
+  background: linear-gradient(145deg, rgba(255,255,255,0.2), rgba(255,255,255,0.06));
+  animation: float-y 3.2s ease-in-out infinite;
+}
+
+/* emoji 漂浮粒子（爱心/星星/泡泡，从底部上升） */
+.particle-float {
+  position: absolute;
+  bottom: -56px;
+  animation-name: particle-rise;
+  animation-timing-function: linear;
+  animation-iteration-count: infinite;
+  will-change: transform;
+}
+@keyframes particle-rise {
+  0% {
+    opacity: 0;
+    transform: translate3d(0, 0, 0) rotate(0deg) scale(0.8);
+  }
+  12% {
+    opacity: var(--pop, 0.85);
+  }
+  55% {
+    transform: translate3d(var(--sway, 34px), -52vh, 0) rotate(18deg) scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: translate3d(calc(var(--sway, 34px) * -0.5), -110vh, 0) rotate(-14deg) scale(0.9);
+  }
+}

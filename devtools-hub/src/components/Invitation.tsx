@@ -1,45 +1,26 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useMemo, useRef, useState } from 'react'
 import type { ReactNode } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 import {
-  ArrowLeft, Calendar, Check, ChevronLeft, Clock, Copy, ExternalLink, Eye,
-  Gift, Heart, MapPin, MessageCircleHeart, Music2,
-  Pause, Play, RefreshCw, Share2, Sparkles, Users, Wand2,
+  Calendar, Check, ChevronLeft, Clock, Copy, Eye,
+  Gift, Heart, ImagePlus, MapPin, MessageCircleHeart, Music2,
+  Plus, RefreshCw, Sparkles, Trash2, Upload, Users, Wand2,
 } from 'lucide-react'
+import { compressImage, dataUrlSizeKb } from './invitation/compressImage'
 import {
   DEFAULT_INVITATION,
   INVITATION_THEMES,
   INVITATION_TYPES,
-  buildMapUrl,
   buildShareUrl,
   decodeInvitation,
   encodeInvitation,
   getTheme,
 } from '../data/invitation'
-import type { InvitationData, InvitationType } from '../data/invitation'
+import type { InvitationData, InvitationTimelineItem, InvitationType } from '../data/invitation'
+import { InvitationView } from './invitation/InvitationView'
 
 const inputCls =
   'w-full px-3.5 py-2.5 rounded-lg bg-input border border-primary text-primary placeholder:text-muted focus:outline-none focus:border-emerald-500 transition-colors'
-
-// ==================== 倒计时 Hook ====================
-function useCountdown(target: Date) {
-  const [now, setNow] = useState(() => Date.now())
-  useEffect(() => {
-    const id = setInterval(() => setNow(Date.now()), 1000)
-    return () => clearInterval(id)
-  }, [])
-  if (Number.isNaN(target.getTime())) return null
-  const diff = target.getTime() - now
-  const abs = Math.max(0, diff)
-  return {
-    diff,
-    days: Math.floor(abs / 86400000),
-    hours: Math.floor((abs % 86400000) / 3600000),
-    minutes: Math.floor((abs % 3600000) / 60000),
-    seconds: Math.floor((abs % 60000) / 1000),
-    passed: diff < 0,
-  }
-}
 
 // ==================== 主组件：根据 URL 参数切换 编辑/浏览 模式 ====================
 export function Invitation() {
@@ -88,6 +69,51 @@ function InvitationEditor() {
 
   const set = <K extends keyof InvitationData>(key: K, value: InvitationData[K]) =>
     setData((d) => ({ ...d, [key]: value }))
+
+  const setPhoto = (i: number, url: string) =>
+    setData((d) => ({ ...d, photos: d.photos.map((p, idx) => (idx === i ? url : p)) }))
+  const addPhoto = () => setData((d) => ({ ...d, photos: [...d.photos, ''] }))
+  const removePhoto = (i: number) =>
+    setData((d) => ({ ...d, photos: d.photos.filter((_, idx) => idx !== i) }))
+
+  // —— 本地上传照片：canvas 压缩为 base64 后嵌入数据（随链接分享）——
+  const fileInputRef = useRef<HTMLInputElement>(null)
+  const [uploading, setUploading] = useState(false)
+  const [uploadErr, setUploadErr] = useState('')
+  const handleUpload = async (files: FileList | null) => {
+    if (!files || files.length === 0) return
+    setUploading(true)
+    setUploadErr('')
+    try {
+      const added: string[] = []
+      for (const file of Array.from(files)) {
+        if (!file.type.startsWith('image/')) continue
+        added.push(await compressImage(file))
+      }
+      if (added.length === 0) {
+        setUploadErr('未识别到有效图片文件')
+        return
+      }
+      setData((d) => ({ ...d, photos: [...d.photos.filter(Boolean), ...added] }))
+    } catch {
+      setUploadErr('图片处理失败，请换一张试试')
+    } finally {
+      setUploading(false)
+      if (fileInputRef.current) fileInputRef.current.value = ''
+    }
+  }
+  // 数据中 base64 图片的总体积估算
+  const embeddedKb = useMemo(
+    () => data.photos.filter((p) => p.startsWith('data:')).reduce((sum, p) => sum + dataUrlSizeKb(p), 0),
+    [data.photos]
+  )
+
+  const setTimelineItem = (i: number, patch: Partial<InvitationTimelineItem>) =>
+    setData((d) => ({ ...d, timeline: d.timeline.map((it, idx) => (idx === i ? { ...it, ...patch } : it)) }))
+  const addTimelineItem = () =>
+    setData((d) => ({ ...d, timeline: [...d.timeline, { time: '', title: '', desc: '' }] }))
+  const removeTimelineItem = (i: number) =>
+    setData((d) => ({ ...d, timeline: d.timeline.filter((_, idx) => idx !== i) }))
 
   const shareUrl = useMemo(() => buildShareUrl(data, window.location.origin), [data])
 
@@ -244,6 +270,148 @@ function InvitationEditor() {
                   />
                 </Field>
               </div>
+            </section>
+
+            {/* 照片墙 */}
+            <section className="bg-secondary rounded-2xl border border-primary p-5 sm:p-6">
+              <SectionTitle icon={ImagePlus} text="轮播照片（可选）" />
+              <p className="text-xs text-muted mb-3 leading-relaxed">
+                宾客将以<b className="text-primary">自动轮播图</b>形式查看（可滑动 / 点选 / 触摸切换）。支持<b
+                  className="text-primary"
+                >本地上传</b>（自动压缩嵌入链接，建议 ≤6 张）或粘贴图床直链。
+              </p>
+
+              {/* 上传按钮组 */}
+              <div className="mb-4 flex flex-wrap items-center gap-2">
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/*"
+                  multiple
+                  className="hidden"
+                  onChange={(e) => handleUpload(e.target.files)}
+                />
+                <button
+                  onClick={() => fileInputRef.current?.click()}
+                  disabled={uploading}
+                  className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl text-sm font-semibold text-white bg-gradient-to-r from-emerald-500 to-green-600 hover:scale-105 hover:shadow-lg transition-all disabled:opacity-60"
+                >
+                  <Upload className="w-4 h-4" />
+                  {uploading ? '正在处理…' : '上传照片'}
+                </button>
+                {embeddedKb > 0 && (
+                  <span className="text-xs text-amber-400/90">
+                    已嵌入图片共约 {embeddedKb} KB
+                    {embeddedKb > 900 ? '（链接会很长，建议用图床直链）' : ''}
+                  </span>
+                )}
+                {uploadErr && <span className="text-xs text-rose-400">{uploadErr}</span>}
+              </div>
+
+              <div className="space-y-2.5">
+                {data.photos.map((url, i) => (
+                  <div key={i} className="flex gap-2">
+                    <div className="relative flex-1">
+                      {url && (
+                        <img
+                          src={url}
+                          alt=""
+                          className="absolute left-3 top-1/2 -translate-y-1/2 w-8 h-8 rounded-md object-cover border border-primary"
+                          onError={(e) => ((e.target as HTMLImageElement).style.display = 'none')}
+                        />
+                      )}
+                      <input
+                        className={`${inputCls} ${url ? 'pl-14' : ''} ${url.startsWith('data:') ? 'pr-24' : ''}`}
+                        value={url.startsWith('data:') ? '（已上传图片）' : url}
+                        onChange={(e) => setPhoto(i, e.target.value)}
+                        placeholder={`照片 ${i + 1} 的图片直链`}
+                      />
+                      {url.startsWith('data:') && (
+                        <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] font-medium text-emerald-400 bg-emerald-500/10 px-1.5 py-0.5 rounded">
+                          {dataUrlSizeKb(url)}KB
+                        </span>
+                      )}
+                    </div>
+                    <button
+                      onClick={() => removePhoto(i)}
+                      className="shrink-0 px-3 rounded-lg bg-tertiary text-muted hover:text-rose-400 hover:bg-rose-500/10 transition-colors"
+                      title="删除此照片"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  </div>
+                ))}
+              </div>
+              <button
+                onClick={addPhoto}
+                className="mt-3 inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm text-emerald-400 border border-dashed border-emerald-500/40 hover:bg-emerald-500/10 transition-colors"
+              >
+                <Plus className="w-4 h-4" />
+                添加直链
+              </button>
+            </section>
+
+            {/* 我们的故事 */}
+            <section className="bg-secondary rounded-2xl border border-primary p-5 sm:p-6">
+              <SectionTitle icon={Heart} text="我们的故事（可选）" />
+              <p className="text-xs text-muted mb-3 leading-relaxed">
+                宾客浏览时将以“故事卡”形式展示，支持多段落（空行分段）。
+              </p>
+              <textarea
+                className={`${inputCls} min-h-[140px] resize-y`}
+                value={data.story}
+                onChange={(e) => set('story', e.target.value)}
+                placeholder="写下你们的相识、相知、相守的故事…"
+              />
+            </section>
+
+            {/* 宴会流程 */}
+            <section className="bg-secondary rounded-2xl border border-primary p-5 sm:p-6">
+              <SectionTitle icon={MapPin} text="宴会流程（可选）" />
+              <p className="text-xs text-muted mb-4 leading-relaxed">宾客将看到时间线形式的流程安排，可增删。</p>
+              <div className="space-y-3">
+                {data.timeline.map((item, i) => (
+                  <div key={i} className="rounded-xl border border-primary bg-tertiary/30 p-3">
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="text-xs font-medium text-muted">环节 {i + 1}</span>
+                      <button
+                        onClick={() => removeTimelineItem(i)}
+                        className="p-1 rounded-md text-muted hover:text-rose-400 hover:bg-rose-500/10 transition-colors"
+                        title="删除此环节"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                    <div className="grid sm:grid-cols-[90px_1fr] gap-2">
+                      <input
+                        className={inputCls}
+                        value={item.time}
+                        onChange={(e) => setTimelineItem(i, { time: e.target.value })}
+                        placeholder="时间 18:00"
+                      />
+                      <input
+                        className={inputCls}
+                        value={item.title}
+                        onChange={(e) => setTimelineItem(i, { title: e.target.value })}
+                        placeholder="环节名称，如 婚礼仪式"
+                      />
+                    </div>
+                    <input
+                      className={`${inputCls} mt-2`}
+                      value={item.desc}
+                      onChange={(e) => setTimelineItem(i, { desc: e.target.value })}
+                      placeholder="环节说明（可留空）"
+                    />
+                  </div>
+                ))}
+              </div>
+              <button
+                onClick={addTimelineItem}
+                className="mt-3 inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm text-emerald-400 border border-dashed border-emerald-500/40 hover:bg-emerald-500/10 transition-colors"
+              >
+                <Plus className="w-4 h-4" />
+                添加环节
+              </button>
             </section>
 
             {/* 邀请语 */}
@@ -438,328 +606,6 @@ function InvitationPreview({ data }: { data: InvitationData }) {
             点击开启请柬
           </div>
         </div>
-      </div>
-    </div>
-  )
-}
-
-// ==================== 请柬浏览模式（分享给宾客的页面） ====================
-function InvitationView({ data, onBack }: { data: InvitationData; onBack: () => void }) {
-  const [opened, setOpened] = useState(false)
-  const [copied, setCopied] = useState(false)
-  const [musicPlaying, setMusicPlaying] = useState(false)
-  const audioRef = useRef<HTMLAudioElement>(null)
-
-  const theme = getTheme(data.themeId)
-  const typeInfo = INVITATION_TYPES[data.type]
-  const shareUrl = useMemo(() => buildShareUrl(data, window.location.origin), [data])
-
-  const target = useMemo(() => new Date(`${data.date}T${data.time || '00:00'}:00`), [data.date, data.time])
-  const countdown = useCountdown(target)
-
-  // 留言板
-  const wishesKey = useMemo(() => {
-    const raw = `${data.nameA}-${data.nameB}-${data.date}`
-    try {
-      return 'inv-wishes-' + btoa(unescape(encodeURIComponent(raw)))
-    } catch {
-      return 'inv-wishes-' + raw
-    }
-  }, [data.nameA, data.nameB, data.date])
-  const [wishes, setWishes] = useState<{ name: string; text: string; time: number }[]>(() => {
-    try {
-      const raw = localStorage.getItem(wishesKey)
-      return raw ? (JSON.parse(raw) as { name: string; text: string; time: number }[]) : []
-    } catch {
-      return []
-    }
-  })
-  const [wishName, setWishName] = useState('')
-  const [wishText, setWishText] = useState('')
-
-  useEffect(() => {
-    try {
-      localStorage.setItem(wishesKey, JSON.stringify(wishes))
-    } catch {
-      /* ignore */
-    }
-  }, [wishes, wishesKey])
-
-  const openInvitation = () => {
-    setOpened(true)
-    // 用户交互后尝试自动播放音乐
-    const a = audioRef.current
-    if (a && data.music) {
-      a.play()
-        .then(() => setMusicPlaying(true))
-        .catch(() => setMusicPlaying(false))
-    }
-  }
-
-  const toggleMusic = () => {
-    const a = audioRef.current
-    if (!a) return
-    if (musicPlaying) {
-      a.pause()
-      setMusicPlaying(false)
-    } else {
-      a.play()
-        .then(() => setMusicPlaying(true))
-        .catch(() => setMusicPlaying(false))
-    }
-  }
-
-  const submitWish = () => {
-    if (!wishName.trim() || !wishText.trim()) return
-    setWishes((w) => [...w, { name: wishName.trim(), text: wishText.trim(), time: Date.now() }])
-    setWishText('')
-  }
-
-  const share = async () => {
-    const payload = {
-      title: `${typeInfo.title} - ${data.nameA}${data.nameB ? ' & ' + data.nameB : ''}`,
-      text: data.message.slice(0, 60),
-      url: shareUrl,
-    }
-    try {
-      if (navigator.share) {
-        await navigator.share(payload)
-        return
-      }
-    } catch {
-      /* 用户取消分享 */
-    }
-    try {
-      await navigator.clipboard.writeText(shareUrl)
-      setCopied(true)
-      setTimeout(() => setCopied(false), 2000)
-    } catch {
-      /* ignore */
-    }
-  }
-
-  const mapUrl = buildMapUrl(data.venue, data.address)
-  const weekday = useMemo(() => {
-    const d = new Date(`${data.date}T00:00:00`)
-    return Number.isNaN(d.getTime()) ? '' : d.toLocaleDateString('zh-CN', { weekday: 'long' })
-  }, [data.date])
-
-  return (
-    <div className="min-h-screen font-serif" style={{ background: theme.gradient }}>
-      {/* 背景音乐 */}
-      {data.music && (
-        <>
-          <audio ref={audioRef} src={data.music} loop preload="none" />
-          <button
-            onClick={toggleMusic}
-            className="fixed bottom-6 right-6 z-50 w-12 h-12 rounded-full bg-white/20 backdrop-blur-lg text-white flex items-center justify-center shadow-lg hover:bg-white/30 transition-colors"
-            title={musicPlaying ? '暂停音乐' : '播放音乐'}
-          >
-            {musicPlaying ? <Pause className="w-5 h-5" /> : <Play className="w-5 h-5" />}
-          </button>
-        </>
-      )}
-
-      <div className="max-w-md mx-auto relative min-h-screen">
-        {/* 顶部浮动操作条 */}
-        {opened && (
-          <div className="fixed top-4 left-1/2 -translate-x-1/2 z-50 w-[92%] max-w-md flex items-center justify-between gap-2 rounded-full bg-black/25 backdrop-blur-xl px-4 py-2 text-white text-sm">
-            <button onClick={onBack} className="inline-flex items-center gap-1.5 hover:text-white/80 transition-colors">
-              <ArrowLeft className="w-4 h-4" />
-              <span className="hidden sm:inline">返回编辑</span>
-            </button>
-            <button
-              onClick={share}
-              className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/20 hover:bg-white/30 transition-colors"
-            >
-              {copied ? <Check className="w-4 h-4 text-emerald-300" /> : <Share2 className="w-4 h-4" />}
-              {copied ? '已复制' : '分享请柬'}
-            </button>
-          </div>
-        )}
-
-        {/* ===== 封面 ===== */}
-        {!opened && (
-          <div className="flex flex-col items-center justify-center min-h-screen px-8 text-center text-white">
-            <div className="text-6xl mb-4 drop-shadow-lg">{typeInfo.emoji}</div>
-            <div className="text-xs tracking-[0.5em] text-white/70 mb-2">INVITATION</div>
-            <h1 className="text-4xl font-bold mb-2">{typeInfo.title}</h1>
-            <div className="my-6 w-16 h-px bg-white/50" />
-            <div className="text-3xl font-bold leading-relaxed mb-6">
-              {data.nameA || 'XXX'}
-              {data.nameB && (
-                <>
-                  <span className="text-2xl px-3 align-middle">
-                    <Heart className="w-7 h-7 inline text-rose-200" fill="currentColor" />
-                  </span>
-                  {data.nameB}
-                </>
-              )}
-            </div>
-            <p className="text-white/80 mb-10">
-              {data.date || '____'}
-              {weekday && `（${weekday}）`}
-              {data.time && ` ${data.time}`}
-            </p>
-            <button
-              onClick={openInvitation}
-              className="px-10 py-4 rounded-full bg-white/20 backdrop-blur-lg border border-white/40 text-lg font-semibold hover:bg-white/30 hover:scale-105 transition-all shadow-xl"
-            >
-              开启请柬
-            </button>
-          </div>
-        )}
-
-        {/* ===== 请柬正文 ===== */}
-        {opened && (
-          <div className="px-6 pt-24 pb-28 text-center text-white">
-            <div className="text-5xl mb-5">{typeInfo.emoji}</div>
-            <div className="text-xs tracking-[0.5em] text-white/70 mb-3">INVITATION</div>
-            <h1 className="text-3xl font-bold mb-3">{typeInfo.title}</h1>
-
-            <div className="text-3xl font-bold leading-relaxed mb-8">
-              {data.nameA || 'XXX'}
-              {data.nameB && (
-                <>
-                  <span className="text-2xl px-3 align-middle">
-                    <Heart className="w-7 h-7 inline text-rose-200" fill="currentColor" />
-                  </span>
-                  {data.nameB}
-                </>
-              )}
-            </div>
-
-            {/* 邀请语 */}
-            <p className="text-white/90 leading-relaxed mb-10 whitespace-pre-line max-w-sm mx-auto">
-              {data.message || typeInfo.invite}
-            </p>
-
-            {/* 信息卡 */}
-            <div className="rounded-3xl bg-white/12 backdrop-blur-md p-6 mb-8 space-y-4">
-              <div className="flex items-center justify-center gap-3">
-                <Calendar className="w-5 h-5 text-white/80 shrink-0" />
-                <span className="text-lg">
-                  {data.date || '____'}
-                  {weekday && <span className="text-white/70 ml-2">{weekday}</span>}
-                </span>
-              </div>
-              {data.time && (
-                <div className="flex items-center justify-center gap-3">
-                  <Clock className="w-5 h-5 text-white/80 shrink-0" />
-                  <span className="text-lg">{data.time}</span>
-                </div>
-              )}
-              {(data.venue || data.address) && (
-                <div className="flex items-center justify-center gap-3">
-                  <MapPin className="w-5 h-5 text-white/80 shrink-0" />
-                  <span className="text-lg">{data.venue || data.address}</span>
-                </div>
-              )}
-              {(data.venue || data.address) && (
-                <a
-                  href={mapUrl}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="inline-flex items-center gap-1.5 px-5 py-2 rounded-full bg-white/20 hover:bg-white/30 text-sm font-semibold transition-colors"
-                >
-                  查看地图
-                  <ExternalLink className="w-3.5 h-3.5" />
-                </a>
-              )}
-            </div>
-
-            {/* 倒计时 */}
-            {data.showCountdown && countdown && (
-              <div className="mb-10">
-                <div className="text-sm text-white/70 mb-3 tracking-widest">
-                  {countdown.passed ? '宴会正在进行中' : '距离宴会开始还有'}
-                </div>
-                {!countdown.passed && (
-                  <div className="flex justify-center gap-3">
-                    {[
-                      { v: countdown.days, label: '天' },
-                      { v: countdown.hours, label: '时' },
-                      { v: countdown.minutes, label: '分' },
-                      { v: countdown.seconds, label: '秒' },
-                    ].map((it) => (
-                      <div key={it.label} className="w-16 rounded-2xl bg-white/15 backdrop-blur-md py-3">
-                        <div className="text-2xl font-bold tabular-nums">{it.v}</div>
-                        <div className="text-xs text-white/70 mt-1">{it.label}</div>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-            )}
-
-            {/* 留言祝福 */}
-            <div className="rounded-3xl bg-white/12 backdrop-blur-md p-6 mb-8 text-left">
-              <h2 className="flex items-center gap-2 text-white font-semibold mb-4">
-                <MessageCircleHeart className="w-5 h-5" />
-                祝福留言（{wishes.length}）
-              </h2>
-              <div className="space-y-3 mb-5">
-                {wishes.length === 0 && (
-                  <p className="text-sm text-white/60 text-center py-3">还没有留言，来送上你的祝福吧～</p>
-                )}
-                {wishes.map((w, i) => (
-                  <div key={i} className="bg-white/10 rounded-xl p-3">
-                    <div className="flex items-center justify-between gap-2 mb-1">
-                      <span className="text-sm font-semibold text-white/90">{w.name}</span>
-                      <span className="text-xs text-white/50">
-                        {new Date(w.time).toLocaleDateString('zh-CN')}
-                      </span>
-                    </div>
-                    <p className="text-sm text-white/80 break-words">{w.text}</p>
-                  </div>
-                ))}
-              </div>
-              <div className="space-y-2.5">
-                <input
-                  className="w-full px-4 py-2.5 rounded-xl bg-white/10 border border-white/25 text-white placeholder:text-white/50 focus:outline-none focus:border-white/60"
-                  placeholder="你的名字"
-                  value={wishName}
-                  onChange={(e) => setWishName(e.target.value)}
-                  maxLength={20}
-                />
-                <textarea
-                  className="w-full px-4 py-2.5 rounded-xl bg-white/10 border border-white/25 text-white placeholder:text-white/50 focus:outline-none focus:border-white/60 resize-none"
-                  placeholder="送上你的祝福…"
-                  value={wishText}
-                  onChange={(e) => setWishText(e.target.value)}
-                  maxLength={120}
-                  rows={2}
-                />
-                <button
-                  onClick={submitWish}
-                  className="w-full py-2.5 rounded-xl bg-white/20 hover:bg-white/30 font-semibold text-sm transition-colors"
-                >
-                  送出祝福
-                </button>
-              </div>
-            </div>
-
-            {/* 底部签名 */}
-            <div className="text-white/80 text-sm leading-relaxed mb-10">
-              <p>{typeInfo.invite}</p>
-              {data.host && <p className="mt-3 text-white font-semibold text-base">{data.host} 敬邀</p>}
-            </div>
-
-            <div className="w-16 h-px bg-white/40 mx-auto mb-8" />
-
-            <Link
-              to="/invitation"
-              className="inline-flex items-center gap-2 px-6 py-3 rounded-full bg-white/15 hover:bg-white/25 text-sm font-semibold transition-colors"
-            >
-              <Wand2 className="w-4 h-4" />
-              我也要制作电子请柬
-            </Link>
-
-            <div className="mt-10 pb-4 text-xs text-white/40">
-              Made with <Heart className="w-3 h-3 inline text-rose-300" fill="currentColor" /> DevTools Hub
-            </div>
-          </div>
-        )}
       </div>
     </div>
   )
