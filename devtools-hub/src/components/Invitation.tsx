@@ -122,6 +122,10 @@ function InvitationEditor() {
       ...d,
       photos: d.photos.filter((_, idx) => idx !== i),
       photoCaptions: d.photoCaptions ? d.photoCaptions.filter((_, idx) => idx !== i) : undefined,
+      photoArtWords: d.photoArtWords ? d.photoArtWords.filter((_, idx) => idx !== i) : undefined,
+      photoBlessings: d.photoBlessings
+        ? d.photoBlessings.filter((_, idx) => idx !== i)
+        : undefined,
     }))
   const setPhotoCaption = (i: number, caption: string) =>
     setData((d) => {
@@ -129,6 +133,22 @@ function InvitationEditor() {
       while (caps.length < d.photos.length) caps.push('')
       caps[i] = caption
       return { ...d, photoCaptions: caps }
+    })
+  /** 艺术字（1-4 字）——留空时浏览端按索引从默认库 ART_WORDS_DEFAULT 自动取 */
+  const setPhotoArtWord = (i: number, v: string) =>
+    setData((d) => {
+      const arr = Array.isArray(d.photoArtWords) ? [...d.photoArtWords] : []
+      while (arr.length < d.photos.length) arr.push('')
+      arr[i] = v
+      return { ...d, photoArtWords: arr }
+    })
+  /** 婚礼吉祥话（多行，'\n' 换行）——留空时浏览端按索引从 BLESSINGS_DEFAULT 自动取 */
+  const setPhotoBlessing = (i: number, v: string) =>
+    setData((d) => {
+      const arr = Array.isArray(d.photoBlessings) ? [...d.photoBlessings] : []
+      while (arr.length < d.photos.length) arr.push('')
+      arr[i] = v
+      return { ...d, photoBlessings: arr }
     })
   /** 兼容老数据：保留 toggleFeatured 接口但 noop（"心形精选"功能已废弃） */
   const toggleFeatured = (_i: number) => setData((d) => d)
@@ -435,6 +455,35 @@ function InvitationEditor() {
                         onChange={(e) => setPhotoCaption(i, e.target.value)}
                         placeholder={`照片 ${i + 1} 的简介（点开大图时显示，可留空）`}
                       />
+                      {/* 艺术字 + 吉祥话 —— 两栏：1-4 字艺术字 / 多行婚礼吉祥话 */}
+                      <div className="mt-1.5 grid grid-cols-[80px_1fr] gap-1.5">
+                        <input
+                          className={`${inputCls} !py-1.5 !px-2 text-xs text-center`}
+                          maxLength={6}
+                          value={(data.photoArtWords?.[i] as string) ?? ''}
+                          onChange={(e) => setPhotoArtWord(i, e.target.value)}
+                          placeholder="艺术字"
+                          style={{
+                            fontFamily:
+                              "'STKaiti', 'KaiTi', 'Noto Serif SC', 'Songti SC', serif",
+                            fontWeight: 600,
+                            letterSpacing: '0.1em',
+                          }}
+                          title="艺术字（1-4 字，留空则按张序从默认库取：初见/执手/相知/相守/...）"
+                        />
+                        <textarea
+                          rows={2}
+                          className={`${inputCls} !py-1.5 !px-2 text-xs resize-none`}
+                          value={(data.photoBlessings?.[i] as string) ?? ''}
+                          onChange={(e) => setPhotoBlessing(i, e.target.value)}
+                          placeholder="婚礼吉祥话（用回车换行；留空则按张序从默认库取）"
+                          style={{
+                            fontFamily:
+                              "'STKaiti', 'KaiTi', 'Noto Serif SC', 'Songti SC', serif",
+                          }}
+                          title="婚礼吉祥话（如：执子之手\\n与子偕老）"
+                        />
+                      </div>
                     </div>
                   )
                 })}

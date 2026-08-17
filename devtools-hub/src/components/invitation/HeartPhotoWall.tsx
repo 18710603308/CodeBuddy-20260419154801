@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { ChevronLeft, ChevronRight, Image as ImageIcon, X } from 'lucide-react'
+import { ART_WORDS_DEFAULT, BLESSINGS_DEFAULT } from '../../data/invitation'
 
 type Pt = { x: number; y: number }
 
@@ -131,6 +132,16 @@ interface HeartPhotoWallProps {
   fallbackEmoji?: string
   /** 每张照片简介（与 photos 下标对齐），Lightbox 中展示 */
   captions?: string[]
+  /**
+   * 每张照片「艺术字」（与 photos 下标对齐）
+   * 留空时按 photos 索引从 ART_WORDS_DEFAULT 自动取
+   */
+  artWords?: string[]
+  /**
+   * 每张照片「婚礼吉祥话」（与 photos 下标对齐，'\n' 换行）
+   * 留空时按 photos 索引从 BLESSINGS_DEFAULT 自动取
+   */
+  blessings?: string[]
   /** @deprecated 已废弃——所有 photos 默认都进心形铺满；保留参数仅为兼容旧调用方 */
   featuredIndexes?: number[]
 }
@@ -140,6 +151,8 @@ export function HeartPhotoWall({
   accent,
   fallbackEmoji = '💐',
   captions,
+  artWords,
+  blessings,
 }: HeartPhotoWallProps) {
   const MAX = 60 // 心形 + 平铺总展示上限
 
@@ -190,6 +203,26 @@ export function HeartPhotoWall({
       .map((s) => s.trim())
       .filter(Boolean)
   }, [openCaption])
+
+  /** 当前照片艺术字 —— 用户未填则按索引从默认库取 */
+  const openArtWord = useMemo(() => {
+    const fromUser = openOrigIndex >= 0 && artWords ? (artWords[openOrigIndex] || '').trim() : ''
+    if (fromUser) return fromUser
+    if (openOrigIndex < 0) return ''
+    return ART_WORDS_DEFAULT[openOrigIndex % ART_WORDS_DEFAULT.length] || '永约'
+  }, [artWords, openOrigIndex])
+
+  /** 当前照片婚礼吉祥话 —— 按 '\n' 分行 */
+  const openBlessingLines = useMemo((): string[] => {
+    const fromUser =
+      openOrigIndex >= 0 && blessings ? (blessings[openOrigIndex] || '').trim() : ''
+    let text = fromUser
+    if (!text) {
+      if (openOrigIndex < 0) return []
+      text = BLESSINGS_DEFAULT[openOrigIndex % BLESSINGS_DEFAULT.length] || ''
+    }
+    return text.split(/\n+/).map((s) => s.trim()).filter(Boolean)
+  }, [blessings, openOrigIndex])
 
   const close = useCallback(() => {
     setOpenIndex(null)
@@ -434,47 +467,116 @@ export function HeartPhotoWall({
                 )}
               </div>
 
-              {/* 右侧文案（爱的旁白，仅 PC 显示） */}
-              {captionLines.length > 0 && (
+              {/* 右侧文案（爱的旁白，仅 PC 显示）——艺术家风格：艺术字 + 吉祥话 + 简介 */}
+              {(openArtWord || openBlessingLines.length > 0 || captionLines.length > 0) && (
                 <div
                   className="hidden md:flex flex-col items-center justify-center text-center max-w-[320px] flex-1"
                   style={{ color: '#7a4f2b' }}
                 >
+                  {/* 顶部英文小字标签 */}
                   <div
-                    className="text-[11px] tracking-[0.4em] mb-3 font-medium"
+                    className="text-[11px] tracking-[0.42em] mb-4 font-medium"
                     style={{ color: '#c08560' }}
                   >
-                    LOVE · WHISPER
+                    WEDDING · MOMENTS
                   </div>
-                  <div
-                    className="text-2xl mb-4"
-                    style={{ color: '#c4765a' }}
-                  >
+
+                  {/* 艺术字主标题 —— 巨型书法 / 楷体 / 玫瑰红色 */}
+                  {openArtWord && (
+                    <div
+                      className="leading-none mb-3 select-none"
+                      style={{
+                        fontFamily:
+                          "'STKaiti', 'Noto Serif SC', 'Kaiti SC', 'KaiTi', 'Songti SC', 'STSong', serif",
+                        fontWeight: 600,
+                        color: '#a8423f',
+                        fontSize: '52px',
+                        letterSpacing: '0.16em',
+                        textShadow:
+                          '0 1px 0 rgba(255,255,255,0.6), 0 2px 14px rgba(168,66,63,0.18)',
+                      }}
+                    >
+                      {openArtWord}
+                    </div>
+                  )}
+
+                  {/* ❤ 装饰小图标 */}
+                  <div className="text-base mb-2" style={{ color: '#c44545' }}>
                     ❤
                   </div>
+
+                  {/* 金色细线分隔 */}
                   <div
-                    className="text-[15px] leading-[2.1] tracking-wide"
-                    style={{ fontFamily: "'Noto Serif SC', 'Songti SC', serif" }}
-                  >
-                    {captionLines.map((line, i) => (
-                      <p key={i} className="my-0.5">
-                        {line}
-                      </p>
-                    ))}
-                  </div>
+                    className="mb-3 h-px"
+                    style={{
+                      width: '38px',
+                      background:
+                        'linear-gradient(90deg, transparent, #c9a062, transparent)',
+                    }}
+                  />
+
+                  {/* 婚礼吉祥话（楷体多行） */}
+                  {openBlessingLines.length > 0 && (
+                    <div
+                      className="text-[15px] leading-[2.1] tracking-[0.16em] mb-3"
+                      style={{
+                        fontFamily:
+                          "'STKaiti', 'KaiTi', 'Songti SC', 'Noto Serif SC', serif",
+                        color: '#7a2c2a',
+                      }}
+                    >
+                      {openBlessingLines.map((line, i) => (
+                        <p key={i} className="my-0.5">
+                          {line}
+                        </p>
+                      ))}
+                    </div>
+                  )}
+
+                  {/* 用户简介（caption）—— italic 小字 */}
+                  {captionLines.length > 0 && (
+                    <div
+                      className="text-[12px] leading-relaxed italic max-w-[260px] mb-3"
+                      style={{
+                        color: '#a07654',
+                        fontFamily:
+                          "'Cormorant Garamond', 'Georgia', 'Noto Serif SC', serif",
+                      }}
+                    >
+                      “{captionLines.join(' · ')}”
+                    </div>
+                  )}
+
+                  {/* 计数 —— 摄影展标签 */}
                   <div
-                    className="text-[11px] tracking-[0.3em] mt-4 opacity-70"
-                    style={{ color: '#a07654' }}
+                    className="mt-2 inline-flex items-center gap-2 px-3 py-1 rounded-full"
+                    style={{
+                      color: '#a07654',
+                      fontSize: '11px',
+                      letterSpacing: '0.28em',
+                      border: '1px solid rgba(192,133,96,0.35)',
+                      background: 'rgba(255,251,240,0.45)',
+                    }}
                   >
-                    · {openOrigIndex + 1} / {display.length} ·
+                    <span
+                      className="inline-block w-1 h-1 rounded-full"
+                      style={{ background: '#c4765a' }}
+                    />
+                    {String(openOrigIndex + 1).padStart(2, '0')}
+                    <span style={{ opacity: 0.5 }}>/</span>
+                    {String(display.length).padStart(2, '0')}
+                    <span
+                      className="inline-block w-1 h-1 rounded-full"
+                      style={{ background: '#c4765a' }}
+                    />
                   </div>
                 </div>
               )}
 
-              {/* 移动端：简介放在大图下方（多行诗意） */}
-              {captionLines.length > 0 && (
+              {/* 移动端：艺术字 + 吉祥话 + 简介放在大图下方 */}
+              {(openArtWord || openBlessingLines.length > 0 || captionLines.length > 0) && (
                 <div
-                  className="md:hidden mt-1 w-full max-w-[92vw] rounded-2xl px-5 py-3 text-center"
+                  className="md:hidden mt-1 w-full max-w-[92vw] rounded-2xl px-5 py-4 text-center"
                   style={{
                     background:
                       'linear-gradient(180deg, rgba(255,251,240,0.96), rgba(255,247,230,0.96))',
@@ -483,16 +585,49 @@ export function HeartPhotoWall({
                   }}
                   onClick={(e) => e.stopPropagation()}
                 >
-                  <div
-                    className="text-sm leading-relaxed"
-                    style={{ fontFamily: "'Noto Serif SC', 'Songti SC', serif" }}
-                  >
-                    {captionLines.map((line, i) => (
-                      <p key={i} className="my-0.5">
-                        {line}
-                      </p>
-                    ))}
-                  </div>
+                  {openArtWord && (
+                    <div
+                      className="mb-2"
+                      style={{
+                        fontFamily:
+                          "'STKaiti', 'Noto Serif SC', 'Kaiti SC', 'Songti SC', serif",
+                        color: '#a8423f',
+                        fontSize: '32px',
+                        letterSpacing: '0.18em',
+                        fontWeight: 600,
+                        textShadow:
+                          '0 1px 0 rgba(255,255,255,0.5), 0 2px 8px rgba(168,66,63,0.16)',
+                      }}
+                    >
+                      {openArtWord}
+                    </div>
+                  )}
+                  {openBlessingLines.length > 0 && (
+                    <div
+                      className="text-sm leading-[2] tracking-[0.16em] mb-1"
+                      style={{
+                        fontFamily:
+                          "'STKaiti', 'KaiTi', 'Songti SC', 'Noto Serif SC', serif",
+                        color: '#7a2c2a',
+                      }}
+                    >
+                      {openBlessingLines.map((line, i) => (
+                        <p key={i} className="my-0">
+                          {line}
+                        </p>
+                      ))}
+                    </div>
+                  )}
+                  {captionLines.length > 0 && (
+                    <div
+                      className="text-xs italic mt-1 opacity-80"
+                      style={{
+                        fontFamily: "'Cormorant Garamond', 'Georgia', serif",
+                      }}
+                    >
+                      “{captionLines.join(' · ')}”
+                    </div>
+                  )}
                 </div>
               )}
             </div>

@@ -3,6 +3,46 @@
  * 纯前端实现：请柬数据编码进 URL query (?d=base64url)，分享链接即请柬本体
  */
 
+/**
+ * 婚礼详情页艺术字库（Lightbox 主标题，按 photos 索引循环取用）
+ * 汉字选自婚礼常用吉语：初见 · 执手 · 相知 · 相守 · 永约 · 结发 · 偕老 · 同心 · 百年 · 白首 · 良缘 · 韶华 · 天涯
+ */
+export const ART_WORDS_DEFAULT = [
+  '初见',
+  '执手',
+  '相知',
+  '相守',
+  '永约',
+  '结发',
+  '偕老',
+  '同心',
+  '百年',
+  '白首',
+  '良缘',
+  '韶华',
+  '天涯',
+]
+
+/**
+ * 婚礼详情页吉祥话库（Lightbox 副标题，'\n' 强制分行排版）
+ * 收录于《诗经》《诗集》《西厢记》等传统婚礼祝词
+ */
+export const BLESSINGS_DEFAULT = [
+  '执子之手\n与子偕老',
+  '百年好合\n永结同心',
+  '佳偶天成\n天作之合',
+  '相濡以沫\n相伴一生',
+  '山高水长\n与君同程',
+  '岁月静好\n与君语',
+  '细水长流\n与君同',
+  '花好月圆\n良缘夙缔',
+  '琴瑟在御\n莫不静好',
+  '宜室宜家\n鸾凤和鸣',
+  '两情相悦\n白首相守',
+  '千里姻缘\n一线相牵',
+  '死生契阔\n与子成说',
+]
+
 export type InvitationType = 'wedding' | 'birthday' | 'baby' | 'moving' | 'party'
 
 export interface InvitationTimelineItem {
@@ -46,6 +86,20 @@ export interface InvitationData {
    * 浏览端 Lightbox 大图下方会以卡片形式展示该文案
    */
   photoCaptions?: string[]
+  /**
+   * 每张照片的「艺术字」（与 photos 下标对齐，可空）
+   * 1-4 个汉字，作为 Lightbox 详情页的主标题书法装饰。
+   * 例如：'初见' / '执手' / '相守' / '永约' / '偕老' / '同心'
+   * 留空时按 photos 索引从默认库 ART_WORDS_DEFAULT 自动取。
+   */
+  photoArtWords?: string[]
+  /**
+   * 每张照片的「婚礼吉祥话」（与 photos 下标对齐，可空）
+   * 作为 Lightbox 详情页的副标题诗意排版，'\n' 强制换行。
+   * 例如：'执子之手\n与子偕老' / '百年好合\n永结同心'
+   * 留空时按 photos 索引从默认库 BLESSINGS_DEFAULT 自动取。
+   */
+  photoBlessings?: string[]
   /**
    * 心形墙精选展示的照片下标（不限数量；空数组则全部进心形铺满）
    * 心形墙会按数量自动调整缩略图大小，确保互不重叠、每张可点

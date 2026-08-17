@@ -534,12 +534,14 @@ export function InvitationView({
               <Ornament color={theme.primary} />
             </div>
 
-            {/* 爱心照片墙：精选照片拼成爱心（互不重叠），其余照片平铺；点击查看大图+简介 */}
+            {/* 爱心照片墙：精选照片拼成爱心（互不重叠），其余照片平铺；点击查看大图+艺术字+吉祥话 */}
             <Reveal>
               <HeartPhotoWall
                 photos={data.photos}
                 accent={theme.primary}
                 captions={data.photoCaptions}
+                artWords={data.photoArtWords}
+                blessings={data.photoBlessings}
                 featuredIndexes={data.featuredIndexes}
               />
             </Reveal>
