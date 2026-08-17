@@ -527,8 +527,11 @@ function InvitationEditor() {
                 className={inputCls}
                 value={data.music}
                 onChange={(e) => set('music', e.target.value)}
-                placeholder="粘贴音乐直链（mp3/ogg），留空则不播放"
+                placeholder="粘贴音乐直链（mp3/ogg）；留空则自动播放内置歌单（24小时摇滚聚会 / APT. 轮播）"
               />
+              <p className="mt-2 text-xs text-secondary">
+                内置歌单会自动轮播并支持切换/关闭；填写直链后将在歌单末尾追加播放
+              </p>
               <label className="mt-4 flex items-center justify-between gap-3 cursor-pointer">
                 <span className="text-sm text-secondary">请柬中显示倒计时</span>
                 <button

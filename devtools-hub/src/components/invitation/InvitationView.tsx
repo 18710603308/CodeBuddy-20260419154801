@@ -3,12 +3,14 @@ import type { ReactNode } from 'react'
 import { Link } from 'react-router-dom'
 import {
   ArrowLeft, Calendar, Check, Clock, ExternalLink, Heart, MapPin,
-  Pause, Play, Share2, Wand2,
+  Music2, Pause, Play, Share2, SkipBack, SkipForward, Wand2, X,
 } from 'lucide-react'
 import {
   INVITATION_TYPES, buildMapUrl, buildShareUrl, getTheme,
 } from '../../data/invitation'
 import type { InvitationData } from '../../data/invitation'
+import { INVITATION_PLAYLIST } from '../../data/invitationMusic'
+import { HeartPhotoWall } from './HeartPhotoWall'
 import { PetalRain } from './PetalRain'
 
 // ==================== 倒计时 Hook ====================
@@ -87,6 +89,15 @@ export function InvitationView({
   const [opened, setOpened] = useState(false)
   const [copied, setCopied] = useState(false)
   const [musicPlaying, setMusicPlaying] = useState(false)
+  const playingRef = useRef(false)
+  const [musicOff, setMusicOff] = useState<boolean>(() => {
+    try {
+      return localStorage.getItem('inv-music-off') === '1'
+    } catch {
+      return false
+    }
+  })
+  const [trackIndex, setTrackIndex] = useState(0)
   const audioRef = useRef<HTMLAudioElement>(null)
   const scrollerRef = useRef<HTMLDivElement>(null)
   const [activePage, setActivePage] = useState(0)
@@ -140,26 +151,87 @@ export function InvitationView({
 
   const openInvitation = () => {
     setOpened(true)
+    if (musicOff) return
     const a = audioRef.current
-    if (a && data.music) {
+    if (a) {
       a.play()
         .then(() => setMusicPlaying(true))
         .catch(() => setMusicPlaying(false))
     }
   }
 
-  const toggleMusic = () => {
+  // ==================== 背景音乐（内置歌单轮播） ====================
+  const playlist = useMemo(() => {
+    const list = [...INVITATION_PLAYLIST]
+    if (data.music) {
+      list.push({ name: '自定义音乐', artist: '请柬设置', src: data.music })
+    }
+    return list
+  }, [data.music])
+
+  const current = playlist[trackIndex % playlist.length]
+
+  const syncPlaying = useCallback((v: boolean) => {
+    playingRef.current = v
+    setMusicPlaying(v)
+  }, [])
+
+  const playMusic = useCallback(() => {
     const a = audioRef.current
     if (!a) return
-    if (musicPlaying) {
-      a.pause()
-      setMusicPlaying(false)
-    } else {
-      a.play()
-        .then(() => setMusicPlaying(true))
-        .catch(() => setMusicPlaying(false))
+    a.play()
+      .then(() => syncPlaying(true))
+      .catch(() => syncPlaying(false))
+  }, [syncPlaying])
+
+  const pauseMusic = useCallback(() => {
+    const a = audioRef.current
+    if (a) a.pause()
+    syncPlaying(false)
+  }, [syncPlaying])
+
+  const toggleMusic = useCallback(() => {
+    if (playingRef.current) pauseMusic()
+    else playMusic()
+  }, [playMusic, pauseMusic])
+
+  const changeTrack = useCallback(
+    (dir: number) => {
+      setTrackIndex((i) => (i + dir + playlist.length) % playlist.length)
+    },
+    [playlist.length]
+  )
+
+  const turnOffMusic = useCallback(() => {
+    pauseMusic()
+    setMusicOff(true)
+    try {
+      localStorage.setItem('inv-music-off', '1')
+    } catch {
+      /* ignore */
     }
-  }
+  }, [pauseMusic])
+
+  const turnOnMusic = useCallback(() => {
+    setMusicOff(false)
+    try {
+      localStorage.removeItem('inv-music-off')
+    } catch {
+      /* ignore */
+    }
+    playMusic()
+  }, [playMusic])
+
+  // 切歌（audio 随 key 重建）后若此前在播放，则自动续播新曲目
+  useEffect(() => {
+    if (!playingRef.current) return
+    const a = audioRef.current
+    if (a) {
+      a.play()
+        .then(() => syncPlaying(true))
+        .catch(() => syncPlaying(false))
+    }
+  }, [trackIndex, syncPlaying])
 
   const submitWish = () => {
     if (!wishName.trim() || !wishText.trim()) return
@@ -292,19 +364,81 @@ export function InvitationView({
 
   return (
     <div className="fixed inset-0 z-50" style={{ background: theme.cardBg }}>
-      {/* 背景音乐 */}
-      {data.music && (
-        <>
-          <audio ref={audioRef} src={data.music} loop preload="none" />
-          <button
-            onClick={toggleMusic}
-            className="fixed bottom-6 right-5 z-[60] w-12 h-12 rounded-full shadow-xl flex items-center justify-center transition-transform hover:scale-105"
-            style={{ background: theme.primary, color: '#fff' }}
-            title={musicPlaying ? '暂停音乐' : '播放音乐'}
+      {/* 背景音乐：内置歌单轮播 + 切换/关闭 */}
+      <audio
+        key={trackIndex}
+        ref={audioRef}
+        src={current.src}
+        preload="auto"
+        className="hidden"
+        onEnded={() => changeTrack(1)}
+        onPlaying={() => syncPlaying(true)}
+        onPause={() => syncPlaying(false)}
+        onError={() => syncPlaying(false)}
+      />
+      {musicOff ? (
+        <button
+          onClick={turnOnMusic}
+          className="fixed bottom-6 right-5 z-[60] flex h-10 w-10 items-center justify-center rounded-full shadow-lg opacity-70 transition-opacity hover:opacity-100"
+          style={{ background: theme.primary, color: '#fff' }}
+          title="开启音乐"
+          aria-label="开启音乐"
+        >
+          <Music2 className="h-4 w-4" />
+        </button>
+      ) : (
+        <div className="fixed bottom-6 right-5 z-[60] flex flex-col items-end gap-2">
+          <div
+            className="w-60 rounded-2xl p-3.5 text-white shadow-2xl border border-white/20"
+            style={{ background: `${theme.primaryDark}e6`, backdropFilter: 'blur(14px)' }}
           >
-            {musicPlaying ? <Pause className="w-5 h-5" /> : <Play className="w-5 h-5" />}
-          </button>
-        </>
+            <div className="mb-2.5 flex items-center justify-between gap-2">
+              <div className="min-w-0 flex-1">
+                <div className="text-[10px] uppercase tracking-widest text-white/55">♪ 背景音乐</div>
+                <div className="truncate text-sm font-semibold">{current.name}</div>
+                {current.artist && (
+                  <div className="truncate text-[11px] text-white/65">{current.artist}</div>
+                )}
+              </div>
+              <span className={`text-lg ${musicPlaying ? 'animate-wiggle' : 'opacity-60'}`}>🎵</span>
+            </div>
+            <div className="flex items-center justify-between">
+              <button
+                onClick={() => changeTrack(-1)}
+                className="flex h-9 w-9 items-center justify-center rounded-full bg-white/15 transition-colors hover:bg-white/25"
+                aria-label="上一首"
+                title="上一首"
+              >
+                <SkipBack className="h-4 w-4" />
+              </button>
+              <button
+                onClick={toggleMusic}
+                className="flex h-11 w-11 items-center justify-center rounded-full shadow-lg transition-transform hover:scale-105"
+                style={{ background: theme.primary, color: '#fff' }}
+                aria-label={musicPlaying ? '暂停' : '播放'}
+                title={musicPlaying ? '暂停音乐' : '播放音乐'}
+              >
+                {musicPlaying ? <Pause className="h-5 w-5" /> : <Play className="h-5 w-5" />}
+              </button>
+              <button
+                onClick={() => changeTrack(1)}
+                className="flex h-9 w-9 items-center justify-center rounded-full bg-white/15 transition-colors hover:bg-white/25"
+                aria-label="下一首"
+                title="下一首"
+              >
+                <SkipForward className="h-4 w-4" />
+              </button>
+              <button
+                onClick={turnOffMusic}
+                className="flex h-9 w-9 items-center justify-center rounded-full bg-white/15 text-white/70 transition-colors hover:bg-white/25 hover:text-white"
+                aria-label="关闭音乐"
+                title="关闭音乐"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+          </div>
+        </div>
       )}
 
       {/* 顶部浮动操作条 */}
@@ -368,41 +502,13 @@ export function InvitationView({
               <Ornament color={theme.primary} />
             </div>
 
-            {/* 竖排平铺大图：全宽、原比例、无缝往下排 */}
-            <div className="flex flex-col gap-3 px-0 pb-2">
-              {data.photos.map((src, i) => (
-                <Reveal key={i} delay={Math.min(i * 60, 300)}>
-                  <div className="relative w-full overflow-hidden" style={{ background: '#0c0c14' }}>
-                    {src ? (
-                      <img
-                        src={src}
-                        alt={`照片 ${i + 1}`}
-                        className="block w-full h-auto"
-                        loading="lazy"
-                        onError={(e) => {
-                          ;(e.currentTarget as HTMLImageElement).style.display = 'none'
-                          const parent = (e.currentTarget as HTMLImageElement).parentElement
-                          if (parent) {
-                            parent.classList.add('fallback-photo')
-                            parent.style.minHeight = '320px'
-                          }
-                        }}
-                      />
-                    ) : (
-                      <div className="fallback-photo" style={{ minHeight: 320 }} />
-                    )}
-                    {data.photos.length > 1 && (
-                      <span className="absolute right-3 bottom-3 rounded-full bg-black/45 px-2.5 py-1 text-xs font-semibold text-white backdrop-blur">
-                        {i + 1} / {data.photos.length}
-                      </span>
-                    )}
-                  </div>
-                </Reveal>
-              ))}
-            </div>
+            {/* 爱心照片墙：缩略图拼成爱心，点击查看原图 */}
+            <Reveal>
+              <HeartPhotoWall photos={data.photos} accent={theme.primary} />
+            </Reveal>
 
             <p className="text-center text-xs mt-5 pb-10 animate-float-y" style={{ color: theme.cardSub }}>
-              ✨ 继续下滑 查看故事与更多 ✨
+              💖 点击爱心中的照片可查看原图，继续下滑查看故事与更多 ✨
             </p>
           </section>
         ) : (
