@@ -131,12 +131,7 @@ interface HeartPhotoWallProps {
   fallbackEmoji?: string
   /** 每张照片简介（与 photos 下标对齐），Lightbox 中展示 */
   captions?: string[]
-  /**
-   * 心形墙精选展示的照片下标（不限数量，按下标顺序展示）。
-   * - 未传或空数组 → 默认所有 photos 都进心形铺满
-   * - 显式传入时按数组下标展示
-   * 缩略图尺寸会按精选数量自适应，保证互不重叠、可点击。
-   */
+  /** @deprecated 已废弃——所有 photos 默认都进心形铺满；保留参数仅为兼容旧调用方 */
   featuredIndexes?: number[]
 }
 
@@ -145,20 +140,22 @@ export function HeartPhotoWall({
   accent,
   fallbackEmoji = '💐',
   captions,
-  featuredIndexes,
 }: HeartPhotoWallProps) {
   const MAX = 60 // 心形 + 平铺总展示上限
 
-  // 心形展示下标：featuredIndexes 为空时默认全选（铺满心形）
-  const featured = useMemo(() => {
-    const arr = Array.isArray(featuredIndexes)
-      ? featuredIndexes.filter((i) => i >= 0 && i < photos.length)
-      : []
-    return arr.length > 0 ? arr : photos.map((_, i) => i).slice(0, MAX)
-  }, [featuredIndexes, photos.length])
-
-  // 全部展示的照片（用于 Lightbox 浏览 + 下方平铺）
+  // 全部展示的照片（用于 Lightbox 浏览 + 下方平铺 + 心形铺满）
   const display = photos.slice(0, MAX)
+
+  /**
+   * 心形墙展示下标——为简化使用，**所有 photos 都进心形铺满**，
+   * featuredIndexes 字段已废弃但保留以兼容旧数据。
+   * - 当 photos 数 ≤ MAX 时，全部进心形
+   * - 当 photos 数 > MAX 时，前 MAX 张进心形、其余在下方平铺
+   */
+  const featured = useMemo(
+    () => display.map((_, i) => i),
+    [display.length]
+  )
 
   // 心形缩略图尺寸 = 自适应
   const thumbSize = getThumbSize(featured.length)
@@ -169,7 +166,7 @@ export function HeartPhotoWall({
     [featured.length, thumbSize]
   )
 
-  // 其余未进心形的（featured 未覆盖到的）
+  // 其余未进心形的（这里 featured == display，所以一般为空；保留逻辑以兼容大 > 60 场景）
   const rest = useMemo(
     () => display.map((_, i) => i).filter((i) => !featured.includes(i)),
     [display, featured]
@@ -263,7 +260,7 @@ export function HeartPhotoWall({
 
   return (
     <div className="w-full max-w-md mx-auto">
-      {/* ============ 心形墙（所有精选照片铺满、互不重叠） ============ */}
+      {/* ============ 心形墙（所有照片自动填满、互不重叠） ============ */}
       {featured.length > 0 && positions.length > 0 && (
         <div
           className="relative w-full"

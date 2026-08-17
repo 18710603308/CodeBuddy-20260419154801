@@ -218,7 +218,8 @@ export const DEFAULT_INVITATION: InvitationData = {
     '一起走过的街角，是最好的时光',
     '从此以后，朝夕都是你',
   ],
-  featuredIndexes: [0, 1, 2],
+  // 心形铺满：所有 photos 默认全部进心形（不再用 featuredIndexes 字段）
+  featuredIndexes: [],
   story:
     '2019 年的春天，我们在朋友的聚会上初次相遇。一句简单的问候，开启了我们之间的故事。\n\n一起看过清晨的海，一起走过深夜的街，从相知到相守，每一个平凡的日子都因为有彼此而变得闪闪发光。\n\n如今，我们决定携手步入人生新的旅程，期待与您分享这份喜悦。',
   timeline: [

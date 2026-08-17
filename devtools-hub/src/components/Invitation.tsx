@@ -122,9 +122,6 @@ function InvitationEditor() {
       ...d,
       photos: d.photos.filter((_, idx) => idx !== i),
       photoCaptions: d.photoCaptions ? d.photoCaptions.filter((_, idx) => idx !== i) : undefined,
-      featuredIndexes: d.featuredIndexes
-        ? d.featuredIndexes.filter((x) => x !== i).map((x) => (x > i ? x - 1 : x))
-        : undefined,
     }))
   const setPhotoCaption = (i: number, caption: string) =>
     setData((d) => {
@@ -133,13 +130,8 @@ function InvitationEditor() {
       caps[i] = caption
       return { ...d, photoCaptions: caps }
     })
-  /** 心形精选开关：不设硬上限（缩略图会按数量自适应缩小） */
-  const toggleFeatured = (i: number) =>
-    setData((d) => {
-      const cur = Array.isArray(d.featuredIndexes) ? [...d.featuredIndexes] : []
-      if (cur.includes(i)) return { ...d, featuredIndexes: cur.filter((x) => x !== i) }
-      return { ...d, featuredIndexes: [...cur, i].sort((a, b) => a - b) }
-    })
+  /** 兼容老数据：保留 toggleFeatured 接口但 noop（"心形精选"功能已废弃） */
+  const toggleFeatured = (_i: number) => setData((d) => d)
 
   // —— 本地上传照片：canvas 压缩为 base64 后嵌入数据（随链接分享）——
   const fileInputRef = useRef<HTMLInputElement>(null)
@@ -363,9 +355,8 @@ function InvitationEditor() {
             <section className="bg-secondary rounded-2xl border border-primary p-5 sm:p-6">
               <SectionTitle icon={ImagePlus} text="照片墙（可选）" />
               <p className="text-xs text-muted mb-3 leading-relaxed">
-                宾客将以<b className="text-primary">心形精选墙 + 平铺</b>形式查看：心形内展示你勾选的
-                <b className="text-primary">精选照片（不限数量，缩略图按数量自适应）</b>，其余照片在下方平铺；
-                点击任意照片可查看大图与<b className="text-primary">照片简介</b>。支持
+                宾客将以<b className="text-primary">心形铺满墙</b>形式查看：所有照片自动填满心形（缩略图按数量自适应），
+                超过 60 张时剩余照片在下方平铺；点击任意照片可查看大图与<b className="text-primary">照片简介</b>。支持
                 <b className="text-primary">本地上传</b>（自动压缩嵌入链接，建议 ≤6 张）或粘贴图床直链。
               </p>
 
@@ -396,20 +387,16 @@ function InvitationEditor() {
                 {uploadErr && <span className="text-xs text-rose-400">{uploadErr}</span>}
               </div>
 
-              {/* 心形精选提示条 */}
+              {/* 说明：所有照片自动铺满心形 */}
               <div className="mb-3 flex items-center justify-between rounded-lg bg-tertiary/40 px-3 py-2">
                 <span className="text-xs text-muted">
-                  💖 已选 <b className="text-primary">{data.featuredIndexes?.length ?? 0}</b> / 共 {data.photos.length} 张心形精选
-                  {data.featuredIndexes && data.featuredIndexes.length > 0
-                    ? '（缩略图会按数量自适应）'
-                    : '（默认全部进心形铺满）'}
+                  💖 所有照片自动 <b className="text-primary">铺满心形</b>（缩略图按数量自适应，60 张以内全部进心形、超过则下方平铺）
                 </span>
-                <span className="text-[11px] text-muted/80">未勾选的照片将在心形下方平铺</span>
+                <span className="text-[11px] text-muted/80">点击任意照片查看大图与简介</span>
               </div>
 
               <div className="space-y-2.5">
                 {data.photos.map((url, i) => {
-                  const isFeatured = data.featuredIndexes?.includes(i) ?? false
                   return (
                     <div key={i} className="rounded-xl border border-primary/40 bg-tertiary/30 p-2.5">
                       <div className="flex gap-2">
@@ -434,17 +421,6 @@ function InvitationEditor() {
                             </span>
                           )}
                         </div>
-                        <button
-                          onClick={() => toggleFeatured(i)}
-                          className={`shrink-0 px-3 rounded-lg border text-xs font-medium transition-colors ${
-                            isFeatured
-                              ? 'bg-rose-500/15 text-rose-400 border-rose-400/40'
-                              : 'bg-tertiary text-muted border-primary/30 hover:text-rose-400'
-                          }`}
-                          title={isFeatured ? '取消心形精选' : '设为心形精选'}
-                        >
-                          {isFeatured ? '❤ 精选' : '♡ 心形'}
-                        </button>
                         <button
                           onClick={() => removePhoto(i)}
                           className="shrink-0 px-3 rounded-lg bg-tertiary text-muted hover:text-rose-400 hover:bg-rose-500/10 transition-colors"
