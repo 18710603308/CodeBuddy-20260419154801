@@ -42,6 +42,21 @@ function pointInPolygon(x: number, y: number, poly: Pt[]): boolean {
 
 const dist = (a: Pt, b: Pt) => Math.hypot(a.x - b.x, a.y - b.y)
 
+/**
+ * OSS/CDN 链接（.aliyuncs.com 或 image.dns.52cv.top）追加图片处理参数生成轻量缩略图 URL；
+ * base64 / 相对路径等其余来源原样返回。
+ * 仅用于缩略图墙——Lightbox 大图与「下载原图」仍使用原 URL（保留原图能力）。
+ */
+const CDN_OR_OSS = ['.aliyuncs.com', 'image.dns.52cv.top']
+function thumbUrl(src: string): string {
+  if (typeof src !== 'string' || !src) return src
+  if (CDN_OR_OSS.some((h) => src.includes(h)) && !src.includes('x-oss-process')) {
+    const sep = src.includes('?') ? '&' : '?'
+    return `${src}${sep}x-oss-process=image/resize,w_400`
+  }
+  return src
+}
+
 /** 按照片数量自适应缩略图尺寸（正方形 1:1，单位 px） */
 function getThumbSize(n: number): number {
   if (n <= 6) return 88
@@ -307,7 +322,7 @@ export function HeartPhotoWall({
     >
       {!broken.has(origIdx) && display[origIdx] ? (
         <img
-          src={display[origIdx]}
+          src={thumbUrl(display[origIdx])}
           alt={`照片 ${origIdx + 1}`}
           className="block h-full w-full object-cover"
           loading="lazy"

@@ -28,6 +28,36 @@
 
 ## 2. 最近更新
 
+### 电子请柬：照片存储对接阿里云 OSS（无地域属性 bucket）(2026-08-18)
+
+- **动机**：照片 base64 直存数据库体积大、本地 uploads/ 单机存储无备份；改用阿里云 OSS 存照片，数据库只存 OSS URL
+- **bucket**：`52cv-website`（控制台显示"无地域属性(中国内地)"，公共读 + 防盗链白名单 `https://52cv.top`）
+- **无地域属性 bucket 踩坑（关键）**：
+  - 默认域名 `<bucket>.oss.aliyuncs.com` → **403 NonStandardHostForbidden**（2025-03-20 起新开通 OSS 用户的中国大陆 bucket 默认公网域名被禁用）
+  - 真实 endpoint 由服务端错误 XML 返回：**`oss-rg-china-mainland.aliyuncs.com`**
+  - `ali-oss` SDK `region` 参数不允许点号（`The region must be conform to the specifications`），须用 **`endpoint` 参数**
+- **代码改动**（`invitation-api/server.js` + `package.json`，commit `77c061d`）：
+  - `initOSS`：`OSS_REGION` 以 `.aliyuncs.com` 结尾 → `opts.endpoint = https://<region>`，否则 `opts.region`
+  - `ossBaseUrl()`：同上规则拼访问域名（无 CDN 时）
+  - `extractPhotos` 改 async：OSS 优先（key=`invitation/<id>-p<i>.<ext>`，Cache-Control immutable），未配 OSS 回退本地 uploads/；`removeInvPhotos` 清理 OSS/本地旧照片
+  - `package.json` 新增 `ali-oss@^6.20.0`
+- **实测验证**：连接/列目录/上传/删除 ✓；防盗链生效（无 Referer 被拒）✓；公共读后带/不带 Referer 均 HTTP 200 ✓；bucket 无残留
+- **部署**：服务器 `/opt/invitation-api` 需 `npm install`；pm2 环境变量 `OSS_REGION=oss-rg-china-mainland.aliyuncs.com` / `OSS_BUCKET=52cv-website` / `OSS_ACCESS_KEY_ID` / `OSS_ACCESS_KEY_SECRET`（密钥只入 pm2 env，不落代码）
+- ⚠️ 安全提醒：AccessKey 曾在对话中明文出现，部署完成后建议 RAM 控制台轮换
+
+### 电子请柬：OSS 图片接入 CDN 加速域名（2026-08-18）
+
+- **动机**：46 张微信原图（10~17MB/张）直链 OSS，照片墙每访客下载 ~570MB；先落地 `x-oss-process=image/resize,w_400` 缩略图（流量 -99%），再接入 CDN 加速域名提升大图加载
+- **CDN 加速域名**：`image.dns.52cv.top`（CNAME → `image.dns.52cv.top.w.kunlunaq.com`，阿里云 CDN）
+- **控制台配置（用户操作，3 个关键项）**：
+  - 防盗链白名单加裸域 `52cv.top` —— `*.52cv.top` 通配符**不含裸域**，不加则页面（裸域 Referer）403 `denied by Referer ACL`（CDN 层）
+  - HTTPS 证书（DigiCert DV，CN=image.dns.52cv.top）—— 页面是 https，CDN 域名不上证书会 Mixed Content 拦截 / 握手失败
+  - 缓存配置「忽略参数」→ **不忽略** —— 在「缓存配置」下**独立子菜单**（不在「缓存过期时间」弹窗内）；忽略模式下带参与不带参共享缓存 key，先缓存原图则缩略图请求命中原图（12.6MB），反之大图拿到小图，互相污染
+- **排查要点**：OSS 层防盗链全放行（`AllowEmptyReferer=true` + RefererList 空），403 来自 **CDN 层**（`Server: Tengine` + `Via: kunlun` + `X-Tengine-Error: denied by Referer ACL`）；缓存污染用**未访问过的新照片** + 看 `X-Cache`/`Age`/`X-Swift-SaveTime` 判断；CNAME 目标域名不可直接访问（403+无证书）
+- **前端**（`devtools-hub/src/components/invitation/HeartPhotoWall.tsx`）：`thumbUrl(src)` 对 `.aliyuncs.com` / `image.dns.52cv.top` 链接自动追加 `?x-oss-process=image/resize,w_400`，仅缩略图墙使用；Lightbox 大图与「下载原图」保留原 URL
+- **数据库**：`Cl3E8vBc`（唯一 OSS 照片请柬）46 个 photos URL 前缀替换为 `https://image.dns.52cv.top`（PG 直改）
+- **实测**：缩略图 46/46 走 CDN + resize 参数全加载（400×600）；Lightbox 大图 CDN 原图 3911×5866 ✓；带参 215KB / 不带参 12.6MB 缓存隔离 ✓
+
 ### 电子请柬：短链接 + 数据库存储 (2026-08-17)
 
 - **动机**：此前请柬数据（含 base64 图片）全部 base64url 编码进 URL `?d=`，链接超长难分享
