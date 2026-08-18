@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import type { ReactNode } from 'react'
 import { Link } from 'react-router-dom'
 import {
-  ArrowLeft, Calendar, Check, Clock, ExternalLink, Heart, MapPin,
+  Calendar, Check, Clock, ExternalLink, Heart, MapPin,
   Music2, Pause, Play, Share2, SkipBack, SkipForward, Wand2, X,
 } from 'lucide-react'
 import {
@@ -79,11 +79,9 @@ function Ornament({ color = '#b45309' }: { color?: string }) {
 // ==================== 浏览页主组件 ====================
 export function InvitationView({
   data,
-  onBack,
   views,
 }: {
   data: InvitationData
-  onBack: () => void
   views?: number
 }) {
   const [opened, setOpened] = useState(false)
@@ -467,13 +465,9 @@ export function InvitationView({
 
       {/* 顶部浮动操作条 */}
       <div
-        className="fixed top-4 left-1/2 -translate-x-1/2 z-[60] w-[92%] max-w-md flex items-center justify-between gap-2 rounded-full px-4 py-2 text-white text-sm shadow-lg"
+        className="fixed top-4 left-1/2 -translate-x-1/2 z-[60] w-[92%] max-w-md flex items-center justify-end gap-2 rounded-full px-4 py-2 text-white text-sm shadow-lg"
         style={{ background: `${theme.primaryDark}cc`, backdropFilter: 'blur(12px)' }}
       >
-        <button onClick={onBack} className="inline-flex items-center gap-1.5 hover:opacity-80 transition-opacity">
-          <ArrowLeft className="w-4 h-4" />
-          <span className="hidden sm:inline">编辑请柬</span>
-        </button>
         <button
           onClick={share}
           className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/20 hover:bg-white/30 transition-colors"

@@ -58,6 +58,16 @@
 - **数据库**：`Cl3E8vBc`（唯一 OSS 照片请柬）46 个 photos URL 前缀替换为 `https://image.dns.52cv.top`（PG 直改）
 - **实测**：缩略图 46/46 走 CDN + resize 参数全加载（400×600）；Lightbox 大图 CDN 原图 3911×5866 ✓；带参 215KB / 不带参 12.6MB 缓存隔离 ✓
 
+### 电子请柬：浏览页移除「编辑请柬」入口（2026-08-18）
+
+- **动机**：请柬分享后会被访客误触「编辑请柬」按钮进入编辑模式，防止误改已生成请柬数据
+- **代码改动**（`devtools-hub/src/components/invitation/InvitationView.tsx` + `src/components/Invitation.tsx`）：
+  - `InvitationView`：删除顶部浮动操作条左侧「编辑请柬」按钮，操作条改 `justify-end`（仅保留右侧「分享请柬」）
+  - 同步清理 `onBack` prop 链：`InvitationView` 移除 `onBack` prop → `Invitation.tsx` 长链/短链调用与 `RemoteInvitation` 移除 `onBack` 传参 → `edit:'1'` 入口不再从浏览页暴露
+  - 编辑器能力保留：仍可通过 URL `?id=X&edit=1` 直接进入编辑
+- **部署**：新 JS `index-C3ZnMkcX.js`（`application/javascript` ✓）
+- **浏览器实测**：封面仅「轻触开启」；正文页按钮为「分享请柬」「送出祝福」，无任何「编辑」字样 ✓
+
 ### 电子请柬：短链接 + 数据库存储 (2026-08-17)
 
 - **动机**：此前请柬数据（含 base64 图片）全部 base64url 编码进 URL `?d=`，链接超长难分享

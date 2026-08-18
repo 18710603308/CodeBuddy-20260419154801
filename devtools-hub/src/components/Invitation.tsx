@@ -57,7 +57,7 @@ export function Invitation() {
   // 有有效 d 参数 → 旧版长链接请柬浏览模式
   if (encoded && data) {
     return (
-      <InvitationView data={data} onBack={() => setSearchParams({ d: encoded, edit: '1' })} />
+      <InvitationView data={data} />
     )
   }
   if (encoded && !data) {
@@ -66,14 +66,14 @@ export function Invitation() {
   // 有短 id → 从数据库加载请柬浏览
   if (id) {
     return (
-      <RemoteInvitation key={id} id={id} onBack={() => setSearchParams({ id, edit: '1' })} />
+      <RemoteInvitation key={id} id={id} />
     )
   }
   return <InvitationEditor />
 }
 
 // ==================== 短链接请柬：从数据库异步加载 ====================
-function RemoteInvitation({ id, onBack }: { id: string; onBack: () => void }) {
+function RemoteInvitation({ id }: { id: string }) {
   const [state, setState] = useState<'loading' | 'ok' | 'error'>('loading')
   const [data, setData] = useState<InvitationData | null>(null)
   const [views, setViews] = useState(0)
@@ -106,7 +106,7 @@ function RemoteInvitation({ id, onBack }: { id: string; onBack: () => void }) {
     )
   }
   if (state === 'error' || !data) return <InvalidLink />
-  return <InvitationView data={data} onBack={onBack} views={views} />
+  return <InvitationView data={data} views={views} />
 }
 
 // ==================== 链接无效提示 ====================
