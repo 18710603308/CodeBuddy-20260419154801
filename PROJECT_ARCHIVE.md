@@ -70,16 +70,18 @@
 
 ### 电子请柬：移动端双指缩放防误触翻页（2026-08-18）
 
-- **动机**：照片墙（含 Lightbox 全屏轮播）原触摸事件只判断 X 方向位移，移动端双指缩放/放大手势（`touches.length === 2`）被误判为 swipe 翻页，体验割裂
-- **代码改动**（`devtools-hub/src/components/invitation/PhotoCarousel.tsx`）：
-  - 新增 `multiTouchRef = useRef(false)`，记录本次触摸是否进入过多指
-  - `onTouchStart`：`e.touches.length > 1`（双指落屏）立即置 `multiTouchRef = true` 并清空 `touchX`，不进入 swipe 起始状态
-  - 新增 `onTouchMove`：中途加入第二根手指（单→多指缩放）时实时置 `multiTouchRef = true` 并清空 `touchX`，避免最后一根抬起时 `changedTouches[0]` 跨度过大误触发
-  - `onTouchEnd`：`multiTouchRef === true` 则**直接 return**（不翻页），同时清理 ref
-  - 新增 `onTouchCancel`：系统中断触摸（来电/手势冲突）时也清理
-  - 单指 swipe 行为完全保留（40px 阈值 + 短暂暂停自动播放）
-- **部署**：`index-C3ZnMkcX.js` MIME `application/javascript` ✓；服务器产物 `touches.length>1` 出现 2 次（touchStart + touchMove），多指判断已生效
-- **验证**：源码 grep `multiTouchRef` 7 处；构建产物中 `touches.length>1` 在 touchStart 和 touchMove 各出现一次
+- **动机**：照片墙 Lightbox 原触摸事件只判断 X 方向位移，移动端双指缩放/放大手势（`touches.length === 2`）被误判为 swipe 翻页，体验割裂
+- **⚠️ 排错关键**：`PhotoCarousel.tsx` 虽名为轮播组件但**从未被任何文件 import**（被 tree-shaken），用户实际看到的 Lightbox 是 `HeartPhotoWall.tsx` 内联实现的。第一次修复改错文件（部署后 hash 不变、行为无变化）——**改动前必须确认组件是否被引用**
+- **代码改动**（`devtools-hub/src/components/invitation/HeartPhotoWall.tsx`）：
+  - ref 从 `touchX: number` 升级为 `touchStartRef: { id, x, y }`（记录 touch identifier + 坐标），另加 `multiTouchRef` 标记多指
+  - Lightbox 根 div `style` 加 `touchAction: 'pan-y'`：浏览器只处理纵向滚动，捏合缩放不再由浏览器接管
+  - `onTouchStart`：`e.touches.length > 1`（双指落屏）立即置 `multiTouchRef = true` 并清空起始点，不进入 swipe 起始状态
+  - `onTouchMove`：中途加入第二根手指（单→多指缩放）时实时置 `multiTouchRef = true` 并清空起始点
+  - `onTouchEnd`：`multiTouchRef === true` 或起始点缺失则**直接 return**；否则只在 `changedTouches` 中**找到起始 identifier 的手指**时计算位移（双指缩放时另一指先抬、位移再大也不误判）；且要求 `|dx| > 60 && |dx| > |dy| * 1.2`（仅水平主导滑动才翻页，双指缩放手指多为斜向/竖向被过滤）
+  - `onTouchCancel`：系统中断触摸（来电/手势冲突）时也清理
+  - 单指 swipe 行为保留（阈值从 40px 提到 60px）
+- **部署**：新入口 `index-B8gVPX7q.js`（MIME `application/javascript` 902508 bytes ✓）；服务器产物 grep `touchAction:"pan-y"` 与多指 touchStart 逻辑均已确认
+- **⚠️ 部署坑**：rsync `--size-only` 因新旧 `index.html` 字节数相同而跳过传输，需 `--ignore-times` 强制覆盖（或先删服务器旧 index.html）
 
 ### 电子请柬：短链接 + 数据库存储 (2026-08-17)
 

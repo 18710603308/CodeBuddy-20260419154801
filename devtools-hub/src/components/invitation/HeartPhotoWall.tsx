@@ -203,7 +203,10 @@ export function HeartPhotoWall({
   const [openIndex, setOpenIndex] = useState<number | null>(null)
   const [broken, setBroken] = useState<Set<number>>(new Set())
   const [lightboxError, setLightboxError] = useState(false)
-  const touchX = useRef<number | null>(null)
+  // 起始触摸点（identifier + 坐标）：只认同一根手指的抬起，避免双指缩放时另一指位移被误判
+  const touchStartRef = useRef<{ id: number; x: number; y: number } | null>(null)
+  // 标记本次触摸是否进入过多指（双指缩放手势），进入过则忽略 swipe 翻页
+  const multiTouchRef = useRef(false)
 
   // 当前打开照片的 caption（按 photos 原下标取）
   const openOrigIndex = openIndex === null ? -1 : openIndex
@@ -430,17 +433,55 @@ export function HeartPhotoWall({
               background:
                 'radial-gradient(ellipse at center, rgba(255,240,235,0.97) 0%, rgba(252,222,210,0.97) 100%)',
               backdropFilter: 'blur(6px)',
+              // pan-y：浏览器只处理纵向滚动，横向手势与捏合缩放全部交给 JS 判断，杜绝原生缩放误触翻页
+              touchAction: 'pan-y',
             }}
             onClick={close}
             onTouchStart={(e) => {
-              touchX.current = e.touches[0].clientX
+              // 双指（缩放/旋转）立即标记为多指，彻底禁用本次 swipe
+              if (e.touches.length > 1) {
+                multiTouchRef.current = true
+                touchStartRef.current = null
+                return
+              }
+              const t = e.touches[0]
+              // 只记录起始的那根手指，后续只认它的抬起
+              touchStartRef.current = { id: t.identifier, x: t.clientX, y: t.clientY }
+              multiTouchRef.current = false
+            }}
+            onTouchMove={(e) => {
+              // 单指→双指（先落一指再上第二指缩放）也标记为多指
+              if (e.touches.length > 1) {
+                multiTouchRef.current = true
+                touchStartRef.current = null
+              }
             }}
             onTouchEnd={(e) => {
-              if (touchX.current !== null) {
-                const dx = e.changedTouches[0].clientX - touchX.current
-                if (Math.abs(dx) > 40) step(dx < 0 ? 1 : -1)
-                touchX.current = null
+              const st = touchStartRef.current
+              // 多指手势 / 无起始记录 → 不翻页
+              if (multiTouchRef.current || !st) {
+                multiTouchRef.current = false
+                touchStartRef.current = null
+                return
               }
+              // 只认起始手指的抬起：双指缩放时另一根手指先抬，位移再大也不会误判
+              const end = Array.from(e.changedTouches).find((t) => t.identifier === st.id)
+              if (end) {
+                const dx = end.clientX - st.x
+                const dy = end.clientY - st.y
+                // 仅水平主导的滑动才翻页：位移 > 60px 且横向显著大于纵向
+                // （双指缩放手指位移多为斜向/竖向，被方向过滤拦截）
+                if (Math.abs(dx) > 60 && Math.abs(dx) > Math.abs(dy) * 1.2) {
+                  step(dx < 0 ? 1 : -1)
+                }
+              }
+              touchStartRef.current = null
+              multiTouchRef.current = false
+            }}
+            onTouchCancel={() => {
+              // 系统中断触摸（来电/手势冲突）时也清理
+              touchStartRef.current = null
+              multiTouchRef.current = false
             }}
           >
             {/* 下载原图（未压缩） */}
