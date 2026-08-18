@@ -24,6 +24,8 @@ export function PhotoCarousel({
   const [index, setIndex] = useState(0)
   const [paused, setPaused] = useState(false)
   const touchX = useRef<number | null>(null)
+  // 标记本次触摸是否进入过多指（双指缩放手势），若进入过则忽略 swipe 翻页
+  const multiTouchRef = useRef(false)
   const pauseTimer = useRef<number | null>(null)
 
   const total = photos.length
@@ -75,16 +77,41 @@ export function PhotoCarousel({
     <div
       className={fullscreen ? 'relative h-full w-full' : 'relative'}
       onTouchStart={(e) => {
+        // 多指（双指缩放）一开始就标记，避免后续被识别为 swipe
+        if (e.touches.length > 1) {
+          multiTouchRef.current = true
+          touchX.current = null
+          return
+        }
         touchX.current = e.touches[0].clientX
+        multiTouchRef.current = false
         pauseBriefly()
       }}
+      onTouchMove={(e) => {
+        // 中途加入第二根手指（单→多指缩放）也标记为多指
+        if (e.touches.length > 1) {
+          multiTouchRef.current = true
+          touchX.current = null
+        }
+      }}
       onTouchEnd={(e) => {
+        // 多指手势（缩放/旋转）不触发左右翻页
+        if (multiTouchRef.current) {
+          multiTouchRef.current = false
+          touchX.current = null
+          return
+        }
         if (touchX.current !== null) {
           const dx = e.changedTouches[0].clientX - touchX.current
           if (Math.abs(dx) > 40) (dx < 0 ? next : prev)()
           touchX.current = null
         }
         pauseBriefly()
+      }}
+      onTouchCancel={() => {
+        // 系统中断触摸（来电/手势冲突）时也清理
+        multiTouchRef.current = false
+        touchX.current = null
       }}
     >
       {/* 主图 */}

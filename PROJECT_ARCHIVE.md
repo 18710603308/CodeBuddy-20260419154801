@@ -68,6 +68,19 @@
 - **部署**：新 JS `index-C3ZnMkcX.js`（`application/javascript` ✓）
 - **浏览器实测**：封面仅「轻触开启」；正文页按钮为「分享请柬」「送出祝福」，无任何「编辑」字样 ✓
 
+### 电子请柬：移动端双指缩放防误触翻页（2026-08-18）
+
+- **动机**：照片墙（含 Lightbox 全屏轮播）原触摸事件只判断 X 方向位移，移动端双指缩放/放大手势（`touches.length === 2`）被误判为 swipe 翻页，体验割裂
+- **代码改动**（`devtools-hub/src/components/invitation/PhotoCarousel.tsx`）：
+  - 新增 `multiTouchRef = useRef(false)`，记录本次触摸是否进入过多指
+  - `onTouchStart`：`e.touches.length > 1`（双指落屏）立即置 `multiTouchRef = true` 并清空 `touchX`，不进入 swipe 起始状态
+  - 新增 `onTouchMove`：中途加入第二根手指（单→多指缩放）时实时置 `multiTouchRef = true` 并清空 `touchX`，避免最后一根抬起时 `changedTouches[0]` 跨度过大误触发
+  - `onTouchEnd`：`multiTouchRef === true` 则**直接 return**（不翻页），同时清理 ref
+  - 新增 `onTouchCancel`：系统中断触摸（来电/手势冲突）时也清理
+  - 单指 swipe 行为完全保留（40px 阈值 + 短暂暂停自动播放）
+- **部署**：`index-C3ZnMkcX.js` MIME `application/javascript` ✓；服务器产物 `touches.length>1` 出现 2 次（touchStart + touchMove），多指判断已生效
+- **验证**：源码 grep `multiTouchRef` 7 处；构建产物中 `touches.length>1` 在 touchStart 和 touchMove 各出现一次
+
 ### 电子请柬：短链接 + 数据库存储 (2026-08-17)
 
 - **动机**：此前请柬数据（含 base64 图片）全部 base64url 编码进 URL `?d=`，链接超长难分享
