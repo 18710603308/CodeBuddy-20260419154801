@@ -1,23 +1,25 @@
 /**
- * 电子请柬短链接 API — PostgreSQL 存储
+ * 电子请柬短链接 API — PostgreSQL 存储 + 阿里云 OSS 照片
  *
  * 存储请柬数据到 PostgreSQL，返回 8 位短 ID，前端通过短链接访问。
  * - 数据存 PostgreSQL（gaussdb-pg 容器，postgres:18，库 gaussdb_learn）
- * - 照片 base64 自动落盘到 uploads/，数据库只存 URL（读写更快，浏览器可并发加载）
+ * - 照片 base64 自动转存阿里云 OSS，数据库只存 URL（超大源文件走对象存储 + CDN，不再占源站带宽）
+ * - 未配置 OSS 时回退本地 uploads/（兼容旧部署与本地开发）
  * - GET 读取时自动累计浏览量 views
  *
  * 环境变量：
- *   PORT        监听端口，默认 3002
- *   PGHOST      数据库主机，默认 127.0.0.1
- *   PGPORT      数据库端口，默认 5432
- *   PGDATABASE  数据库名，默认 gaussdb_learn
- *   PGUSER      数据库用户，默认 postgres
- *   PGPASSWORD  数据库密码（建议生产通过环境变量注入）
+ *   PORT                监听端口，默认 3002
+ *   PGHOST/PGPORT/PGDATABASE/PGUSER/PGPASSWORD   PostgreSQL 连接（默认 127.0.0.1:5432/gaussdb_learn/postgres）
+ *   OSS_REGION          OSS 地域，如 oss-cn-shenzhen；无地域属性(中国内地) bucket 填 oss-rg-china-mainland.aliyuncs.com（配置后启用 OSS 照片存储）
+ *   OSS_BUCKET          OSS bucket，默认 52cv-website
+ *   OSS_ACCESS_KEY_ID   RAM 子账号 AccessKey ID
+ *   OSS_ACCESS_KEY_SECRET  RAM 子账号 AccessKey Secret
+ *   OSS_CDN_HOST        可选，照片访问域名（如 cdn.example.com，配 CDN 时用；缺省用 bucket 默认域名）
  *
  * 端点：
  *   POST /invitation          { data: InvitationData }  → { id }
  *   GET  /invitation/:id      → { data, views }
- *   GET  /uploads/:file       → 静态图片（照片文件）
+ *   GET  /uploads/:file       → 静态图片（旧数据本地照片，兼容）
  *   GET  /health              → { ok: true }
  */
 'use strict'
@@ -37,6 +39,39 @@ const MIN_INLINE = 512 // 小于该字节的 base64 保持内联（图标等）�
 const MIME = { png: 'image/png', jpg: 'image/jpeg', gif: 'image/gif', webp: 'image/webp' }
 
 fs.mkdirSync(UPLOAD_DIR, { recursive: true })
+
+// ==================== 阿里云 OSS 照片存储（可选） ====================
+const OSS_REGION = process.env.OSS_REGION
+const OSS_BUCKET = process.env.OSS_BUCKET || '52cv-website'
+const OSS_AK = process.env.OSS_ACCESS_KEY_ID
+const OSS_SK = process.env.OSS_ACCESS_KEY_SECRET
+// 照片访问基址：配了 CDN 用 CDN 域名；无地域属性 bucket 的 region 是 oss.aliyuncs.com（完整 endpoint），
+// 默认域名为 <bucket>.oss.aliyuncs.com；常规地域为 <bucket>.<region>.aliyuncs.com
+function ossBaseUrl() {
+  if (process.env.OSS_CDN_HOST) return `https://${process.env.OSS_CDN_HOST}`
+  if (!OSS_REGION) return null
+  if (OSS_REGION.endsWith('.aliyuncs.com')) return `https://${OSS_BUCKET}.${OSS_REGION}`
+  return `https://${OSS_BUCKET}.${OSS_REGION}.aliyuncs.com`
+}
+const OSS_PUBLIC_BASE = ossBaseUrl()
+
+let oss = null
+function initOSS() {
+  if (!OSS_REGION || !OSS_AK || !OSS_SK) {
+    console.warn('[invitation-api] OSS 未配置（OSS_REGION/OSS_ACCESS_KEY_ID/OSS_ACCESS_KEY_SECRET），照片回退本地 uploads/')
+    return
+  }
+  const OSS = require('ali-oss')
+  const opts = { bucket: OSS_BUCKET, accessKeyId: OSS_AK, accessKeySecret: OSS_SK }
+  if (OSS_REGION.endsWith('.aliyuncs.com')) {
+    // 无地域属性 bucket（如 oss-rg-china-mainland.aliyuncs.com）：SDK region 参数不允许点号，须用 endpoint
+    opts.endpoint = `https://${OSS_REGION}`
+  } else {
+    opts.region = OSS_REGION
+  }
+  oss = new OSS(opts)
+  console.log(`[invitation-api] OSS store: ${OSS_BUCKET}.${OSS_REGION} → ${OSS_PUBLIC_BASE}`)
+}
 
 // ==================== 存储层（PostgreSQL） ====================
 const pool = new Pool({
@@ -131,27 +166,62 @@ function readBody(req) {
   })
 }
 
-/** 把照片 base64 落盘为静态文件，数据库只存 URL；小图保持内联 */
-function extractPhotos(data, id) {
+/** 把照片 base64 转存（OSS 优先，未配置时落盘本地 uploads/），数据库只存 URL；小图保持内联 */
+async function extractPhotos(data, id) {
   if (!Array.isArray(data.photos) || data.photos.length === 0) return
   const urls = []
-  data.photos.forEach((src, i) => {
+  for (let i = 0; i < data.photos.length; i++) {
+    const src = data.photos[i]
     const m = typeof src === 'string' ? src.match(IMG_RE) : null
     if (!m) {
       urls.push(src) // 已是 URL 或非 base64，原样保留
-      return
+      continue
     }
     const ext = m[1] === 'jpeg' ? 'jpg' : m[1]
     const buf = Buffer.from(m[2], 'base64')
     if (buf.length < MIN_INLINE) {
       urls.push(src) // 小图保持内联，避免大量碎片文件
-      return
+      continue
     }
     const name = `${id}-p${i}.${ext}`
-    fs.writeFileSync(path.join(UPLOAD_DIR, name), buf)
-    urls.push(`/inv-api/uploads/${name}`)
-  })
+    const key = `invitation/${name}`
+    if (oss) {
+      await oss.put(key, buf, {
+        headers: {
+          'Content-Type': MIME[ext],
+          'Cache-Control': 'public, max-age=31536000, immutable',
+        },
+      })
+      urls.push(`${OSS_PUBLIC_BASE}/${key}`)
+    } else {
+      fs.writeFileSync(path.join(UPLOAD_DIR, name), buf)
+      urls.push(`/inv-api/uploads/${name}`)
+    }
+  }
   data.photos = urls
+}
+
+/** 删除某请柬 id 的旧照片（OSS 或本地，编辑重传前清理避免残留） */
+async function removeInvPhotos(id) {
+  const prefix = `invitation/${id}-p`
+  try {
+    if (oss) {
+      // 分批列出并删除 OSS 对象
+      let marker
+      do {
+        const r = await oss.list({ prefix, 'max-keys': 100, marker })
+        const objs = (r.objects || []).filter((o) => o.name.startsWith(prefix))
+        if (objs.length) await oss.deleteMulti(objs.map((o) => o.name))
+        marker = r.nextMarker || null
+      } while (marker)
+      return
+    }
+    for (const f of fs.readdirSync(UPLOAD_DIR)) {
+      if (f.startsWith(`${id}-p`)) fs.unlinkSync(path.join(UPLOAD_DIR, f))
+    }
+  } catch {
+    /* ignore */
+  }
 }
 
 /** 静态服务 uploads/ 下的照片文件 */
@@ -224,8 +294,8 @@ const server = http.createServer(async (req, res) => {
       do {
         id = genId()
       } while (await store.get(id))
-      // 照片 base64 落盘 → 数据库只存 URL
-      extractPhotos(data, id)
+      // 照片 base64 转存 OSS/本地 → 数据库只存 URL
+      await extractPhotos(data, id)
       await store.set(id, JSON.stringify(data))
       return send(res, 200, { id })
     }
@@ -247,16 +317,9 @@ const server = http.createServer(async (req, res) => {
       if (!data || typeof data !== 'object' || !data.date) {
         return send(res, 400, { error: 'invalid invitation data' })
       }
-      // 清理该 id 旧照片文件后重新落盘（避免删除/重排照片后残留旧文件）
-      try {
-        const prefix = `${id}-p`
-        for (const f of fs.readdirSync(UPLOAD_DIR)) {
-          if (f.startsWith(prefix)) fs.unlinkSync(path.join(UPLOAD_DIR, f))
-        }
-      } catch {
-        /* ignore */
-      }
-      extractPhotos(data, id)
+      // 清理该 id 旧照片后重新转存（避免删除/重排照片后残留旧文件）
+      await removeInvPhotos(id)
+      await extractPhotos(data, id)
       await store.update(id, JSON.stringify(data))
       return send(res, 200, { ok: true, id })
     }
@@ -279,10 +342,11 @@ const server = http.createServer(async (req, res) => {
   }
 })
 
+initOSS()
 initStore()
   .then(() => {
     server.listen(PORT, () => {
-      console.log(`[invitation-api] listening on :${PORT} (store=${store.kind})`)
+      console.log(`[invitation-api] listening on :${PORT} (store=${store.kind}, photos=${oss ? 'oss' : 'local'})`)
     })
   })
   .catch((e) => {
