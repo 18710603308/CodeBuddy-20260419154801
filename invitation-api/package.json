@@ -1,12 +1,12 @@
 {
   "name": "invitation-api",
-  "version": "1.0.0",
-  "description": "电子请柬短链接存储 API（零依赖，Node 内置 http）",
+  "version": "1.1.0",
+  "description": "电子请柬短链接存储 API（PostgreSQL + Node 内置 http）",
   "main": "server.js",
   "scripts": {
     "start": "node server.js"
   },
-  "optionalDependencies": {
-    "better-sqlite3": "^11.0.0"
+  "dependencies": {
+    "pg": "^8.13.1"
   }
 }

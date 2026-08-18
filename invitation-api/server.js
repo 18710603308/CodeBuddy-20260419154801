@@ -1,15 +1,18 @@
 /**
- * 电子请柬短链接 API — 零依赖实现
+ * 电子请柬短链接 API — PostgreSQL 存储
  *
- * 存储请柬数据到数据库，返回 8 位短 ID，前端通过短链接访问。
- * - 优先使用 better-sqlite3（若已安装）→ SQLite 数据库
- * - 否则回退 JSON 文件存储（零依赖，可直接运行）
+ * 存储请柬数据到 PostgreSQL，返回 8 位短 ID，前端通过短链接访问。
+ * - 数据存 PostgreSQL（gaussdb-pg 容器，postgres:18，库 gaussdb_learn）
  * - 照片 base64 自动落盘到 uploads/，数据库只存 URL（读写更快，浏览器可并发加载）
  * - GET 读取时自动累计浏览量 views
  *
  * 环境变量：
- *   PORT         监听端口，默认 3002
- *   INV_DB_PATH  数据库文件路径，默认本目录 invitations.db / invitations.json
+ *   PORT        监听端口，默认 3002
+ *   PGHOST      数据库主机，默认 127.0.0.1
+ *   PGPORT      数据库端口，默认 5432
+ *   PGDATABASE  数据库名，默认 gaussdb_learn
+ *   PGUSER      数据库用户，默认 postgres
+ *   PGPASSWORD  数据库密码（建议生产通过环境变量注入）
  *
  * 端点：
  *   POST /invitation          { data: InvitationData }  → { id }
@@ -23,10 +26,11 @@ const http = require('http')
 const crypto = require('crypto')
 const path = require('path')
 const fs = require('fs')
+const { Pool } = require('pg')
 
 const PORT = Number(process.env.PORT || 3002)
 const ID_LEN = 8
-const MAX_BODY = 40 * 1024 * 1024 // 40MB（多张照片 base64）
+const MAX_BODY = 100 * 1024 * 1024 // 100MB（多张照片原图 base64；nginx 侧 client_max_body_size 需同步 ≥ 该值）
 const UPLOAD_DIR = path.join(__dirname, 'uploads')
 const IMG_RE = /^data:image\/(png|jpe?g|gif|webp);base64,([A-Za-z0-9+/=]+)$/
 const MIN_INLINE = 512 // 小于该字节的 base64 保持内联（图标等），避免碎片化
@@ -34,79 +38,58 @@ const MIME = { png: 'image/png', jpg: 'image/jpeg', gif: 'image/gif', webp: 'ima
 
 fs.mkdirSync(UPLOAD_DIR, { recursive: true })
 
-// ==================== 存储层 ====================
+// ==================== 存储层（PostgreSQL） ====================
+const pool = new Pool({
+  host: process.env.PGHOST || '127.0.0.1',
+  port: Number(process.env.PGPORT || 5432),
+  database: process.env.PGDATABASE || 'gaussdb_learn',
+  user: process.env.PGUSER || 'postgres',
+  password: process.env.PGPASSWORD || '95AfslRpWgM9056aZOIh',
+  max: 10,
+  connectionTimeoutMillis: 5000,
+})
+
 let store
 
-// 尝试 SQLite（better-sqlite3）
-try {
-  const Database = require('better-sqlite3')
-  const dbPath = process.env.INV_DB_PATH || path.join(__dirname, 'invitations.db')
-  const db = new Database(dbPath)
-  db.exec(
+/** 建表并初始化 store（pg 为异步，须在 listen 前完成） */
+async function initStore() {
+  await pool.query(
     `CREATE TABLE IF NOT EXISTS invitations (
        id TEXT PRIMARY KEY,
        data TEXT NOT NULL,
        views INTEGER NOT NULL DEFAULT 0,
-       created_at INTEGER NOT NULL
+       created_at BIGINT NOT NULL
      )`
   )
-  // 兼容旧表（无 views 列时补充）
-  const cols = db.prepare('PRAGMA table_info(invitations)').all().map((c) => c.name)
-  if (!cols.includes('views')) db.exec('ALTER TABLE invitations ADD COLUMN views INTEGER NOT NULL DEFAULT 0')
-
-  const insert = db.prepare('INSERT INTO invitations (id, data, views, created_at) VALUES (?, ?, 0, ?)')
-  const getStmt = db.prepare('SELECT data, views FROM invitations WHERE id = ?')
-  const bumpStmt = db.prepare('UPDATE invitations SET views = views + 1 WHERE id = ?')
-  const updateStmt = db.prepare('UPDATE invitations SET data = ? WHERE id = ?')
   store = {
-    kind: 'sqlite',
-    set: (id, data) => insert.run(id, data, Date.now()),
-    get: (id) => {
-      const row = getStmt.get(id)
-      return row ? { data: row.data, views: row.views || 0 } : null
+    kind: 'postgres',
+    set: async (id, data) => {
+      await pool.query('INSERT INTO invitations (id, data, views, created_at) VALUES ($1, $2, 0, $3)', [
+        id,
+        data,
+        Date.now(),
+      ])
     },
-    update: (id, data) => updateStmt.run(data, id).changes > 0,
-    bump: (id) => {
-      const row = getStmt.get(id)
-      if (!row) return null
-      bumpStmt.run(id)
-      return (row.views || 0) + 1
+    get: async (id) => {
+      const r = await pool.query('SELECT data, views FROM invitations WHERE id = $1', [id])
+      if (r.rowCount === 0) return null
+      return { data: r.rows[0].data, views: r.rows[0].views || 0 }
     },
-  }
-  console.log(`[invitation-api] SQLite store: ${dbPath}`)
-} catch (e) {
-  // JSON 文件存储（零依赖回退）
-  const jsonPath = process.env.INV_DB_PATH || path.join(__dirname, 'invitations.json')
-  let map = {}
-  try {
-    map = JSON.parse(fs.readFileSync(jsonPath, 'utf8'))
-  } catch {
-    /* 首次运行 */
-  }
-  const persist = () => {
-    fs.writeFileSync(jsonPath, JSON.stringify(map))
-  }
-  store = {
-    kind: 'json',
-    set: (id, data) => {
-      map[id] = { data, views: 0, created_at: Date.now() }
-      persist()
+    update: async (id, data) => {
+      const r = await pool.query('UPDATE invitations SET data = $1 WHERE id = $2', [data, id])
+      return r.rowCount > 0
     },
-    get: (id) => (map[id] ? { data: map[id].data, views: map[id].views || 0 } : null),
-    update: (id, data) => {
-      if (!map[id]) return false
-      map[id].data = data
-      persist()
-      return true
-    },
-    bump: (id) => {
-      if (!map[id]) return null
-      map[id].views = (map[id].views || 0) + 1
-      persist()
-      return map[id].views
+    bump: async (id) => {
+      const r = await pool.query('UPDATE invitations SET views = views + 1 WHERE id = $1 RETURNING views', [id])
+      if (r.rowCount === 0) return null
+      return r.rows[0].views
     },
   }
-  console.log(`[invitation-api] JSON store: ${jsonPath} (better-sqlite3 未安装)`)
+  console.log(
+    `[invitation-api] PostgreSQL store: ${process.env.PGHOST || '127.0.0.1'}:${process.env.PGPORT || 5432}/${
+      process.env.PGDATABASE || 'gaussdb_learn'
+    }`
+  )
 }
 
 // ==================== 工具 ====================
@@ -240,10 +223,10 @@ const server = http.createServer(async (req, res) => {
       let id
       do {
         id = genId()
-      } while (store.get(id))
+      } while (await store.get(id))
       // 照片 base64 落盘 → 数据库只存 URL
       extractPhotos(data, id)
-      store.set(id, JSON.stringify(data))
+      await store.set(id, JSON.stringify(data))
       return send(res, 200, { id })
     }
 
@@ -253,7 +236,7 @@ const server = http.createServer(async (req, res) => {
       if (!/^[A-Za-z0-9_-]{4,32}$/.test(id)) {
         return send(res, 400, { error: 'invalid id' })
       }
-      if (!store.get(id)) return send(res, 404, { error: 'not found' })
+      if (!(await store.get(id))) return send(res, 404, { error: 'not found' })
       const raw = await readBody(req)
       let data
       try {
@@ -274,7 +257,7 @@ const server = http.createServer(async (req, res) => {
         /* ignore */
       }
       extractPhotos(data, id)
-      store.update(id, JSON.stringify(data))
+      await store.update(id, JSON.stringify(data))
       return send(res, 200, { ok: true, id })
     }
 
@@ -284,9 +267,9 @@ const server = http.createServer(async (req, res) => {
       if (!/^[A-Za-z0-9_-]{4,32}$/.test(id)) {
         return send(res, 400, { error: 'invalid id' })
       }
-      const row = store.get(id)
+      const row = await store.get(id)
       if (!row) return send(res, 404, { error: 'not found' })
-      const views = store.bump(id)
+      const views = await store.bump(id)
       return send(res, 200, { data: JSON.parse(row.data), views })
     }
 
@@ -296,6 +279,13 @@ const server = http.createServer(async (req, res) => {
   }
 })
 
-server.listen(PORT, () => {
-  console.log(`[invitation-api] listening on :${PORT} (store=${store.kind})`)
-})
+initStore()
+  .then(() => {
+    server.listen(PORT, () => {
+      console.log(`[invitation-api] listening on :${PORT} (store=${store.kind})`)
+    })
+  })
+  .catch((e) => {
+    console.error(`[invitation-api] PostgreSQL init failed: ${e.message}`)
+    process.exit(1)
+  })
