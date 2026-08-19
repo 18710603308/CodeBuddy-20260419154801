@@ -83,6 +83,15 @@
 - **部署**：新入口 `index-B8gVPX7q.js`（MIME `application/javascript` 902508 bytes ✓）；服务器产物 grep `touchAction:"pan-y"` 与多指 touchStart 逻辑均已确认
 - **⚠️ 部署坑**：rsync `--size-only` 因新旧 `index.html` 字节数相同而跳过传输，需 `--ignore-times` 强制覆盖（或先删服务器旧 index.html）
 
+### 电子请柬：背景音乐改为《执子之手》（2026-08-19）
+
+- **需求**：婚礼请柬背景音乐改为《执子之手》宝石Gem/哩哩
+- **版权排查**：原版网易云 id=1995495104 为 VIP 收费歌曲（详情接口 `fee:1`），`outer/url` 外链仅返回 **30 秒试听片段**（128kbps / 480KB，ffprobe 验证 duration=30s）——与之前《APT.》原版同样受限
+- **解决方案**：改用网易云上可完整播放的 Cover 版本 id=3381679941（王六一《执子之手 (Cover 宝石Gem、哩哩)》，`fee:0` 免费，实测 3,057,783 bytes / **191 秒完整版**，`outer/url` 200 audio/mpeg ✓）
+- **改动**（`devtools-hub/src/data/invitationMusic.ts`）：歌单第一首（默认播放）改为《执子之手》（artist 标注「宝石Gem/哩哩（Cover 王六一）」），保留第二首《24 小时摇滚聚会》轮播；注释更新版权说明
+- **部署**：新入口 `index-DFl7Y3us.js`（MIME `application/javascript` 902535 bytes ✓）；服务器产物 grep `3381679941` 已确认
+- **备选**：若需原唱完整版，可在请柬编辑器自定义音乐上传原版音频（`data.music` 字段已支持）
+
 ### 电子请柬：短链接 + 数据库存储 (2026-08-17)
 
 - **动机**：此前请柬数据（含 base64 图片）全部 base64url 编码进 URL `?d=`，链接超长难分享
