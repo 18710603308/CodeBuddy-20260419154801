@@ -92,6 +92,15 @@
 - **部署**：新入口 `index-DFl7Y3us.js`（MIME `application/javascript` 902535 bytes ✓）；服务器产物 grep `3381679941` 已确认
 - **备选**：若需原唱完整版，可在请柬编辑器自定义音乐上传原版音频（`data.music` 字段已支持）
 
+### 电子请柬：背景音乐默认单曲循环《执子之手》（2026-08-19）
+
+- **需求**：执子之手作为默认单曲循环；APT. 与 24 小时摇滚聚会仅作可选歌单，**除非手动切换否则不自动播放**
+- **改动**（`devtools-hub/src/data/invitationMusic.ts` + `src/components/invitation/InvitationView.tsx`）：
+  - `invitationMusic.ts` 拆分导出：`INVITATION_DEFAULT_TRACK`（执子之手，单曲循环）+ `INVITATION_OPTIONAL_TRACKS`（APT. / 24 小时摇滚聚会）+ 兼容的 `INVITATION_PLAYLIST`（默认曲目在前，播放列表拼接用）
+  - `InvitationView.tsx`：`<audio onEnded>` 从 `changeTrack(1)` 自动切歌改为**重播当前曲目**（`a.currentTime = 0; a.play()`）——播放完不切歌，保持单曲循环；手动点「上一首/下一首」（`changeTrack`）才在完整歌单间切换（含自定义音乐）
+- **行为**：进入页面默认播放执子之手并循环；点「下一首」→ APT. → 24 小时摇滚聚会 → 执子之手 → …；切到某首后仍单曲循环该首（不会自动跳回）
+- **部署**：新入口 `index-DkKvTJKu.js`（MIME `application/javascript` 902754 bytes ✓）；服务器产物三首歌 id（3381679941/2714755782/348107）均已确认
+
 ### 电子请柬：短链接 + 数据库存储 (2026-08-17)
 
 - **动机**：此前请柬数据（含 base64 图片）全部 base64url 编码进 URL `?d=`，链接超长难分享

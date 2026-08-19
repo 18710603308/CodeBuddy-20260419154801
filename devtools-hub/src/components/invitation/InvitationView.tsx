@@ -948,7 +948,17 @@ export function InvitationView({
         src={current.src}
         preload="auto"
         className="hidden"
-        onEnded={() => changeTrack(1)}
+        onEnded={() => {
+          // 默认单曲循环：播放完重播当前曲目（执子之手），不自动切歌。
+          // 只有用户手动点「上一首/下一首」才会切换（APT/24 小时摇滚聚会等可选曲目）
+          const a = audioRef.current
+          if (a) {
+            a.currentTime = 0
+            a.play()
+              .then(() => syncPlaying(true))
+              .catch(() => syncPlaying(false))
+          }
+        }}
         onPlaying={() => syncPlaying(true)}
         onPause={() => syncPlaying(false)}
         onError={() => syncPlaying(false)}
