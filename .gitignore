@@ -28,6 +28,12 @@ dist-ssr
 .trae/
 .workbuddy/
 
+# Playwright CLI test artifacts
+.playwright-cli/
+
+# One-off OSS connectivity test script (temp, run with env keys)
+invitation-api/test-oss.js
+
 # Large runtime dependencies (documented separately)
 devtools-hub/public/emulatorjs/data/
 devtools-hub/public/roms/

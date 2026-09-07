@@ -192,6 +192,20 @@
   }
 }
 
+/* 封面视频 Ken Burns 缓慢推拉（让循环素材始终有动感） */
+@keyframes slow-zoom {
+  0%,
+  100% {
+    transform: scale(1.02);
+  }
+  50% {
+    transform: scale(1.14);
+  }
+}
+.animate-slow-zoom {
+  animation: slow-zoom 26s ease-in-out infinite;
+}
+
 /* 上浮提示（封面“上滑”箭头） */
 @keyframes float-bounce {
   0%,
@@ -284,6 +298,20 @@
   animation: float-y 3.2s ease-in-out infinite;
 }
 
+/* 水平轻飘（胶片长廊左右滑动提示） */
+@keyframes float-x {
+  0%,
+  100% {
+    transform: translateX(0);
+  }
+  50% {
+    transform: translateX(8px);
+  }
+}
+.animate-float-x {
+  animation: float-x 2.6s ease-in-out infinite;
+}
+
 /* 图标轻摇 */
 @keyframes wiggle {
   0%,
@@ -296,6 +324,16 @@
 }
 .animate-wiggle {
   animation: wiggle 1.6s ease-in-out infinite;
+}
+
+/* 音符图标慢速旋转（音乐播放中） */
+@keyframes spin-slow {
+  to {
+    transform: rotate(360deg);
+  }
+}
+.animate-spin-slow {
+  animation: spin-slow 4s linear infinite;
 }
 
 /* 倒计时数字跳动 */

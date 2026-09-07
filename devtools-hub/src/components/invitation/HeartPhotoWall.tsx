@@ -328,7 +328,8 @@ export function HeartPhotoWall({
           src={thumbUrl(display[origIdx])}
           alt={`照片 ${origIdx + 1}`}
           className="block h-full w-full object-cover"
-          loading="lazy"
+          loading="eager"
+          decoding="async"
           draggable={false}
           onError={() => setBroken((s) => new Set(s).add(origIdx))}
         />
