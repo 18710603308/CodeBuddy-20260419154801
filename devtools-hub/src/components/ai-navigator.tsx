@@ -192,7 +192,7 @@ export function AINavigator() {
               <div className="w-8 h-8 rounded-lg bg-blue-500/10 border border-blue-500/30 flex items-center justify-center">
                 <Zap className="w-4 h-4 text-blue-400" />
               </div>
-              <span className="text-lg font-bold text-primary">20</span>
+              <span className="text-lg font-bold text-primary">{categories.length}</span>
               <span className="text-xs text-muted">功能分类</span>
             </div>
             <div className="flex items-center gap-2">
