@@ -305,6 +305,25 @@ e1eb79a feat: GaussDB 数据库在线学习与 SQL 练习平台
   - .gitignore 更新
 ```
 
+### 已提交变更 (2026-09-07，已推送 main/main)
+
+```
+f930b94 feat(invitation): 分享二维码弹层、章节爱心图标、去复古 4 种视频封面风格（21/22 期）
+  - 16 files changed, +3031 / -226
+  - 二维码分享弹层（qrcode 依赖；内容优先短链 /invitation?id=，长链按长度自适应容错）
+  - SectionHeading chapter 变体改 <Heart> 图标；照片墙标题 PHOTO GALLERY
+  - 新增 mono-cinema/cyber-neon/morandi-dream/urban-mag 4 视频风格（风格池 10→14）
+  - 素材：Mixkit 8 个 720p 视频 invitation-assets/（37M，入库）
+  - 新增 data/invitationLayouts.ts（43 布局）/ invitationStyles.ts（含 video 字段）
+
+084df99 feat(ai): AI 导航黄页数据更新至 2026-09（20 分类 206 工具）
+  - 2 files changed, +212 / -199
+  - 分类调整：legal→AI 智能体 agent 等；条目 ~190 → 206
+  - 清理失效项（New Bing/腾讯智影/Pi 等），更新头部产品 2026 域名
+```
+
+> 覆盖此前 §待提交 中 08-13/08-17 的请柬相关工作区变更（均已合入各期提交）。
+
 ### 待提交变更 (2026-08-17，归档时工作区状态)
 
 ```
