@@ -28,6 +28,14 @@
 
 ## 2. 最近更新
 
+### 工作空间冗余清理：嵌套备份 27G + 未引用源码/依赖瘦身 (2026-09-09)
+
+- **嵌套备份清理（14G + 服务器 13G）**：`devtools-hub/dist/roms/roms-backup` 12+ 层嵌套备份（build→inv_roms_backup→…）rm 后 dist/roms 15G→853M（与 public/roms 一致）；服务器 `/usr/share/nginx/html/roms/dist-roms-bk6`（13G，含 dist-roms-backup-3 嵌套）同步清理，roms 14G→853M，磁盘 43%→40G 用 16G/可用 22G
+- **未引用源码删除（21 文件）**：旧单机游戏 ContraFC/SuperMario/TankBattle/LodeRunner（已统一走 NESGame+react-emulatorjs，jsnes 弃用）、ImageManager/SpeechRecognition 旧工具页、请柬历史孤儿 HeartPhotoWall/PhotoCarousel、SyncHeightContext/use-mobile/lib/utils（shadcn 残留）、ROM 内嵌数组 contraRom/smbRom/tankRom/arcadeControls（ROM 改为 public/roms/*.nes 文件）、对应脚本 export-roms/gen-smb-rom、devtools-hub/emulatorjs 根残留 + emulatorjs.zip、sql-api 空目录、根临时 package.json/node_modules
+- **依赖瘦身**：npm uninstall 49 个直接/开发依赖（全部 @radix-ui/*26 + cmdk/vaul/sonner/next-themes/react-hook-form/zod/recharts/date-fns/react-day-picker/react-resizable-panels/embla-carousel-react/input-otp/cva/clsx/tailwind-merge/tw-animate-css/nes-emulator/nes_rust_wasm/jsnes 等 shadcn 全家桶残留），移除 242 包；保留 @emulatorjs/core-fceumm（react-emulatorjs 运行时内核）与 @types/*
+- **线上部署**：重建后入口 `index-CjXMahi0.js` + `index-CrxfaLhc.css` 已部署，`--delete` 顺带清掉线上 26+ 陈旧 assets（现仅 2 个）；验证 curl 200 application/javascript
+- 功能等价验证：tsc + vite build 通过；产物确认无旧组件残留（OffWorkCountdown 曾被误删，git checkout 恢复）
+
 ### 电子请柬：照片存储对接阿里云 OSS（无地域属性 bucket）(2026-08-18)
 
 - **动机**：照片 base64 直存数据库体积大、本地 uploads/ 单机存储无备份；改用阿里云 OSS 存照片，数据库只存 OSS URL
