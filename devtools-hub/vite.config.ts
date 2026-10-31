@@ -7,11 +7,8 @@ import wasm from "vite-plugin-wasm"
 export default defineConfig({
   base: '/',
   plugins: [react(), wasm()],
-  // PGlite (PostgreSQL WASM) 依赖的 .wasm/.data 文件需按静态资源处理
+  // EmulatorJS 核心(cores/*.data)与 wasm 需按静态资源处理
   assetsInclude: ['**/*.wasm', '**/*.data'],
-  optimizeDeps: {
-    exclude: ['@electric-sql/pglite'],
-  },
   server: {
     port: 5173,
     host: '0.0.0.0',
@@ -44,33 +41,10 @@ export default defineConfig({
         target: 'http://localhost:3000',
         changeOrigin: true,
       },
-      // GaussDB 学习 - SQL 验证 API（已下线：前端仅保留 PGlite 本地模式）
-      // 电子请柬短链接 API
-      '/inv-api': {
-        target: 'http://localhost:3002',
-        changeOrigin: true,
-        rewrite: (path: string) => path.replace(/^\/inv-api/, ''),
-      },
       // 通用 API（Docker API 等）
       '/api': {
         target: 'http://localhost:3000',
         changeOrigin: true,
-      },
-      // 音乐 API 代理（解决 CORS）
-      '/music-api/netease': {
-        target: 'https://music.163.com',
-        changeOrigin: true,
-        rewrite: (path: string) => path.replace(/^\/music-api\/netease/, ''),
-      },
-      '/music-api/qq': {
-        target: 'https://c.y.qq.com',
-        changeOrigin: true,
-        rewrite: (path: string) => path.replace(/^\/music-api\/qq/, ''),
-      },
-      '/music-api/kugou': {
-        target: 'https://mobilecdn.kugou.com',
-        changeOrigin: true,
-        rewrite: (path: string) => path.replace(/^\/music-api\/kugou/, ''),
       },
     },
   },

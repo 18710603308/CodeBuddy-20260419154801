@@ -3,7 +3,6 @@ import App from './App'
 import { AINavigator } from './components/ai-navigator'
 import { CodingTheWorld } from './components/coding-the-world'
 import { OfflineTools } from './components/offline-tools'
-import { GaussDBLearn } from './components/GaussDBLearn'
 import { Game } from './components/game'
 import { RetroGames } from './components/retro-games'
 import { GameCollection } from './components/game-collection'
@@ -19,9 +18,6 @@ import { RegistryViewer } from './components/registry-viewer'
 import NESGame from './components/NESGame'
 import ArcadeGame from './components/ArcadeGame'
 import GameHub from './components/GameHub'
-import PerlerBeadsCoop from './components/PerlerBeadsCoop'
-import MusicRoom from './components/MusicRoom'
-import Invitation from './components/Invitation'
 import { ErrorPage } from './components/ErrorPage'
 import { PageMeta } from './components/PageMeta'
 
@@ -60,14 +56,7 @@ const SEO = {
     title: '游戏中心 - 街机/FC/休闲游戏合集 | DevTools Hub',
     description: '一页畅玩所有经典游戏：魂斗罗、拳皇97、蜘蛛纸牌、扫雷、2048、黄金矿工、连连看等。',
   },
-  PERLER_COOP: {
-    title: '拼豆联机 - 多人在线拼豆创作 | DevTools Hub',
-    description: '纯网页多人联机拼豆游戏，WebRTC P2P 实时合作，20色调色板，创建房间分享码即可和好友一起拼豆创作，支持预设图案和导出PNG。',
-  },
-  MUSIC_ROOM: {
-    title: '共享听歌房 - 多人在线听歌聊天 | DevTools Hub',
-    description: '纯网页多人在线共享听歌房间，支持网易云/QQ音乐/酷狗搜索点歌，房间内实时聊天、表情互动、刷礼物、摇骰子/十五二十/小姐牌小游戏，P2P实时同步。',
-  },
+
   LINK_GAME: {
     title: '连连看在线玩 - 经典休闲益智游戏 | DevTools Hub',
     description: '在线连连看小游戏，经典消除玩法，锻炼眼力和反应速度，免费在线畅玩。',
@@ -104,14 +93,7 @@ const SEO = {
     title: 'Docker Registry - 私有镜像仓库管理 | DevTools Hub',
     description: '可视化 Docker 私有镜像仓库管理工具，查看、搜索、删除镜像标签，管理容器镜像。',
   },
-  GAUSSDB_LEARN: {
-    title: 'GaussDB在线学习 - SQL数据库练习平台 | DevTools Hub',
-    description: '华为GaussDB数据库在线学习平台，内置浏览器SQL练习环境。学习DDL、DML、SELECT、JOIN、聚合、子查询、事务等数据库知识，边学边练，免费在线运行SQL。',
-  },
-  INVITATION: {
-    title: '电子请柬 - 婚礼/生日/乔迁邀请函在线制作 | DevTools Hub',
-    description: '免费在线制作电子请柬：婚礼、生日、满月、乔迁、派对等多种场景模板，填写信息实时预览，一键生成分享链接，支持倒计时、背景音乐、祝福留言墙。',
-  },
+
 }
 
 // Helper: SEO for NES games
@@ -149,14 +131,10 @@ const router = createBrowserRouter([
       { path: '/ai', element: <AINavigator />, handle: { seo: SEO.AI } },
       { path: '/coding-the-world', element: <CodingTheWorld />, handle: { seo: SEO.CODING_WORLD } },
       { path: '/offline-tools', element: <OfflineTools />, handle: { seo: SEO.OFFLINE_TOOLS } },
-      { path: '/gaussdb-learn', element: <GaussDBLearn />, handle: { seo: SEO.GAUSSDB_LEARN } },
-      { path: '/invitation', element: <Invitation />, handle: { seo: SEO.INVITATION } },
       { path: '/game', element: <Game />, handle: { seo: SEO.GAME } },
       { path: '/retro-games', element: <RetroGames />, handle: { seo: SEO.RETRO_GAMES } },
       { path: '/game-collection', element: <GameCollection />, handle: { seo: SEO.GAME_COLLECTION } },
       { path: '/game-hub', element: <GameHub />, handle: { seo: SEO.GAME_HUB } },
-      { path: '/perler-coop', element: <PerlerBeadsCoop />, handle: { seo: SEO.PERLER_COOP } },
-      { path: '/music-room', element: <MusicRoom />, handle: { seo: SEO.MUSIC_ROOM } },
 
       // 休闲游戏
       { path: '/link-game', element: <LinkGame />, handle: { seo: SEO.LINK_GAME } },

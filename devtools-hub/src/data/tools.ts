@@ -1,5 +1,5 @@
 import type { ComponentType } from 'react'
-import { Binary, Bomb as BombIcon, Bot, Braces, Clipboard, Clock, Code2, Coffee, Cog, Database, FileCode, FileJson, FileText, Gamepad2, Gift, GitCompare, Globe, Grid3x3, Hash, Hash as HashIcon, Headphones, Joystick, Key, Link as LinkIcon, Lock, Music, Puzzle, QrCode, Search, ShieldCheck, Shuffle, Table2, Terminal, TextCursorInput, Type, Wand2, WifiOff } from 'lucide-react'
+import { Binary, Bomb as BombIcon, Bot, Braces, Clipboard, Clock, Code2, Coffee, Cog, FileCode, FileJson, FileText, Gamepad2, GitCompare, Globe, Hash, Hash as HashIcon, Joystick, Key, Link as LinkIcon, Lock, Music, Puzzle, QrCode, Search, ShieldCheck, Shuffle, Table2, Terminal, TextCursorInput, Type, Wand2, WifiOff } from 'lucide-react'
 
 /**
  * 工具元数据接口
@@ -44,8 +44,6 @@ export const tools: ToolMeta[] = [
   // 导航
   nav('ai-nav', Bot, 'AI 导航黄页', '收录全网优质 AI 工具，支持分类浏览和搜索', 'from-emerald-400 to-green-600', 'bg-emerald-500/10', 'border-emerald-500/30', '/ai'),
   nav('coding-world', Globe, 'Coding The World', '探索优质开源项目', 'from-blue-500 to-purple-600', 'bg-blue-500/10', 'border-blue-500/30', '/coding-the-world'),
-  nav('gaussdb-learn', Database, 'GaussDB 数据库学习', 'GaussDB 在线学习与 SQL 练习平台，内置数据库引擎边学边练', 'from-teal-500 to-cyan-600', 'bg-teal-500/10', 'border-teal-500/30', '/gaussdb-learn'),
-  nav('invitation', Gift, '电子请柬', '婚礼/生日/乔迁电子请柬在线制作，实时预览一键生成分享链接', 'from-rose-500 to-pink-600', 'bg-rose-500/10', 'border-rose-500/30', '/invitation'),
 
   // 游戏 - 第三方平台
   game('game-collection', Gamepad2, '欲买桂花同载酒', '第三方游戏平台合集，FC、街机、GBA 等经典游戏', 'from-amber-500 to-orange-600', 'bg-amber-500/10', 'border-amber-500/30', '/game-collection'),
@@ -60,8 +58,6 @@ export const tools: ToolMeta[] = [
   game('game2048', HashIcon, '2048', '经典数字合成游戏，挑战2048', 'from-orange-500 to-amber-600', 'bg-orange-500/10', 'border-orange-500/30'),
   game('gold-miner', Gamepad2, '黄金矿工', '经典益智小游戏，抓取金块得分', 'from-yellow-500 to-orange-600', 'bg-yellow-500/10', 'border-yellow-500/30'),
   game('texas-holdem', Gamepad2, '德州扑克', '经典德州扑克人机对战，仿真实牌局', 'from-red-600 to-rose-800', 'bg-red-600/10', 'border-red-600/30'),
-  game('perler-coop', Grid3x3, '拼豆联机', '多人在线拼豆创作，P2P实时联机，20色调色板自由拼像素画', 'from-pink-500 to-rose-600', 'bg-pink-500/10', 'border-pink-500/30', '/perler-coop'),
-  game('music-room', Headphones, '共享听歌房', '多人在线听歌聊天，支持网易云/QQ/酷狗搜歌，表情礼物互动，摇骰子/十五二十/小姐牌小游戏', 'from-purple-500 to-indigo-600', 'bg-purple-500/10', 'border-purple-500/30', '/music-room'),
 
   // 游戏 - 模拟器 FC
   game('contra-fc', Gamepad2, '魂斗罗 FC', '原汁原味FC经典复刻，EmulatorJS模拟器', 'from-red-500 to-orange-600', 'bg-red-500/10', 'border-red-500/30'),
